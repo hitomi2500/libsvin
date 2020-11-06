@@ -8,6 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void
+_svin_delay(int milliseconds)
+{
+    //delay
+    volatile int dummy=0;
+    for (dummy = 0; dummy < 3000*milliseconds; dummy++)
+        ;
+}
+
 static void
 _svin_set_cycle_patterns_cpu()
 {
@@ -102,6 +111,10 @@ _svin_set_cycle_patterns_nbg()
 
         vdp2_vram_cycp_set(&vram_cycp);
         vdp_sync();
+
+        //enable transparency for NBG1 over NBG0 (might not work with sprites between
+        MEMORY_WRITE(16, VDP2(CCCTL), 0x0002); //enable cc for NBG1
+        MEMORY_WRITE(16, VDP2(CCRNA), 0x0C00); //enable cc for NBG1
 }
 
 void
@@ -257,27 +270,19 @@ _svin_init()
 
 	//setting cycle patterns for nbg access
 	_svin_set_cycle_patterns_nbg();
-
-	//enable transparency for NBG1 over NBG0 (might not work with sprites between
-    MEMORY_WRITE(16, VDP2(CCCTL), 0x0002); //enable cc for NBG1
-    MEMORY_WRITE(16, VDP2(CCRNA), 0x0C00); //enable cc for NBG1
 }
 
-void _svin_set_background(int starting_fad,int starting_fad_palette)
+void _svin_background_set(int starting_fad,int starting_fad_palette)
 {
-    //fill pattern names for nbg0 with transparent chars, so that loading process is unseen
-    /*int * _pointer32 = (int *)_SVIN_NBG0_PNDR_START;
-    for (unsigned int i=0;i<_SVIN_NBG0_PNDR_SIZE/sizeof(int);i++)
-    {
-        _pointer32[i] = _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0
-    }*/
-
     //set zero palette to hide loading
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
     for (int i=0;i<256;i++)
     {
         my_vdp2_cram[i] = 0;
     }
+
+    //setting cycle patterns for cpu access
+	_svin_set_cycle_patterns_cpu();
 
     //this is a stock slow version for unhacked yaul
     /*for (int sector=0;sector<154;sector++)
@@ -301,38 +306,41 @@ void _svin_set_background(int starting_fad,int starting_fad_palette)
                             ((my_vdp2_pal[i*3+0]&0xF8)>>3) );
     }
 
-    /*//restore pattern names for nbg0
-	//starting with plane 0
-	_pointer32 = (int *)_SVIN_NBG0_PNDR_START;
-	for (int y = 0; y < 28; y++)
-    {
-        int iOffset = y*32;
-        for (int x = 0; x < 32; x++)
-        {
-            _pointer32[iOffset+x] = (iOffset+x)*8;
-        }
-    }
-    //plane 1 goes next
-	for (int y = 0; y < 28; y++)
-    {
-        int iOffset = 32*32 + y*32;
-        int iOffset2 = 32*28 + y*12;
-        for (int x = 0; x < 12; x++)
-        {
-            _pointer32[iOffset+x] = (iOffset2+x)*8;
-        }
-    }*/
+    //setting cycle patterns for nbg access
+    _svin_set_cycle_patterns_nbg();
 }
 
-void _svin_clear_background()
+void _svin_background_clear()
 {
-    //read palette into LWRAM
+    //set zero palette
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-    my_vdp2_cram[0] = 0;
-
-	int * _pointer32 = (int *)_SVIN_NBG0_CHPNDR_START;
-    for (unsigned int i=0;i<_SVIN_NBG0_CHPNDR_SIZE/sizeof(int);i++)
+    for (int i=0;i<256;i++)
     {
-        _pointer32[i] = 0;
+        my_vdp2_cram[i] = 0;
     }
 }
+
+void _svin_background_fade_to_black()
+{
+    //set zero palette
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    uint8_t r,g,b;
+    for (int fade=0;fade<32;fade++)
+    {
+        for (int i=0;i<256;i++)
+        {
+            b = (my_vdp2_cram[i]&0x7C00)>>10;
+            g = (my_vdp2_cram[i]&0x03E0)>>5;
+            r = (my_vdp2_cram[i]&0x001F)>>0;
+            r--;b--;g--;
+            if (r==0xFF) r = 0;
+            if (g==0xFF) g = 0;
+            if (b==0xFF) b = 0;
+            my_vdp2_cram[i] = ( (b<<10) |
+                                (g<<5) |
+                                (r<<0) );
+        }
+        _svin_delay(30);
+    }
+}
+
