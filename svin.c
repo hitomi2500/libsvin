@@ -192,7 +192,7 @@ _svin_init()
 	_pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i=0;i<_SVIN_NBG1_PNDR_SIZE/sizeof(int);i++)
     {
-        _pointer32[i] = _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on
+        _pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on
     }
     //writing semi-transparent characters where the dialog box should go, plane 0 first
     for (int y = 22; y < 27; y++)
@@ -200,7 +200,7 @@ _svin_init()
         int iOffset = y*32;
         for (int x = 4; x < 32; x++)
         {
-            _pointer32[iOffset+x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS*1;
+            _pointer32[iOffset+x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS*1; //palette 1, transparency on
         }
     }
     //now plane 1
@@ -209,7 +209,7 @@ _svin_init()
         int iOffset = 32*32 + y*32;
         for (int x = 0; x < 8; x++)
         {
-            _pointer32[iOffset+x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS*1;
+            _pointer32[iOffset+x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS*1; //palette 1, transparency on
         }
     }
 
@@ -219,21 +219,21 @@ _svin_init()
 	_pointer32 = (int *)_SVIN_NBG0_CHPNDR_START;
     for (unsigned int i=0;i<_SVIN_NBG0_CHPNDR_SIZE/sizeof(int);i++)
     {
-        _pointer32[i] = 0;//0xFFFFFFFF;//((i/64)%256)*0x1010101;
+        _pointer32[i] = 0;
     }
 
     //clearing character pattern names data for nbg1
 	_pointer32 = (int *)_SVIN_NBG1_CHPNDR_START;
     for (unsigned int i=0;i<_SVIN_NBG1_CHPNDR_SIZE/sizeof(int);i++)
     {
-        _pointer32[i] = 0;//((i/64)%256)*0x1010101;
+        _pointer32[i] = 0;
     }
 
     //setting up "transparent" character for nbg1
     _pointer32 = (int *)_SVIN_NBG1_CHPNDR_SPECIALS_ADDR;
     for (unsigned int i=0;i<_SVIN_CHARACTER_BYTES/sizeof(int);i++)
     {
-        _pointer32[i] = 0;//0x1F2F7FFF;
+        _pointer32[i] = 0;
     }
 
     //setting up "semi-transparent" character for nbg1
@@ -265,9 +265,34 @@ _svin_init()
 
 void _svin_set_background(int starting_fad,int starting_fad_palette)
 {
+    //fill pattern names for nbg0 with transparent chars, so that loading process is unseen
+    /*int * _pointer32 = (int *)_SVIN_NBG0_PNDR_START;
+    for (unsigned int i=0;i<_SVIN_NBG0_PNDR_SIZE/sizeof(int);i++)
+    {
+        _pointer32[i] = _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0
+    }*/
+
+    //set zero palette to hide loading
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    for (int i=0;i<256;i++)
+    {
+        my_vdp2_cram[i] = 0;
+    }
+
+    //this is a stock slow version for unhacked yaul
+    /*for (int sector=0;sector<154;sector++)
+    {
+        cd_block_sector_read(starting_fad + sector, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
+    }*/
+    //this is a fast version for hacked yaul
+    cd_block_multiple_sectors_read(starting_fad, 77, (uint8_t *) (HWRAM(0x40000)));
+    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+    cd_block_multiple_sectors_read(starting_fad+77, 77, (uint8_t *) (HWRAM(0x40000)));
+    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+
     //read palette into LWRAM
     cd_block_sector_read(starting_fad_palette, (uint8_t *) HWRAM(0x40000) );
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
     uint8_t *my_vdp2_pal = (uint8_t *)HWRAM(0x40000);
     for (int i=0;i<256;i++)
     {
@@ -276,22 +301,27 @@ void _svin_set_background(int starting_fad,int starting_fad_palette)
                             ((my_vdp2_pal[i*3+0]&0xF8)>>3) );
     }
 
-    /*for (int sector=0;sector<154;sector++)
+    /*//restore pattern names for nbg0
+	//starting with plane 0
+	_pointer32 = (int *)_SVIN_NBG0_PNDR_START;
+	for (int y = 0; y < 28; y++)
     {
-        cd_block_sector_read(starting_fad + sector, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
-    }*/
-    /*for (int sector=0;sector<77;sector++)
+        int iOffset = y*32;
+        for (int x = 0; x < 32; x++)
+        {
+            _pointer32[iOffset+x] = (iOffset+x)*8;
+        }
+    }
+    //plane 1 goes next
+	for (int y = 0; y < 28; y++)
     {
-        cd_block_sector_read(starting_fad + sector, (uint8_t *) (HWRAM(0x40000)+sector*2048) );
+        int iOffset = 32*32 + y*32;
+        int iOffset2 = 32*28 + y*12;
+        for (int x = 0; x < 12; x++)
+        {
+            _pointer32[iOffset+x] = (iOffset2+x)*8;
+        }
     }*/
-    cd_block_multiple_sectors_read(starting_fad, 77, (uint8_t *) (HWRAM(0x40000)));
-    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),(uint8_t *) HWRAM(0x40000),2048*77);
-    /*for (int sector=0;sector<77;sector++)
-    {
-        cd_block_sector_read(starting_fad + 77 + sector, (uint8_t *) (HWRAM(0x40000)+sector*2048) );
-    }*/
-    cd_block_multiple_sectors_read(starting_fad+77, 77, (uint8_t *) (HWRAM(0x40000)));
-    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),(uint8_t *) HWRAM(0x40000),2048*77);
 }
 
 void _svin_clear_background()
