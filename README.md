@@ -1,2 +1,2 @@
 # libsvin
-Sega Saturn visual novel library
+libsvin is a library for writing or porting visual novels for Sega Saturn. The library is based on [`libyaul`].
