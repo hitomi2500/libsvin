@@ -25,7 +25,7 @@ main(void)
 
         _svin_init();
 
-        _svin_background_clear();
+        //iso9660_dirent_t
 
         while(1)
         {
@@ -34,10 +34,10 @@ main(void)
                 file_entry = &_filelist.entries[i];
                 if (file_entry->size == 315392)
                 {
-                    _svin_background_fade_to_black();
+                    //_svin_background_fade_to_black();
                     file_entry2 = &_filelist.entries[i+1];
-                    _svin_background_set(file_entry->starting_fad,file_entry2->starting_fad);
-                    _svin_delay(3000);
+                    _svin_background_update(file_entry->starting_fad,file_entry2->starting_fad);
+                    _svin_delay(1000);
                 }
             }
         }

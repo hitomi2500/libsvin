@@ -17,6 +17,35 @@ _svin_delay(int milliseconds)
         ;
 }
 
+void _svin_background_fade_to_black_step()
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    uint8_t r,g,b;
+    for (int i=0;i<256;i++)
+    {
+        b = (my_vdp2_cram[i]&0x7C00)>>10;
+        g = (my_vdp2_cram[i]&0x03E0)>>5;
+        r = (my_vdp2_cram[i]&0x001F)>>0;
+        r--;b--;g--;
+        if (r==0xFF) r = 0;
+        if (g==0xFF) g = 0;
+        if (b==0xFF) b = 0;
+        my_vdp2_cram[i] = ( (b<<10) |
+                            (g<<5) |
+                            (r<<0) );
+    }
+}
+
+void _svin_background_fade_to_black()
+{
+    for (int fade=0;fade<32;fade++)
+    {
+        _svin_background_fade_to_black_step();
+        _svin_delay(30);
+    }
+}
+
+
 static void
 _svin_set_cycle_patterns_cpu()
 {
@@ -310,6 +339,50 @@ void _svin_background_set(int starting_fad,int starting_fad_palette)
     _svin_set_cycle_patterns_nbg();
 }
 
+void _svin_background_update(int starting_fad,int starting_fad_palette)
+{
+    //read next image while fading-to-black current one
+    for (int i=0;i<14;i++)
+    {
+         cd_block_multiple_sectors_read(starting_fad+i*11, 11, (uint8_t *) (HWRAM(0x40000+2048*11*i)));
+        _svin_background_fade_to_black_step();
+    }
+
+    //cintinue fading-to-black
+    for (int i=0;i<18;i++)
+    {
+        _svin_delay(50);
+        _svin_background_fade_to_black_step();
+    }
+
+    //set zero palette to hide loading
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    for (int i=0;i<256;i++)
+    {
+        my_vdp2_cram[i] = 0;
+    }
+
+    //setting cycle patterns for cpu access
+	_svin_set_cycle_patterns_cpu();
+
+    //this is a fast version for hacked yaul
+    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START),(uint8_t *) HWRAM(0x40000),2048*154);
+
+    //read palette into LWRAM
+    cd_block_sector_read(starting_fad_palette, (uint8_t *) HWRAM(0x40000) );
+    my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    uint8_t *my_vdp2_pal = (uint8_t *)HWRAM(0x40000);
+    for (int i=0;i<256;i++)
+    {
+        my_vdp2_cram[i] = ( ((my_vdp2_pal[i*3+2]&0xF8)<<7) |
+                            ((my_vdp2_pal[i*3+1]&0xF8)<<2) |
+                            ((my_vdp2_pal[i*3+0]&0xF8)>>3) );
+    }
+
+    //setting cycle patterns for nbg access
+    _svin_set_cycle_patterns_nbg();
+}
+
 void _svin_background_clear()
 {
     //set zero palette
@@ -317,30 +390,6 @@ void _svin_background_clear()
     for (int i=0;i<256;i++)
     {
         my_vdp2_cram[i] = 0;
-    }
-}
-
-void _svin_background_fade_to_black()
-{
-    //set zero palette
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-    uint8_t r,g,b;
-    for (int fade=0;fade<32;fade++)
-    {
-        for (int i=0;i<256;i++)
-        {
-            b = (my_vdp2_cram[i]&0x7C00)>>10;
-            g = (my_vdp2_cram[i]&0x03E0)>>5;
-            r = (my_vdp2_cram[i]&0x001F)>>0;
-            r--;b--;g--;
-            if (r==0xFF) r = 0;
-            if (g==0xFF) g = 0;
-            if (b==0xFF) b = 0;
-            my_vdp2_cram[i] = ( (b<<10) |
-                                (g<<5) |
-                                (r<<0) );
-        }
-        _svin_delay(30);
     }
 }
 
