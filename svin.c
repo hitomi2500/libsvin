@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
+
+fad_t _svin_background_pack_fad;
+uint8_t _svin_background_pack_index[8192];
+
 void
 _svin_delay(int milliseconds)
 {
@@ -17,7 +22,8 @@ _svin_delay(int milliseconds)
         ;
 }
 
-void _svin_background_fade_to_black_step()
+void 
+_svin_background_fade_to_black_step()
 {
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
     uint8_t r,g,b;
@@ -36,7 +42,8 @@ void _svin_background_fade_to_black_step()
     }
 }
 
-void _svin_background_fade_to_black()
+void 
+_svin_background_fade_to_black()
 {
     for (int fade=0;fade<32;fade++)
     {
@@ -147,7 +154,7 @@ _svin_set_cycle_patterns_nbg()
 }
 
 void
-_svin_init()
+_svin_init(iso9660_filelist_t * _filelist)
 {
     int * _pointer32;
 
@@ -299,33 +306,83 @@ _svin_init()
 
 	//setting cycle patterns for nbg access
 	_svin_set_cycle_patterns_nbg();
+    
+    //-------------- Getting FAD and index for background pack binary -------------------
+    iso9660_filelist_entry_t *file_entry;
+    _svin_background_pack_fad = 0;
+    for (unsigned int i =0; i< _filelist->entries_count; i++)
+    {
+        file_entry = &(_filelist->entries[i]);
+        if (strcmp(file_entry->name,"BG.PAK") == 0)
+        {
+            _svin_background_pack_fad = file_entry->starting_fad;
+            cd_block_multiple_sectors_read(_svin_background_pack_fad, 4, _svin_background_pack_index );
+        }
+    }
+    assert(_svin_background_pack_fad > 0);
 }
 
-void _svin_background_set(int starting_fad,int starting_fad_palette)
+void 
+_svin_background_set_by_index(int index)
 {
+    char _name[64];
+    strcpy(_name,(char *)&(_svin_background_pack_index[index*64]));
+    if (_name[0] != '\0')
+        _svin_background_set(_name);
+}
+
+void 
+_svin_background_set(char *name)
+{   
+    //searching for a name
+    int iFoundIndex = -1;
+    for (int i=0;i<128;i++)
+    {
+        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64])) )
+        {
+            iFoundIndex = i;
+        }
+    }
+
+    if (-1 == iFoundIndex)
+        return; //name not found 
+
     //set zero palette to hide loading
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-    for (int i=0;i<256;i++)
+    /*for (int i=0;i<256;i++)
     {
         my_vdp2_cram[i] = 0;
-    }
+    }*/
 
     //setting cycle patterns for cpu access
 	_svin_set_cycle_patterns_cpu();
 
-    //this is a stock slow version for unhacked yaul
-    /*for (int sector=0;sector<154;sector++)
+    //clearing character pattern names data for nbg0
+	/*int * _pointer32 = (int *)_SVIN_NBG0_CHPNDR_START;
+    for (unsigned int i=0;i<_SVIN_NBG0_CHPNDR_SIZE/sizeof(int);i++)
     {
-        cd_block_sector_read(starting_fad + sector, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
+        _pointer32[i] = i;
     }*/
+
+    //this is a stock slow version for unhacked yaul
+    for (int sector=0;sector<154;sector++)
+    {
+        //cd_block_sector_read(starting_fad + sector, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
+        cd_block_sector_read(_svin_background_pack_fad + 4 + sector + iFoundIndex*156, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
+    }
     //this is a fast version for hacked yaul
-    cd_block_multiple_sectors_read(starting_fad, 77, (uint8_t *) (HWRAM(0x40000)));
-    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),(uint8_t *) HWRAM(0x40000),2048*77);
-    cd_block_multiple_sectors_read(starting_fad+77, 77, (uint8_t *) (HWRAM(0x40000)));
-    memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+    //cd_block_multiple_sectors_read(starting_fad, 77, (uint8_t *) (HWRAM(0x40000)));
+    //memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+    //cd_block_multiple_sectors_read(starting_fad+77, 77, (uint8_t *) (HWRAM(0x40000)));
+    //memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+    //cd_block_multiple_sectors_read(_svin_background_pack_fad + 4 + iFoundIndex*156, 77, (uint8_t *) (HWRAM(0x40000)));
+    //memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),(uint8_t *) HWRAM(0x40000),2048*77);
+    //cd_block_multiple_sectors_read(_svin_background_pack_fad + 4 + iFoundIndex*156 + 77, 77, (uint8_t *) (HWRAM(0x40000)));
+    //memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),(uint8_t *) HWRAM(0x40000),2048*77);
 
     //read palette into LWRAM
-    cd_block_sector_read(starting_fad_palette, (uint8_t *) HWRAM(0x40000) );
+    //cd_block_sector_read(starting_fad_palette, (uint8_t *) HWRAM(0x40000) );
+    cd_block_sector_read(_svin_background_pack_fad + 4 + 154  + iFoundIndex*156, (uint8_t *) HWRAM(0x40000) );
     my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
     uint8_t *my_vdp2_pal = (uint8_t *)HWRAM(0x40000);
     for (int i=0;i<256;i++)
@@ -383,7 +440,8 @@ void _svin_background_update(int starting_fad,int starting_fad_palette)
     _svin_set_cycle_patterns_nbg();
 }
 
-void _svin_background_clear()
+void 
+_svin_background_clear()
 {
     //set zero palette
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);

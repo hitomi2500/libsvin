@@ -11,11 +11,16 @@
 static iso9660_filelist_t _filelist;
 static iso9660_filelist_entry_t _filelist_entries[ISO9660_FILELIST_ENTRIES_COUNT];
 
+extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
+
+
+//uint8_t bg_romdisk[];
+
 int
 main(void)
 {
-        iso9660_filelist_entry_t *file_entry;
-        iso9660_filelist_entry_t *file_entry2;
+        //iso9660_filelist_entry_t *file_entry;
+        //iso9660_filelist_entry_t *file_entry2;
         _filelist.entries = _filelist_entries;
         _filelist.entries_count = 0;
         _filelist.entries_pooled_count = 0;
@@ -23,22 +28,25 @@ main(void)
         /* Load the maximum number */
         iso9660_filelist_read(&_filelist, -1);
 
-        _svin_init();
+        _svin_init(&_filelist);
 
-        //iso9660_dirent_t
+        //romdisk_init();
+
+        /*void *romdisk;
+        romdisk = romdisk_mount("/bg.rom", bg_romdisk);
+        assert(romdisk != NULL);*/
+
+        //void *fh;
+        //fh = romdisk_open(romdisk, "/B0.NBG");
+       // assert(fh != NULL);
 
         while(1)
         {
-            for (unsigned int i =0; i< _filelist.entries_count; i++)
+           for (unsigned int i =0; i< 64; i++)
             {
-                file_entry = &_filelist.entries[i];
-                if (file_entry->size == 315392)
-                {
-                    //_svin_background_fade_to_black();
-                    file_entry2 = &_filelist.entries[i+1];
-                    _svin_background_update(file_entry->starting_fad,file_entry2->starting_fad);
-                    _svin_delay(1000);
-                }
+                _svin_background_set_by_index(i);
+                //_svin_background_set("bus_stop");
+                _svin_delay(1000);
             }
         }
 
