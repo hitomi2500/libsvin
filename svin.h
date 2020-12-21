@@ -42,7 +42,8 @@ void _svin_init(iso9660_filelist_t * _filelist);
 void _svin_delay(int milliseconds);
 void _svin_background_set_by_index(int index);
 void _svin_background_set(char *name);
-void _svin_background_update(int starting_fad,int starting_fad_palette);
+void _svin_background_update_by_index(int index);
+void _svin_background_update(char *name);
 void _svin_background_clear();
 void _svin_background_fade_to_black();
 

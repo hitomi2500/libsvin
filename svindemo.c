@@ -40,11 +40,14 @@ main(void)
         //fh = romdisk_open(romdisk, "/B0.NBG");
        // assert(fh != NULL);
 
+       _svin_background_set_by_index(64);
+
         while(1)
         {
-           for (unsigned int i =0; i< 64; i++)
+           for (unsigned int i=0; i< 64; i++)
             {
-                _svin_background_set_by_index(i);
+                //_svin_background_set_by_index(i);
+                _svin_background_update_by_index(i);
                 //_svin_background_set("bus_stop");
                 _svin_delay(1000);
             }
