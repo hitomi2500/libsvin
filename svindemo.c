@@ -30,21 +30,11 @@ main(void)
 
         _svin_init(&_filelist);
 
-        //romdisk_init();
-
-        /*void *romdisk;
-        romdisk = romdisk_mount("/bg.rom", bg_romdisk);
-        assert(romdisk != NULL);*/
-
-        //void *fh;
-        //fh = romdisk_open(romdisk, "/B0.NBG");
-       // assert(fh != NULL);
-
-       _svin_background_set_by_index(64);
+       _svin_background_set("int_dining_hall_people_day");
 
         while(1)
         {
-           for (unsigned int i=0; i< 64; i++)
+           for (unsigned int i=0; i< 100; i++)
             {
                 //_svin_background_set_by_index(i);
                 _svin_background_update_by_index(i);

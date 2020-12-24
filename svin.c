@@ -11,7 +11,8 @@
 extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
 
 fad_t _svin_background_pack_fad;
-uint8_t _svin_background_pack_index[8192];
+uint8_t *_svin_background_pack_index;
+uint16_t _svin_background_files_number;
 
 void
 _svin_delay(int milliseconds)
@@ -325,14 +326,6 @@ _svin_init(iso9660_filelist_t * _filelist)
     }
     for (int pal=0;pal<4;pal++)
         _svin_background_set_palette(pal,temp_pal);
-	/*uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-	for (int i=0;i<256;i++)
-	{
-	    my_vdp2_cram[i] = ( (i/8)*0x0421 );//palette 0 - grayscale gradient
-	    my_vdp2_cram[256+i] = ( (i/8)*0x0421 );//palette 1 - grayscale gradient
-	    my_vdp2_cram[512+i] = ( (i/8)*0x0421 );//palette 2 - grayscale gradient
-	    my_vdp2_cram[768+i] = ( (i/8)*0x0421 );//palette 3 - grayscale gradient
-	}*/
 
 	//setting cycle patterns for nbg access
 	_svin_set_cycle_patterns_nbg();
@@ -346,7 +339,19 @@ _svin_init(iso9660_filelist_t * _filelist)
         if (strcmp(file_entry->name,"BG.PAK") == 0)
         {
             _svin_background_pack_fad = file_entry->starting_fad;
-            cd_block_multiple_sectors_read(_svin_background_pack_fad, 4, _svin_background_pack_index );
+            //allocating temporary buf for 1 sector
+            uint8_t tmp_sector[2048];
+            uint16_t * tmp_sector_16 = (uint16_t * )tmp_sector;
+            //reading 1st block to find out number of blocks
+            cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
+            //getting size and number of entries
+            assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
+            _svin_background_files_number = tmp_sector_16[4];
+            //allocating array for background pack index
+            _svin_background_pack_index = malloc(64*_svin_background_files_number+1);
+            //reading
+            int blocks_for_index = (_svin_background_files_number+1)/32;
+            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_pack_index);
         }
     }
     assert(_svin_background_pack_fad > 0);
@@ -400,7 +405,7 @@ _svin_background_set(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+72])) )
         {
             iFoundIndex = i;
         }
@@ -418,7 +423,7 @@ _svin_background_update(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+72])) )
         {
             iFoundIndex = i;
         }
@@ -478,10 +483,5 @@ _svin_background_clear()
 {
     //set zero palette
     _svin_background_clear_palette(0);
-    /*uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-    for (int i=0;i<256;i++)
-    {
-        my_vdp2_cram[i] = 0;
-    }*/
 }
 
