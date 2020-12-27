@@ -30,7 +30,7 @@ main(void)
 
         _svin_init(&_filelist);
 
-       _svin_background_set("int_dining_hall_people_day");
+       //_svin_background_set("int_dining_hall_people_day");
 
         while(1)
         {

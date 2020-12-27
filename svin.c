@@ -348,9 +348,10 @@ _svin_init(iso9660_filelist_t * _filelist)
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
             _svin_background_files_number = tmp_sector_16[4];
             //allocating array for background pack index
-            _svin_background_pack_index = malloc(64*_svin_background_files_number+1);
+            assert(_svin_background_files_number < 200); //hard limit for backgound number
+            int blocks_for_index = (_svin_background_files_number)/32+1;
+            _svin_background_pack_index = malloc(blocks_for_index*2048);
             //reading
-            int blocks_for_index = (_svin_background_files_number+1)/32;
             cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_pack_index);
         }
     }
@@ -376,26 +377,29 @@ _svin_background_set_by_index(int index)
     //setting cycle patterns for cpu access
 	_svin_set_cycle_patterns_cpu();
 
+    uint16_t * _svin_background_pack_index_16 = (uint16_t*)_svin_background_pack_index;
+    uint16_t _current_sector = _svin_background_pack_index_16[index*32+36];
+
     //this is a stock slow version for unhacked yaul
-    /*for (int sector=0;sector<154;sector++)
-    {
-        cd_block_sector_read(_svin_background_pack_fad + 4 + sector + index*156, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
-    }*/
+    //for (int sector=0;sector<154;sector++)
+    //{
+    //    cd_block_sector_read(_svin_background_pack_fad + 4 + sector + index*156, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
+    //}
     //this is a fast version for hacked yaul
-    cd_block_multiple_sectors_read(_svin_background_pack_fad + 4 + index*156, 77, buffer);
+    cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
     memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+0*2048),buffer,2048*77);
-    cd_block_multiple_sectors_read(_svin_background_pack_fad + 4 + index*156 + 77, 77, buffer);
+    cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
     memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START+77*2048),buffer,2048*77);
 
     //read palette
-     cd_block_sector_read(_svin_background_pack_fad + 4 + 154 + index*156, palette );
+     cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette );
     _svin_background_set_palette(0,palette);
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();
 
-    free (buffer);
     free (palette);
+    free (buffer);
 }
 
 void 
@@ -405,7 +409,7 @@ _svin_background_set(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+72])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+74])) )
         {
             iFoundIndex = i;
         }
@@ -423,7 +427,7 @@ _svin_background_update(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+72])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+74])) )
         {
             iFoundIndex = i;
         }
@@ -447,10 +451,13 @@ _svin_background_update_by_index(int index)
     uint8_t * palette = malloc(2048);
     assert ((int)(palette) > 0);
 
+    uint16_t * _svin_background_pack_index_16 = (uint16_t*)_svin_background_pack_index;
+    uint16_t _current_sector = _svin_background_pack_index_16[index*32+36];
+
     //read next image while fading-to-black current one
     for (int i=0;i<14;i++)
     {
-        cd_block_multiple_sectors_read(_svin_background_pack_fad + 4 + index*156 + i*11, 11, &(buffer[11*2048*i]));
+        cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + i*11, 11, &(buffer[11*2048*i]));
         _svin_background_fade_to_black_step();
     }
     
@@ -468,7 +475,7 @@ _svin_background_update_by_index(int index)
     memcpy((uint8_t *) (_SVIN_NBG0_CHPNDR_START),buffer,2048*154);
 
     //read palette
-     cd_block_sector_read(_svin_background_pack_fad + 4 + 154 + index*156, palette );
+     cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette );
     _svin_background_set_palette(0,palette);
 
     //setting cycle patterns for nbg access
