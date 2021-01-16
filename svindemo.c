@@ -28,7 +28,8 @@ main(void)
         /* Load the maximum number */
         iso9660_filelist_read(&_filelist, -1);
 
-        _svin_init(&_filelist);
+        _svin_init();
+        _svin_background_load_index(&_filelist);
 
        //_svin_background_set("int_dining_hall_people_day");
 

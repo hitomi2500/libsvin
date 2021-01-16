@@ -38,13 +38,20 @@
 #define _SVIN_NBG1_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(3,0x1F000))
 #define _SVIN_NBG1_CHPNDR_SPECIALS_INDEX ((0x7F000)/32)
 
-void _svin_init(iso9660_filelist_t * _filelist);
+void _svin_init();
 void _svin_delay(int milliseconds);
+void _svin_background_fade_to_black_step();
+void _svin_background_fade_to_black();
+void _svin_background_set_palette(int number, uint8_t * pointer);
+void _svin_background_clear_palette(int number);
 void _svin_background_set_by_index(int index);
 void _svin_background_set(char *name);
 void _svin_background_update_by_index(int index);
 void _svin_background_update(char *name);
 void _svin_background_clear();
 void _svin_background_fade_to_black();
+void _svin_background_load_index(iso9660_filelist_t * _filelist);
+void _svin_actor_load_index(iso9660_filelist_t * _filelist, char * actor_code);
+
 
 #endif

@@ -11,8 +11,11 @@
 extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
 
 fad_t _svin_background_pack_fad;
-uint8_t *_svin_background_pack_index;
+uint8_t *_svin_background_index;
 uint16_t _svin_background_files_number;
+fad_t _svin_actor_pack_fad[64];
+uint8_t *_svin_actor_index[64];
+uint16_t _svin_actor_files_number[64];
 
 void
 _svin_delay(int milliseconds)
@@ -21,58 +24,6 @@ _svin_delay(int milliseconds)
     volatile int dummy=0;
     for (dummy = 0; dummy < 3000*milliseconds; dummy++)
         ;
-}
-
-void 
-_svin_background_fade_to_black_step()
-{
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
-    uint8_t r,g,b;
-    for (int i=0;i<256;i++)
-    {
-        b = (my_vdp2_cram[i]&0x7C00)>>10;
-        g = (my_vdp2_cram[i]&0x03E0)>>5;
-        r = (my_vdp2_cram[i]&0x001F)>>0;
-        r--;b--;g--;
-        if (r==0xFF) r = 0;
-        if (g==0xFF) g = 0;
-        if (b==0xFF) b = 0;
-        my_vdp2_cram[i] = ( (b<<10) |
-                            (g<<5) |
-                            (r<<0) );
-    }
-}
-
-void 
-_svin_background_fade_to_black()
-{
-    for (int fade=0;fade<32;fade++)
-    {
-        _svin_background_fade_to_black_step();
-        _svin_delay(30);
-    }
-}
-
-void 
-_svin_background_set_palette(int number, uint8_t * pointer)
-{
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i=0;i<256;i++)
-    {
-        my_vdp2_cram[i] = ( ((pointer[i*3+2]&0xF8)<<7) |
-                            ((pointer[i*3+1]&0xF8)<<2) |
-                            ((pointer[i*3+0]&0xF8)>>3) );
-    }
-}
-
-void 
-_svin_background_clear_palette(int number)
-{
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i=0;i<256;i++)
-    {
-        my_vdp2_cram[i] = 0;
-    }
 }
 
 void
@@ -176,7 +127,7 @@ _svin_set_cycle_patterns_nbg()
 }
 
 void
-_svin_init(iso9660_filelist_t * _filelist)
+_svin_init()
 {
     int * _pointer32;
 
@@ -330,6 +281,65 @@ _svin_init(iso9660_filelist_t * _filelist)
 	//setting cycle patterns for nbg access
 	_svin_set_cycle_patterns_nbg();
     
+}
+
+//---------------------------------------------- Background stuff ----------------------------------------------------
+
+void 
+_svin_background_fade_to_black_step()
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x00000);
+    uint8_t r,g,b;
+    for (int i=0;i<256;i++)
+    {
+        b = (my_vdp2_cram[i]&0x7C00)>>10;
+        g = (my_vdp2_cram[i]&0x03E0)>>5;
+        r = (my_vdp2_cram[i]&0x001F)>>0;
+        r--;b--;g--;
+        if (r==0xFF) r = 0;
+        if (g==0xFF) g = 0;
+        if (b==0xFF) b = 0;
+        my_vdp2_cram[i] = ( (b<<10) |
+                            (g<<5) |
+                            (r<<0) );
+    }
+}
+
+void 
+_svin_background_fade_to_black()
+{
+    for (int fade=0;fade<32;fade++)
+    {
+        _svin_background_fade_to_black_step();
+        _svin_delay(30);
+    }
+}
+
+void 
+_svin_background_set_palette(int number, uint8_t * pointer)
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+    for (int i=0;i<256;i++)
+    {
+        my_vdp2_cram[i] = ( ((pointer[i*3+2]&0xF8)<<7) |
+                            ((pointer[i*3+1]&0xF8)<<2) |
+                            ((pointer[i*3+0]&0xF8)>>3) );
+    }
+}
+
+void 
+_svin_background_clear_palette(int number)
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+    for (int i=0;i<256;i++)
+    {
+        my_vdp2_cram[i] = 0;
+    }
+}
+
+void 
+_svin_background_load_index(iso9660_filelist_t * _filelist)
+{
     //-------------- Getting FAD and index for background pack binary -------------------
     iso9660_filelist_entry_t *file_entry;
     _svin_background_pack_fad = 0;
@@ -350,9 +360,9 @@ _svin_init(iso9660_filelist_t * _filelist)
             //allocating array for background pack index
             assert(_svin_background_files_number < 200); //hard limit for backgound number
             int blocks_for_index = (_svin_background_files_number)/32+1;
-            _svin_background_pack_index = malloc(blocks_for_index*2048);
+            _svin_background_index = malloc(blocks_for_index*2048);
             //reading
-            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_pack_index);
+            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
         }
     }
     assert(_svin_background_pack_fad > 0);
@@ -377,8 +387,8 @@ _svin_background_set_by_index(int index)
     //setting cycle patterns for cpu access
 	_svin_set_cycle_patterns_cpu();
 
-    uint16_t * _svin_background_pack_index_16 = (uint16_t*)_svin_background_pack_index;
-    uint16_t _current_sector = _svin_background_pack_index_16[index*32+36];
+    uint16_t * _svin_background_index_16 = (uint16_t*)_svin_background_index;
+    uint16_t _current_sector = _svin_background_index_16[index*32+36];
 
     //this is a stock slow version for unhacked yaul
     //for (int sector=0;sector<154;sector++)
@@ -409,7 +419,7 @@ _svin_background_set(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+74])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_index[i*64+74])) )
         {
             iFoundIndex = i;
         }
@@ -427,7 +437,7 @@ _svin_background_update(char *name)
     int iFoundIndex = -1;
     for (int i=0;i<128;i++)
     {
-        if ( 0 == strcmp(name,(char *)&(_svin_background_pack_index[i*64+74])) )
+        if ( 0 == strcmp(name,(char *)&(_svin_background_index[i*64+74])) )
         {
             iFoundIndex = i;
         }
@@ -451,8 +461,8 @@ _svin_background_update_by_index(int index)
     uint8_t * palette = malloc(2048);
     assert ((int)(palette) > 0);
 
-    uint16_t * _svin_background_pack_index_16 = (uint16_t*)_svin_background_pack_index;
-    uint16_t _current_sector = _svin_background_pack_index_16[index*32+36];
+    uint16_t * _svin_background_index_16 = (uint16_t*)_svin_background_index;
+    uint16_t _current_sector = _svin_background_index_16[index*32+36];
 
     //read next image while fading-to-black current one
     for (int i=0;i<14;i++)
@@ -492,3 +502,35 @@ _svin_background_clear()
     _svin_background_clear_palette(0);
 }
 
+//---------------------------------------------- Actor stuff ----------------------------------------------------
+
+void
+_svin_actor_load(iso9660_filelist_t * _filelist, char * actor_filename, int actor_id)
+{
+    //-------------- Getting FAD and index for background pack binary -------------------
+    iso9660_filelist_entry_t *file_entry;
+    _svin_background_pack_fad = 0;
+    for (unsigned int i =0; i< _filelist->entries_count; i++)
+    {
+        file_entry = &(_filelist->entries[i]);
+        if (strcmp(file_entry->name,actor_filename) == 0)
+        {
+            _svin_actor_pack_fad[actor_id] = file_entry->starting_fad;
+            //allocating temporary buf for 1 sector
+            uint8_t tmp_sector[2048];
+            uint16_t * tmp_sector_16 = (uint16_t * )tmp_sector;
+            //reading 1st block to find out number of blocks
+            cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
+            //getting size and number of entries
+            assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
+            _svin_background_files_number = tmp_sector_16[4];
+            //allocating array for background pack index
+            assert(_svin_background_files_number < 200); //hard limit for backgound number
+            int blocks_for_index = (_svin_background_files_number)/32+1;
+            _svin_background_index = malloc(blocks_for_index*2048);
+            //reading
+            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
+        }
+    }
+    assert(_svin_background_pack_fad > 0);
+}
