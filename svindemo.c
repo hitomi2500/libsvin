@@ -31,7 +31,10 @@ main(void)
         _svin_init();
         _svin_background_load_index(&_filelist);
 
-       //_svin_background_set("int_dining_hall_people_day");
+        //_svin_background_set("int_dining_hall_people_day");
+        _svin_background_set_by_index(0);
+
+        while(1);
 
         while(1)
         {

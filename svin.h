@@ -1,6 +1,8 @@
 #ifndef _SVIN_H_
 #define _SVIN_H_
 
+//#define PORT_USE_FILECLIENT
+
 #include <yaul.h>
 
 #define _SVIN_SCREEN_WIDTH    704
@@ -38,8 +40,21 @@
 #define _SVIN_NBG1_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(3,0x1F000))
 #define _SVIN_NBG1_CHPNDR_SPECIALS_INDEX ((0x7F000)/32)
 
+//VDP1 command list order
+#define _SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX      1
+#define _SVIN_VDP1_ORDER_SPRITE_A0_INDEX           2
+#define _SVIN_VDP1_ORDER_SPRITE_A1_INDEX           3
+#define _SVIN_VDP1_ORDER_DRAW_END_A_INDEX          4
+#define _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX      5
+#define _SVIN_VDP1_ORDER_SPRITE_B0_INDEX           6
+#define _SVIN_VDP1_ORDER_SPRITE_B1_INDEX           7
+#define _SVIN_VDP1_ORDER_DRAW_END_B_INDEX          8
+#define _SVIN_VDP1_ORDER_COUNT                     9
+
 void _svin_init();
 void _svin_delay(int milliseconds);
+
 void _svin_background_fade_to_black_step();
 void _svin_background_fade_to_black();
 void _svin_background_set_palette(int number, uint8_t * pointer);
@@ -51,7 +66,10 @@ void _svin_background_update(char *name);
 void _svin_background_clear();
 void _svin_background_fade_to_black();
 void _svin_background_load_index(iso9660_filelist_t * _filelist);
-void _svin_actor_load_index(iso9660_filelist_t * _filelist, char * actor_code);
 
+
+
+//void _svin_actor_load_index(iso9660_filelist_t * _filelist, char * actor_code);
+void _svin_actor_load_test(iso9660_filelist_t * _filelist, char * filename, int actor_id);
 
 #endif
