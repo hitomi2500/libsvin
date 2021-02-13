@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cd-block_multiread.h>
 
 extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
 static void _svin_vblank_out_handler(void *);
@@ -542,28 +543,15 @@ void _svin_background_set_by_index(int index)
     vdp1_vram_partitions_t vdp1_vram_partitions;
     vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
-    //this is a stock slow version for unhacked yaul
-    //for (int sector=0;sector<154;sector++)
-    //{
-    //    cd_block_sector_read(_svin_background_pack_fad + 4 + sector + index*156, (uint8_t *) (_SVIN_NBG0_CHPNDR_START+sector*2048) );
-    //}
-    //this is a fast version for hacked yaul
+    //reading first half of the background
     cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
-    //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0 * 2048), buffer, 2048 * 77);
-    memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0 * 2048), 0x00, 2048 * 77);
+    //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0 * 2048), 0x00, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
 
+    //reading first half of the background
     cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
-    //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 77 * 2048), buffer, 2048 * 77);
-    memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 77 * 2048), 0x00, 2048 * 77);
+    //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 77 * 2048), 0x00, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
-
-    //memset((uint8_t *)(vdp1_vram_partitions.texture_base  + 0), 0x00, 500);
-    //memset((uint8_t *)(vdp1_vram_partitions.texture_base  + 1000), 0x01, 500);
-    //memset((uint8_t *)(vdp1_vram_partitions.texture_base  + 2000), 0xFE, 500);
-    //memset((uint8_t *)(vdp1_vram_partitions.texture_base  + 3000), 0xFF, 500);
-
-    //memset((uint8_t *)(vdp1_vram_partitions.texture_base), 0xFE, 500);
 
     //read palette
     cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
