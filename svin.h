@@ -70,6 +70,8 @@ void _svin_background_load_index(iso9660_filelist_t * _filelist);
 
 
 //void _svin_actor_load_index(iso9660_filelist_t * _filelist, char * actor_code);
-void _svin_actor_load_test(iso9660_filelist_t * _filelist, char * filename, int actor_id);
+void _svin_actor_debug_load_index(iso9660_filelist_t *_filelist);
+void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, int actor_id);
+
 
 #endif

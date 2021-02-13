@@ -14,6 +14,10 @@ uint8_t *_svin_background_index;
 uint16_t _svin_background_files_number;
 //fad_t _svin_actor_pack_fad[64];
 //uint8_t *_svin_actor_index[64];
+fad_t _svin_actor_debug_pack_fad;
+uint8_t *_svin_actor_debug_index;
+uint16_t _svin_actor_debug_files_number;
+//uint8_t *_svin_actor_index;
 uint16_t _svin_actor_left[4];
 uint16_t _svin_actor_top[4];
 uint16_t _svin_actor_sizex[4];
@@ -151,15 +155,15 @@ void _svin_init()
     format.cp_table = 0;
     format.color_palette = 0;
     format.plane_size = (2 * 1);
-    format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
+    format.sf_type = VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
     format.sf_code = VDP2_SCRN_SF_CODE_A;
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG0_PNDR_START;
 
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 3);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG0, false);
-    vdp2_cram_mode_set(0);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG0, true);
+    vdp2_cram_mode_set(1);
 
     //setup nbg1
     format.scroll_screen = VDP2_SCRN_NBG1;
@@ -190,14 +194,14 @@ void _svin_init()
     bs_color = COLOR_RGB1555(1, 0, 0, 31);
     vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
 
-    vdp2_sprite_priority_set(0, 4);
-    vdp2_sprite_priority_set(1, 4);
-    vdp2_sprite_priority_set(2, 4);
-    vdp2_sprite_priority_set(3, 4);
-    vdp2_sprite_priority_set(4, 4);
-    vdp2_sprite_priority_set(5, 4);
-    vdp2_sprite_priority_set(6, 4);
-    vdp2_sprite_priority_set(7, 4);
+    vdp2_sprite_priority_set(0, 2);
+    vdp2_sprite_priority_set(1, 2);
+    vdp2_sprite_priority_set(2, 2);
+    vdp2_sprite_priority_set(3, 2);
+    vdp2_sprite_priority_set(4, 2);
+    vdp2_sprite_priority_set(5, 2);
+    vdp2_sprite_priority_set(6, 2);
+    vdp2_sprite_priority_set(7, 2);
 
     vdp_sync_vblank_out_set(_svin_vblank_out_handler);
     
@@ -338,17 +342,17 @@ void _svin_init()
         int iOffset = y * 32;
         for (int x = 0; x < 32; x++)
         {
-            _pointer32[iOffset + x] = (iOffset + x) * 8;
+            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on //(iOffset + x) * 8;
         }
     }
     //plane 1 goes next
     for (int y = 0; y < 28; y++)
     {
         int iOffset = 32 * 32 + y * 32;
-        int iOffset2 = 32 * 28 + y * 12;
+        //int iOffset2 = 32 * 28 + y * 12;
         for (int x = 0; x < 12; x++)
         {
-            _pointer32[iOffset + x] = (iOffset2 + x) * 8;
+            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on; //(iOffset2 + x) * 8;
         }
     }
 
@@ -696,10 +700,40 @@ _svin_actor_load(iso9660_filelist_t * _filelist, char * actor_filename, int acto
     assert(_svin_background_pack_fad > 0);
 }*/
 
-//starting with a simple texture - load a single sprite from the pack and copy it into VDP1 ram
-void _svin_actor_load_test(iso9660_filelist_t *_filelist, char *filename, int actor_id)
+void _svin_actor_debug_load_index(iso9660_filelist_t *_filelist)
 {
-    //-------------- Getting FAD and index for background pack binary -------------------
+    //-------------- Getting FAD and index for actor_debug pack binary -------------------
+    iso9660_filelist_entry_t *file_entry;
+    _svin_actor_debug_pack_fad = 0;
+    for (unsigned int i = 0; i < _filelist->entries_count; i++)
+    {
+        file_entry = &(_filelist->entries[i]);
+        if (strcmp(file_entry->name, "SL.PAK") == 0)
+        {
+            _svin_actor_debug_pack_fad = file_entry->starting_fad;
+            //allocating temporary buf for 1 sector
+            uint8_t tmp_sector[2048];
+            uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
+            //reading 1st block to find out number of blocks
+            cd_block_sector_read(_svin_actor_debug_pack_fad, tmp_sector);
+            //getting size and number of entries
+            assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
+            _svin_actor_debug_files_number = tmp_sector_16[4];
+            //allocating array for actor_debug pack index
+            assert(_svin_actor_debug_files_number < 200); //hard limit for actor_debug number
+            int blocks_for_index = (_svin_actor_debug_files_number) / 32 + 1;
+            _svin_actor_debug_index = malloc(blocks_for_index * 2048);
+            //reading
+            cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad, blocks_for_index, _svin_actor_debug_index);
+        }
+    }
+    assert(_svin_actor_debug_pack_fad > 0);
+}
+
+//starting with a simple texture - load a single sprite from the pack and copy it into VDP1 ram
+void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, int actor_id)
+{
+    //-------------- Getting FAD and index for actor_debug pack binary -------------------
     iso9660_filelist_entry_t *file_entry;
     assert(actor_id < 3); //only 3 actors are supported for now
     for (unsigned int i = 0; i < _filelist->entries_count; i++)
@@ -707,7 +741,6 @@ void _svin_actor_load_test(iso9660_filelist_t *_filelist, char *filename, int ac
         file_entry = &(_filelist->entries[i]);
         if (strcmp(file_entry->name, filename) == 0)
         {
-            //_svin_actor_pack_fad[actor_id] = file_entry->starting_fad;
             //allocating temporary buf for 1 sector
             uint8_t tmp_sector[2048];
             uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
@@ -715,30 +748,76 @@ void _svin_actor_load_test(iso9660_filelist_t *_filelist, char *filename, int ac
             cd_block_sector_read(file_entry->starting_fad, tmp_sector);
             //getting size and number of entries
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
-            assert(1 == tmp_sector_16[4]);  //working with a single-file sprite packs for now
+            //assert(1 == tmp_sector_16[4]);  //working with a single-file sprite packs for now
             //fetch actor geometry
-            _svin_actor_left[actor_id] = tmp_sector_16[32];
-            _svin_actor_top[actor_id] = tmp_sector_16[33];
-            _svin_actor_sizex[actor_id] = tmp_sector_16[34];
-            _svin_actor_sizey[actor_id] = tmp_sector_16[35];
+            /*_svin_actor_left[actor_id] = tmp_sector_16[32+64*actor_id];
+            _svin_actor_top[actor_id] = tmp_sector_16[33+64*actor_id];
+            _svin_actor_sizex[actor_id] = tmp_sector_16[34+64*actor_id];
+            _svin_actor_sizey[actor_id] = tmp_sector_16[35+64*actor_id];*/
+            _svin_actor_left[0] = tmp_sector_16[32+64*0];
+            _svin_actor_top[0] = tmp_sector_16[33+64*0];
+            _svin_actor_sizex[0] = tmp_sector_16[34+64*0];
+            _svin_actor_sizey[0] = tmp_sector_16[35+64*0];
             //calculating required blocks
-            int blocks_for_sprite = (_svin_actor_sizex[actor_id] * _svin_actor_sizex[actor_id] - 1) / 2048 + 1;
+            //int blocks_for_sprite = (_svin_actor_sizex[actor_id] * _svin_actor_sizey[actor_id] - 1) / 2048 + 1;
+            int blocks_for_sprite = (_svin_actor_sizex[0] * _svin_actor_sizey[0] - 1) / 2048 + 1;
             //allocating mem
             uint8_t *buffer = malloc(blocks_for_sprite * 2048);
-            //load actor data into HWRAM VDP1 VRAM
-            cd_block_multiple_sectors_read(file_entry->starting_fad + 1, blocks_for_sprite, buffer);
-            //copy to VDP1 VRAM
+            assert((int)(buffer) > 0);
+            //allocate memory for cram
+            uint8_t *palette = malloc(2048);
+            assert((int)(palette) > 0);
+            
+            //setting cycle patterns for cpu access
+            _svin_set_cycle_patterns_cpu();
+            
+            uint16_t *_svin_actor_debug_index_16 = (uint16_t *)_svin_actor_debug_index;//[actor_id]
+            //uint16_t _current_sector = _svin_actor_debug_index_16[actor_id * 32 + 36];
+            uint16_t _current_sector = _svin_actor_debug_index_16[0 * 32 + 36];
 
-            //allocating array for background pack index
-            //assert(_svin_background_files_number < 200); //hard limit for backgound number
-            //int blocks_for_index = (_svin_background_files_number)/32+1;
-            //_svin_background_index = malloc(blocks_for_index*2048);
-            //reading
-            //cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
+            //this is a fast version for hacked yaul
+            //reading whole block
+            cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad + _current_sector, blocks_for_sprite, buffer);
+            //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0x20000 * actor_id), buffer, _svin_actor_sizex[actor_id] * _svin_actor_sizey[actor_id]);
+            memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0x20000 * actor_id), buffer, _svin_actor_sizex[0] * _svin_actor_sizey[0]);
+
+            //update names
+            //starting with plane 0
+            int *_pointer32 = (int *)_SVIN_NBG0_PNDR_START;
+            int size_x = _svin_actor_sizex[0]/16;
+            for (int y = 0; y < (_svin_actor_sizey[0]/16); y++)
+            {
+                for (int x = 0; x < (_svin_actor_sizex[0]/16); x++)
+                {
+                    _pointer32[y*32 + x + 32*8 + 5 + 10*actor_id] = 0x10100000 + (y*size_x + x) * 8; //palette 1, transparency
+                }
+            }
+            //plane 1 goes next
+            /*for (int y = 0; y < 28; y++)
+            {
+                int iOffset = 32 * 32 + y * 32;
+                //int iOffset2 = 32 * 28 + y * 12;
+                for (int x = 0; x < 12; x++)
+                {
+                    _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on; //(iOffset2 + x) * 8;
+                }
+            }*/
+
+
+            //read palette
+            cd_block_sector_read(_svin_actor_debug_pack_fad + _current_sector + blocks_for_sprite, palette);
+            _svin_background_set_palette(1+actor_id, palette);
+
+            //setting cycle patterns for nbg access
+            _svin_set_cycle_patterns_nbg();
+
+            free(palette);
+            free(buffer);
         }
     }
-    assert(_svin_background_pack_fad > 0);
+
 }
+
 
 void _svin_vblank_out_handler(void *work __unused)
 {
