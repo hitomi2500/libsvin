@@ -11,8 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->comboBox_mode->addItem("4-sprite VDP1 background");
-    ui->comboBox_mode->addItem("16x16 cell full screen VDP2 background");
-    ui->comboBox_mode->addItem("16x16 cell partial VDP2 sprite");
+    ui->comboBox_mode->addItem("8x8 cell VDP2 sprite");
 }
 
 MainWindow::~MainWindow()
@@ -74,14 +73,14 @@ void MainWindow::on_pushButton_2_clicked()
     QStringList proc_args;
     QImage img;
 
-    /*if (list.size() > 128)
+    if (list.size() > 128)
     {
         QMessageBox msgBox;
         msgBox.setWindowTitle("Oopsie daisy");
         msgBox.setText("Packs with more than 128 files are not supported!");
         msgBox.exec();
         return;
-    }*/
+    }
 
     //making big bin instead of independent small NBG/PAL
     QFile outfile_pack(QString("DATA.PAK"));
@@ -118,137 +117,59 @@ void MainWindow::on_pushButton_2_clicked()
         outfile_pack.write(_name);
     }
 
-    //if we're not in BG mode, we need to calculate the superpalette - a single pallete for all the sprites.
-
-    /*if (false == ui->checkBox_background->isChecked())
-    {
-        //rename all images according to ffmpeg reqirement
-        for (int i=0;i<list.size();i++)
-        {
-            QFile::copy(list.at(i), QString("tmp%1.png").arg(i,4,10,QLatin1Char('0')));
-        }
-
-        //merge all images into one video
-        proc_args.clear();
-        proc_args.append("-y");
-        proc_args.append("-i");
-        proc_args.append("tmp%04d.png");
-        proc_args.append("super.avi");
-        process.setProgram("C:\\Saturn\\ES\\ffmpeg");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();
-
-        //remove temp frames
-        for (int i=0;i<list.size();i++)
-        {
-            QFile::remove(QString("tmp%1.png").arg(i,4,10,QLatin1Char('0')));
-        }
-
-        //avi to gif
-        proc_args.clear();
-        proc_args.append("-y");
-        proc_args.append("-i");
-        proc_args.append("super.avi");
-        proc_args.append("super.apng");
-        process.setProgram("C:\\Saturn\\ES\\ffmpeg");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();
-
-        //generate superpalette
-        proc_args.clear();
-        proc_args.append("-y");
-        proc_args.append("-i");
-        proc_args.append("super.apng");
-        proc_args.append("-vf");
-        proc_args.append("palettegen=max_colors=256");
-        proc_args.append("superpal.png");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();
-
-        //remove avi file
-        QFile::remove("super.avi");
-
-    }*/
-
     int iCurrentSector = (list.size())/32 + 1;
+
+    //using imagemagick for image transforms
+    process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
 
     //pass2 -*/
     for (int iImageNumber=0; iImageNumber<list.size(); iImageNumber++)
     {
-        //downscale image to at least 704x448
-        proc_args.clear();
-        /*proc_args.append("-y");
-        proc_args.append("-i");
-        proc_args.append(list.at(iImageNumber));
-        proc_args.append("-vf");
-        proc_args.append("scale=-1:448");
-        proc_args.append("tmp1.png");
-        process.setProgram("C:\\Saturn\\ES\\ffmpeg");*/
-        proc_args.append(list.at(iImageNumber));
-        proc_args.append("-resize");
-        proc_args.append("704x448^");
-        proc_args.append("tmp1.png");
-        process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();
-
-        //checking if image is wider than 704
-        /*QImage img("tmp1.png");
-        if (img.size().width() > 704)
-        {
-            //cut image to 704x448
-            proc_args.clear();
-            proc_args.append("-y");
-            proc_args.append("-i");
-            proc_args.append("tmp1.png");
-            proc_args.append("-vf");
-            proc_args.append("crop=704:448");
-            proc_args.append("tmp2.png");
-        }
-        else
-        {
-            //no crop required, plain copy
-            QFile f("tmp1.png");
-            f.open(QIODevice::ReadOnly);
-            QByteArray b2 = f.readAll();
-            f.close();
-            f.setFileName("tmp2.png");
-            f.open(QIODevice::WriteOnly);
-            f.write(b2);
-            f.close();
-        }*/
-
-        //cut image down to 704x448
-        proc_args.clear();
-        proc_args.append("tmp1.png");
-        proc_args.append("-gravity");
-        proc_args.append("center");
-        proc_args.append("-extent");
-        proc_args.append("704x448");
-        proc_args.append("-resize");
-        proc_args.append("704x448^");
-        proc_args.append("tmp2.png");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();
 
         if (ui->comboBox_mode->currentIndex() == 0)
         {
-            //generate palette, sprited palette is limited to 254 colours
-            /*proc_args.clear();
-            proc_args.append("-y");
-            proc_args.append("-i");
-            proc_args.append("tmp2.png");
-            proc_args.append("-vf");
-            proc_args.append("palettegen=max_colors=255:stats_mode=full");
-            proc_args.append("tmppal.png");
+            //resize image to at least 704x448 each axis
+            proc_args.clear();
+            proc_args.append(list.at(iImageNumber));
+            proc_args.append("-resize");
+            proc_args.append("704x448^");
+            proc_args.append("tmp1.png");
             process.setArguments(proc_args);
             process.open();
-            process.waitForFinished();*/
+            process.waitForFinished();
+
+            //cut image down to 704x448
+            proc_args.clear();
+            proc_args.append("tmp1.png");
+            proc_args.append("-gravity");
+            proc_args.append("center");
+            proc_args.append("-extent");
+            proc_args.append("704x448");
+            proc_args.append("-resize");
+            proc_args.append("704x448^");
+            proc_args.append("tmp2.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
+        }
+        else
+        {
+            //resize sprites for height of 448
+            proc_args.clear();
+            proc_args.append(list.at(iImageNumber));
+            proc_args.append("-resize");
+            proc_args.append("8x448^");
+            proc_args.append("tmp1.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
+            QFile::copy("tmp1.png", "tmp2.png");
+        }
+
+
+        if (ui->comboBox_mode->currentIndex() == 0)
+        {
+            //generate palette, sprited VDP1 palette is limited to 254 colours
             proc_args.clear();
             proc_args.append("tmp2.png");
             proc_args.append("-colors");
@@ -257,40 +178,19 @@ void MainWindow::on_pushButton_2_clicked()
             process.setArguments(proc_args);
             process.open();
             process.waitForFinished();
-
         }
         else
         {
-            //generate palette, NBG palette is limited to 255 colours
+            //generate palette, VDP2 NBG palette is limited to 255 colours
             proc_args.clear();
-            proc_args.append("-y");
-            proc_args.append("-i");
             proc_args.append("tmp2.png");
-            proc_args.append("-vf");
-            proc_args.append("palettegen=max_colors=256:reserve_transparent=1:transparency_color=black:stats_mode=full");
-            proc_args.append("tmppal.png");
+            proc_args.append("-colors");
+            proc_args.append("255");
+            proc_args.append("tmp3.png");
             process.setArguments(proc_args);
             process.open();
             process.waitForFinished();
-
-            //use superpalette
-            //QFile::copy("superpal.png","tmppal.png");
         }
-
-
-        //squish image by palette
-        /*proc_args.clear();
-        proc_args.append("-y");
-        proc_args.append("-i");
-        proc_args.append("tmp2.png");
-        proc_args.append("-i");
-        proc_args.append("tmppal.png");
-        proc_args.append("-lavfi");
-        proc_args.append("paletteuse");
-        proc_args.append("tmp3.png");
-        process.setArguments(proc_args);
-        process.open();
-        process.waitForFinished();*/
 
         //backuppy
         QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
@@ -305,94 +205,7 @@ void MainWindow::on_pushButton_2_clicked()
         int iSizeY=img.height();
 
         //next stage - cropping out transparent data around the image
-        if (ui->comboBox_mode->currentIndex() == 0)
-        {
-            //no crop in background mode
-        }
-        else if (ui->comboBox_mode->currentIndex() == 1)
-        {
-            //no crop in background mode
-        }
-        else
-        {
-            //cropping, detecting a transparent color first
-            //most non-bg images will have a transparent color at top left angle
-            //so we're doing the stupid thing - using this color as transparent
-            QRgb transp_color = img.pixel(0,0);
-            //crop top
-            bool bCrop = true;
-            while (bCrop)
-            {
-                for (int i=0;i<img.width();i++)
-                {
-                    if (img.pixel(i,iTop) != transp_color)
-                        bCrop = false;
-                }
-                if (bCrop)
-                {
-                    iTop++;
-                    iSizeY--;
-                }
-            }
-            //crop bot
-            bCrop = true;
-            while (bCrop)
-            {
-                for (int i=0;i<img.width();i++)
-                {
-                    if (img.pixel(i,iTop+iSizeY-1) != transp_color)
-                        bCrop = false;
-                }
-                if (bCrop) iSizeY--;
-            }
-            //round Y size to cell size (16)
-            while (iSizeY % 16 != 0)
-            {
-                iSizeY++;
-                if (iTop+iSizeY > 448)
-                    iTop--;
-            }
-            //crop left
-            bCrop = true;
-            while (bCrop)
-            {
-                for (int i=0;i<img.height();i++)
-                {
-                    if (img.pixel(iLeft,i) != transp_color)
-                        bCrop = false;
-                }
-                if (bCrop)
-                {
-                    iLeft++;
-                    iSizeX--;
-                }
-            }
-            //crop right
-            bCrop = true;
-            while (bCrop)
-            {
-                for (int i=0;i<img.height();i++)
-                {
-                    if (img.pixel(iLeft+iSizeX-1,i) != transp_color)
-                        bCrop = false;
-                }
-                if (bCrop) iSizeX--;
-            }
-            //round X size to cell size (16)
-            while (iSizeX % 16 != 0)
-            {
-                iSizeX++;
-                if (iLeft + iSizeX > 704)
-                    iLeft--;
-            }
-        }
-
-        //sizes are in tiles now
-        //iSizeX /= 16;
-        //iSizeY /= 16;
-
-        QImage img_c = img.copy(iLeft,iTop,iSizeX,iSizeY);
-        img_c.save(QString("tmp%1f.png").arg(iImageNumber,4,10,QLatin1Char('0')));
+        //not cropping anymore, tiling instead
 
         //cropping done, calculating sectors usage
         int iSectorsUsed = (iSizeX*iSizeY - 1 + 256*3)/2048 + 1; //palette is counted as well
@@ -427,7 +240,7 @@ void MainWindow::on_pushButton_2_clicked()
                     ba[352*224*3 + y*352+x] = img.pixelIndex(352+x,y*2+1);
                 }
         }
-        else if (ui->comboBox_mode->currentIndex() == 1)
+        /*else if (ui->comboBox_mode->currentIndex() == 1)
         {
             ba.resize(704*448);
             ba.fill('\0');
@@ -448,9 +261,73 @@ void MainWindow::on_pushButton_2_clicked()
                             for (int x=0;x<8;x++)
                                 ba[32*28*16*16+(iTileY*12+(iTileX-32))*16*16+cell*64+y*8+x] = img.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
 
-        }
+        }*/
         else
         {
+            //first let's expand image to tile size
+           while (img.size().width()%8 != 0)
+                img.transformed()
+            //let's do some heavy tiling.
+            //let's detect a transparent color
+            int transp_color = img.pixelIndex(0,0);
+            //now we calculate a usage map. since no sprite will be bigger than full screen, maximum usage map is 88x56 for 8x8 tiles.
+            int iUsageMap[88][56];
+            for (int TileY = 0; TileY < 56; TileY++)
+            {
+                for (int TileX = 0; TileX < 88; TileX++)
+                {
+                    bool bEmpty = true;
+                    for (int x=0;x<8;x++)
+                    {
+                        for (int y=0;y<8;y++)
+                        {
+                            if (img.pixelIndex(TileX*8+x,TileY*8+y) != transp_color)
+                                bEmpty = false;
+                        }
+                    }
+                    if (true == bEmpty)
+                        iUsageMap[TileX][TileY] = 0;
+                    else
+                        iUsageMap[TileX][TileY] = 1;
+
+                }
+            }
+
+            //now save usage map into file
+            for (int TileY = 0; TileY < 56; TileY++)
+            {
+                for (int TileX = 0; TileX < 88; TileX+=8)
+                {
+                    uint8_t c = 0;
+                    for (int Tile = 0; Tile<8; Tile++)
+                    {
+                        if (iUsageMap[TileX+Tile][TileY] != 0)
+                            c |= 1<<Tile;
+                    }
+                    ba.append(c);
+                }
+            }
+
+            //now save every tile within usage map
+            for (int TileY = 0; TileY < 56; TileY++)
+            {
+                for (int TileX = 0; TileX < 88; TileX++)
+                {
+                    if (iUsageMap[TileX][TileY] == 1)
+                    {
+                        for (int x=0;x<8;x++)
+                        {
+                            for (int y=0;y<8;y++)
+                            {
+                                ba.append(img.pixelIndex(TileX*8+x,TileY*8+y));
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            /*
             ba.resize(iSizeX*iSizeY);
             ba.fill('\0');
             //mess with tiles
@@ -460,11 +337,7 @@ void MainWindow::on_pushButton_2_clicked()
                         for (int y=0;y<8;y++)
                             for (int x=0;x<8;x++)
                                 ba[(iTileY*(iSizeX/16)+iTileX)*16*16+cell*64+y*8+x] = img_c.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
-
-            //replace color 0x01 with color 0x00 because shit
-            /*for (int i=0;i<ba.size();i++)
-                if (ba.at(i) == 1)
-                    ba[i]=0;*/
+                                */
         }
 
         QByteArray ba_pal;
@@ -491,6 +364,19 @@ void MainWindow::on_pushButton_2_clicked()
             ba_pal[255*3+1] = ba_pal.at(0*3+1);
             ba_pal[255*3+2] = ba_pal.at(0*3+2);
         }
+        else
+        {
+            //for VDP2 sprites 0x00 (transparent) can't be used
+            //imagemagick generates palettes from 0x00 to 0xFE, 0xFF being transparent
+            //so we only have to move color 0x00 to color 0xFF
+            /*for (int i=0;i<ba.size();i++)
+                if (ba.at(i) == 0)
+                    ba[i]=-1;
+            //hacking palette, moving color 0x00 to color 0xFF
+            ba_pal[255*3] = ba_pal.at(0*3);
+            ba_pal[255*3+1] = ba_pal.at(0*3+1);
+            ba_pal[255*3+2] = ba_pal.at(0*3+2);*/
+        }
 
         outfile_pack.write(ba);
 
@@ -507,11 +393,5 @@ void MainWindow::on_pushButton_2_clicked()
     }
 
     outfile_pack.close();
-    /*QPixmap pix;
-    pix.load(ui->lineEdit->text());
-    QPixmap pix2 = pix.scaledToHeight(448);
-    QPixmap pix3 = pix2.copy((pix2.width()-704)/2,0,704,448);
-    ui->label->setPixmap(pix3);*/
-    //now processing time. first transform to 8-bit and optimize palette
 
 }
