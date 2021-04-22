@@ -77,11 +77,14 @@ void MainWindow::on_pushButton_2_clicked()
     QList<QByteArray> TileLibrary;
     int written;
 
-    if (list.size() > 127)
+    int iLimit = 127;
+    if (ui->comboBox_mode->currentIndex() == 2)
+        iLimit = 1; //only a single file in tapestry mode
+    if (list.size() > iLimit)
     {
         QMessageBox msgBox;
         msgBox.setWindowTitle("Oopsie daisy");
-        msgBox.setText("Packs with more than 127 files are not supported!");
+        msgBox.setText("Packs with more than 127 files and tapestries with more than 1 file are not supported!");
         msgBox.exec();
         return;
     }
@@ -224,8 +227,6 @@ void MainWindow::on_pushButton_2_clicked()
         else
         {
             //tapestry
-            //backuppy
-            QFile::copy(list.at(iImageNumber), QString("tmp%1b.bmp").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load(list.at(iImageNumber));
         }
 
@@ -261,7 +262,7 @@ void MainWindow::on_pushButton_2_clicked()
         outfile_pack.write((char*)&s,2);
         outfile_pack.seek(iCurrentSector*2048);
 
-        if (ui->comboBox_mode->currentIndex() == 0)
+        if (ui->comboBox_mode->currentIndex() == 0) //VDP1 4-sprites mode
         {
             ba.resize(704*448);
             ba.fill('\0');
@@ -298,7 +299,7 @@ void MainWindow::on_pushButton_2_clicked()
                                 ba[32*28*16*16+(iTileY*12+(iTileX-32))*16*16+cell*64+y*8+x] = img.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
 
         }*/
-        else if (ui->comboBox_mode->currentIndex() == 1)
+        else if (ui->comboBox_mode->currentIndex() == 1) //tile mode
         {
             //let's do some heavy tiling.
             //we fill pack-wise tile library. for each tile we check if it exist within library, and add it if not.
@@ -399,18 +400,24 @@ void MainWindow::on_pushButton_2_clicked()
         }      
         else //tapestry
         {
-            ba.resize(704*448);
-            ba.fill('\0');
-            //new background mode : 4 VDP1 interlaced sprites
-
-            for (int x = 0; x < 352; x++)
-                for (int y = 0; y < 224; y++)
-                {
-                    ba[352*224*0 + y*352+x] = img.pixelIndex(x,y*2);
-                    ba[352*224*1 + y*352+x] = img.pixelIndex(352+x,y*2);
-                    ba[352*224*2 + y*352+x] = img.pixelIndex(x,y*2+1);
-                    ba[352*224*3 + y*352+x] = img.pixelIndex(352+x,y*2+1);
-                }
+            // for tapestries we do something completely different
+            // pack every 704x2 quad into 4 quads with size of 352x1
+            // and store these packs with CD block offset (2048 bytes)
+            QByteArray ba_tmp;
+            ba_tmp.resize(2048);
+            ba_tmp.fill('\0');
+            ba.clear();
+            for (int iLine = 0; iLine < iSizeY/2; iLine++)
+            {
+                for (int x = 0; x < 352; x++)
+                    {
+                        ba_tmp[352*0 + x] = img.pixelIndex(x,iLine*2);
+                        ba_tmp[352*1 + x] = img.pixelIndex(352+x,iLine*2);
+                        ba_tmp[352*2 + x] = img.pixelIndex(x,iLine*2+1);
+                        ba_tmp[352*3 + x] = img.pixelIndex(352+x,iLine*2+1);
+                    }
+                ba.append(ba_tmp,2048);
+            }
         }
 
         ba_pal.clear();
