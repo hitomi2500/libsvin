@@ -5,10 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= svindemo
-SH_OBJECTS:= \
-	svindemo.o \
-	cd-block_multiread.o \
-	svin.o
+SH_SRCS:= \
+	svindemo.c \
+	cd-block_multiread.c \
+	svin.c
 	
 SH_LIBRARIES:= tga
 SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
@@ -26,10 +26,3 @@ M68K_PROGRAM:=
 M68K_OBJECTS:=
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk
-
-bg.rom:
-	@printf -- "$(V_BEGIN_YELLOW)$@$(V_END)\n"
-	$(ECHO)$(YAUL_INSTALL_ROOT)/bin/genromfs -v -a 2048 -V "BG" -d ./bg/ -f $@
-	$(ECHO)$(YAUL_INSTALL_ROOT)/bin/fsck.genromfs $@
-	$(ECHO)cp $@ cd/$@
-

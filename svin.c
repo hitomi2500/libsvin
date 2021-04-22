@@ -5,10 +5,29 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <cd-block_multiread.h>
 
 extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
 static void _svin_vblank_out_handler(void *);
+
+#ifdef _SVIN_DIRTY_svin_background_set_by_index_half_STATIC_LINKING
+    #define _svin_cd_block_multiple_sectors_read _svin_dirty_multiple_sectors_read
+    #define _svin_cd_block_sector_read _svin_dirty_sector_read
+extern int _svin_dirty_sector_read(uint32_t fad, uint8_t *output_buffer)
+{
+    memcpy(output_buffer,(uint8_t*)CS0(fad*2048),2048);
+    return 0;
+}
+extern int _svin_dirty_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer)
+{
+    memcpy(output_buffer,(uint8_t*)CS0(fad*2048),2048*number);
+    return 0;
+}
+#else
+    #define _svin_cd_block_multiple_sectors_read cd_block_multiple_sectors_read
+    #define _svin_cd_block_sector_read cd_block_sector_read
+#endif
 
 fad_t _svin_background_pack_fad;
 uint8_t *_svin_background_index;
@@ -25,7 +44,28 @@ uint16_t _svin_actor_sizex[4];
 uint16_t _svin_actor_sizey[4];
 uint8_t _svin_current_field = 0;
 vdp1_cmdt_list_t *_svin_cmdt_list;
-uint8_t _svin_init_done = 0;
+uint8_t _svin_init_done;
+
+/*void _svin_hang_test(int i)
+{
+                vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_224);
+
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
+            COLOR_RGB1555(1, 0, 3, 15));
+
+        cpu_intc_mask_set(0);
+
+        vdp2_tvmd_display_set();
+        
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
+        dbgio_dev_font_load();
+        dbgio_dev_font_load_wait();
+
+        dbgio_printf("THIIISSS IIIISSS SVIIIIIN %i\n",i);   
+        dbgio_flush();
+        vdp_sync();
+}*/
 
 void _svin_delay(int milliseconds)
 {
@@ -92,8 +132,8 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_PNDR_NBG0;
-    vram_cycp.pt[0].t4 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -102,15 +142,15 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[1].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[1].t4 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
-    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
+    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_PNDR_NBG0;
     vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_PNDR_NBG1;
-    vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_PNDR_NBG0;
+    vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_PNDR_NBG1;
     vram_cycp.pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[2].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[2].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -166,6 +206,9 @@ void _svin_init()
     vdp2_scrn_display_set(VDP2_SCRN_NBG0, true);
     vdp2_cram_mode_set(1);
 
+    //_svin_hang_test(2); 
+    //while(1);
+
     //setup nbg1
     format.scroll_screen = VDP2_SCRN_NBG1;
     format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
@@ -180,19 +223,23 @@ void _svin_init()
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG1_PNDR_START;
 
+    //_svin_set_cycle_patterns_nbg();
+    //_svin_hang_test(31); 
+    //while(1);
+
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
     vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
 
-    //setting cycle patterns for cpu access
-    _svin_set_cycle_patterns_cpu();
-
-
+    
+    //_svin_set_cycle_patterns_nbg();
+    //_svin_hang_test(34); 
+    //while(1);
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
 
     color_rgb1555_t bs_color;
-    bs_color = COLOR_RGB1555(1, 0, 0, 31);
+    bs_color = COLOR_RGB1555(1, 0, 0, 0);
     vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
 
     vdp2_sprite_priority_set(0, 2);
@@ -204,11 +251,25 @@ void _svin_init()
     vdp2_sprite_priority_set(6, 2);
     vdp2_sprite_priority_set(7, 2);
 
+    //setting cycle patterns for cpu access
+    _svin_set_cycle_patterns_cpu();
+
+
+    ///_svin_set_cycle_patterns_nbg();
+    //_svin_hang_test(37); 
+    //while(1);
+
+
     vdp_sync_vblank_out_set(_svin_vblank_out_handler);
     
     vdp2_tvmd_display_set();
-    cpu_intc_mask_set(0); //?????
-    //vdp_sync();
+    //cpu_intc_mask_set(0); //?????
+    vdp_sync();
+
+    //_svin_set_cycle_patterns_nbg();
+    //_svin_hang_test(41); 
+    //while(1);
+
 
     //-------------- setup VDP1 -------------------
     _svin_cmdt_list = vdp1_cmdt_list_alloc(_SVIN_VDP1_ORDER_COUNT);
@@ -294,32 +355,64 @@ void _svin_init()
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A0_INDEX];
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2CE0;
+    cmdt_sprite->cmd_size = 0x2C70;
     cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0) ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A1_INDEX];
+    cmdt_sprite->cmd_xa = 0;
+    cmdt_sprite->cmd_ya = 112;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A2_INDEX];
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0) + 3*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A3_INDEX];
+    cmdt_sprite->cmd_xa = 352;
+    cmdt_sprite->cmd_ya = 112;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 4*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B0_INDEX];
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 6*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B1_INDEX];
+    cmdt_sprite->cmd_xa = 0;
+    cmdt_sprite->cmd_ya = 112;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 7*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B2_INDEX];
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 9*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B3_INDEX];
+    cmdt_sprite->cmd_xa = 352;
+    cmdt_sprite->cmd_ya = 112;
+    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 10*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
@@ -365,7 +458,7 @@ void _svin_init()
         _pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on
     }
     //writing semi-transparent characters where the dialog box should go, plane 0 first
-    for (int y = 22; y < 27; y++)
+    /*for (int y = 22; y < 27; y++)
     {
         int iOffset = y * 32;
         for (int x = 4; x < 32; x++)
@@ -381,7 +474,7 @@ void _svin_init()
         {
             _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS * 1; //palette 1, transparency on
         }
-    }
+    }*/
 
     //-------------- setup character pattern names -------------------
 
@@ -504,7 +597,7 @@ void _svin_background_load_index(iso9660_filelist_t *_filelist)
             uint8_t tmp_sector[2048];
             uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
             //reading 1st block to find out number of blocks
-            cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
+            _svin_cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
             //getting size and number of entries
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
             _svin_background_files_number = tmp_sector_16[4];
@@ -513,7 +606,7 @@ void _svin_background_load_index(iso9660_filelist_t *_filelist)
             int blocks_for_index = (_svin_background_files_number) / 32 + 1;
             _svin_background_index = malloc(blocks_for_index * 2048);
             //reading
-            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
+            _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
         }
     }
     assert(_svin_background_pack_fad > 0);
@@ -523,6 +616,9 @@ void _svin_background_set_by_index(int index)
 {
     if (index < 0)
         return;
+
+    //_svin_background_set_by_index_half(index,0,0);
+    //_svin_background_set_by_index_half(index,1,1);
 
     //allocate memory for 77 sectors
     uint8_t *buffer = malloc(77 * 2048);
@@ -543,22 +639,93 @@ void _svin_background_set_by_index(int index)
     vdp1_vram_partitions_t vdp1_vram_partitions;
     vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
-    //reading first half of the background
-    cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
+    /*//reading first half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
     //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0 * 2048), 0x00, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
 
-    //reading first half of the background
-    cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
+    //reading second half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
     //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 77 * 2048), 0x00, 2048 * 77);
-    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
+    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);*/
+
+    //reading first half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
+    //copying half
+    for (int i=0;i<224;i++)
+    {
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*0), buffer + i*352, 352);
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*1), buffer + i*352 + 352*224, 352);
+    }
+
+    //reading second half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
+    for (int i=0;i<224;i++)
+    {
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*2), buffer + i*352, 352);
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*3), buffer + i*352 + 352*224, 352);
+    }
 
     //read palette
-    cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
+    _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
     _svin_background_set_palette(0, palette);
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();
+
+    free(palette);
+    free(buffer);
+}
+
+//part values : 0..1
+//slot values : 0..2
+void _svin_background_set_by_index_half(int index, int part, int slot)
+{
+    if (index < 0)
+        return;
+
+    //allocate memory for 77 sectors
+    uint8_t *buffer = malloc(77 * 2048);
+    assert((int)(buffer) > 0);
+    //allocate memory for cram
+    uint8_t *palette = malloc(2048);
+    assert((int)(palette) > 0);
+
+    //set zero palette to hide loading
+    //_svin_background_clear_palette(0);
+
+    //setting cycle patterns for cpu access
+    //_svin_set_cycle_patterns_cpu();
+
+    uint16_t *_svin_background_index_16 = (uint16_t *)_svin_background_index;
+    uint16_t _current_sector = _svin_background_index_16[index * 32 + 36];
+
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    //reading first half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
+    //copying half
+    for (int i=0;i<112;i++)
+    {
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*0 + slot*352*112), buffer + i*352 + part*352*112, 352);
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*1 + slot*352*112), buffer + i*352 + 352*224 + part*352*112, 352);
+    }
+
+    //reading second half of the background
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
+    for (int i=0;i<112;i++)
+    {
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*2 + slot*352*112), buffer + i*352 + part*352*112, 352);
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*3 + slot*352*112), buffer + i*352 + 352*224 + part*352*112, 352);
+    }
+
+    //read palette
+    //_svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
+    //_svin_background_set_palette(0, palette);
+
+    //setting cycle patterns for nbg access
+    //_svin_set_cycle_patterns_nbg();
 
     free(palette);
     free(buffer);
@@ -616,7 +783,7 @@ void _svin_background_update_by_index(int index)
     //read next image while fading-to-black current one
     for (int i = 0; i < 14; i++)
     {
-        cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + i * 11, 11, &(buffer[11 * 2048 * i]));
+        _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + i * 11, 11, &(buffer[11 * 2048 * i]));
         _svin_background_fade_to_black_step();
     }
 
@@ -634,7 +801,7 @@ void _svin_background_update_by_index(int index)
     memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START), buffer, 2048 * 154);
 
     //read palette
-    cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
+    _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
     _svin_background_set_palette(0, palette);
 
     //setting cycle patterns for nbg access
@@ -673,7 +840,7 @@ _svin_actor_load(iso9660_filelist_t * _filelist, char * actor_filename, int acto
             uint8_t tmp_sector[2048];
             uint16_t * tmp_sector_16 = (uint16_t * )tmp_sector;
             //reading 1st block to find out number of blocks
-            cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
+            _svin_cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
             //getting size and number of entries
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
             _svin_background_files_number = tmp_sector_16[4];
@@ -682,7 +849,7 @@ _svin_actor_load(iso9660_filelist_t * _filelist, char * actor_filename, int acto
             int blocks_for_index = (_svin_background_files_number)/32+1;
             _svin_background_index = malloc(blocks_for_index*2048);
             //reading
-            cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
+            _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
         }
     }
     assert(_svin_background_pack_fad > 0);
@@ -703,7 +870,7 @@ void _svin_actor_debug_load_index(iso9660_filelist_t *_filelist)
             uint8_t tmp_sector[2048];
             uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
             //reading 1st block to find out number of blocks
-            cd_block_sector_read(_svin_actor_debug_pack_fad, tmp_sector);
+            _svin_cd_block_sector_read(_svin_actor_debug_pack_fad, tmp_sector);
             //getting size and number of entries
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
             _svin_actor_debug_files_number = tmp_sector_16[4];
@@ -712,7 +879,7 @@ void _svin_actor_debug_load_index(iso9660_filelist_t *_filelist)
             int blocks_for_index = (_svin_actor_debug_files_number) / 32 + 1;
             _svin_actor_debug_index = malloc(blocks_for_index * 2048);
             //reading
-            cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad, blocks_for_index, _svin_actor_debug_index);
+            _svin_cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad, blocks_for_index, _svin_actor_debug_index);
         }
     }
     assert(_svin_actor_debug_pack_fad > 0);
@@ -733,7 +900,7 @@ void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, 
             uint8_t tmp_sector[2048];
             uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
             //reading 1st block to find out number of blocks
-            cd_block_sector_read(file_entry->starting_fad, tmp_sector);
+            _svin_cd_block_sector_read(file_entry->starting_fad, tmp_sector);
             //getting size and number of entries
             assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
             //assert(1 == tmp_sector_16[4]);  //working with a single-file sprite packs for now
@@ -765,7 +932,7 @@ void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, 
 
             //this is a fast version for hacked yaul
             //reading whole block
-            cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad + _current_sector, blocks_for_sprite, buffer);
+            _svin_cd_block_multiple_sectors_read(_svin_actor_debug_pack_fad + _current_sector, blocks_for_sprite, buffer);
             //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0x20000 * actor_id), buffer, _svin_actor_sizex[actor_id] * _svin_actor_sizey[actor_id]);
             memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0x20000 * actor_id), buffer, _svin_actor_sizex[0] * _svin_actor_sizey[0]);
 
@@ -793,7 +960,7 @@ void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, 
 
 
             //read palette
-            cd_block_sector_read(_svin_actor_debug_pack_fad + _current_sector + blocks_for_sprite, palette);
+            _svin_cd_block_sector_read(_svin_actor_debug_pack_fad + _current_sector + blocks_for_sprite, palette);
             _svin_background_set_palette(1+actor_id, palette);
 
             //setting cycle patterns for nbg access
@@ -818,7 +985,7 @@ void _svin_vblank_out_handler(void *work __unused)
 
     if (_svin_current_field % 2 == 0)
         //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX * 4);
-        p[3]=0x14;
+        p[3]=0x1C;
     else
         //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX * 4);
         p[3]=0x04;
