@@ -16,6 +16,10 @@
 __BEGIN_DECLS
 
 extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
+extern int cd_block_sector_read_request(uint32_t fad);
+extern int cd_block_sector_read_process(uint8_t *output_buffer);
+extern int cd_block_sector_read_flush(uint8_t *output_buffer);
+
 
 __END_DECLS
 
