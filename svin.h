@@ -72,7 +72,12 @@ void _svin_background_update(char *name);
 void _svin_background_clear();
 void _svin_background_fade_to_black();
 void _svin_background_load_index(iso9660_filelist_t * _filelist);
-void _svin_background_set_by_index_half(int index, int part, int slot);
+//void _svin_background_set_by_index_half(int index, int part, int slot);
+
+void _svin_tapestry_init();
+void _svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int position);
+void _svin_tapestry_move_up();
+void _svin_tapestry_move_down();
 
 
 

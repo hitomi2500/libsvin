@@ -27,6 +27,9 @@ extern int _svin_dirty_multiple_sectors_read(uint32_t fad, uint32_t number, uint
 #else
     #define _svin_cd_block_multiple_sectors_read cd_block_multiple_sectors_read
     #define _svin_cd_block_sector_read cd_block_sector_read
+    #define _svin_cd_block_sector_read_request cd_block_sector_read_request
+    #define _svin_cd_block_sector_read_process cd_block_sector_read_process
+    #define _svin_cd_block_sector_read_flush cd_block_sector_read_flush
 #endif
 
 fad_t _svin_background_pack_fad;
@@ -44,7 +47,13 @@ uint16_t _svin_actor_sizex[4];
 uint16_t _svin_actor_sizey[4];
 uint8_t _svin_current_field = 0;
 vdp1_cmdt_list_t *_svin_cmdt_list;
+vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_1;
+vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_2;
 uint8_t _svin_init_done;
+fad_t _svin_tapestry_pack_fad;
+int _svin_tapestry_framebuffer_start;
+int _svin_tapestry_data_start;
+int _svin_tapestry_movement_active;
 
 /*void _svin_hang_test(int i)
 {
@@ -314,12 +323,11 @@ void _svin_init()
     vdp1_cmdt_end_set(&cmdts[_SVIN_VDP1_ORDER_DRAW_END_B_INDEX]);
 #define VDP1_FBCR_DIE (0x0008)
     MEMORY_WRITE(16, VDP1(FBCR), VDP1_FBCR_DIE);
-
-    /*vdp1_vram_partitions_set(((_SVIN_VDP1_ORDER_COUNT / 16)*16 + 16),
-                             ((_SVIN_SCREEN_WIDTH * _SVIN_SCREEN_HEIGHT) / 256 + 1) * 256,
-                             0,//VDP1_VRAM_DEFAULT_GOURAUD_COUNT,
-                             0);//VDP1_VRAM_DEFAULT_CLUT_COUNT);*/
-
+    
+    vdp1_vram_partitions_set(64,//VDP1_VRAM_DEFAULT_CMDT_COUNT,
+                              0x7F000, //  VDP1_VRAM_DEFAULT_TEXTURE_SIZE,
+                               0,//  VDP1_VRAM_DEFAULT_GOURAUD_COUNT,
+                               0);//  VDP1_VRAM_DEFAULT_CLUT_COUNT);
 
             static vdp1_env_t vdp1_env = {
                 .erase_color = COLOR_RGB1555(1, 0, 0, 0),
@@ -679,7 +687,7 @@ void _svin_background_set_by_index(int index)
 
 //part values : 0..1
 //slot values : 0..2
-void _svin_background_set_by_index_half(int index, int part, int slot)
+/*void _svin_background_set_by_index_half(int index, int part, int slot)
 {
     if (index < 0)
         return;
@@ -721,15 +729,15 @@ void _svin_background_set_by_index_half(int index, int part, int slot)
     }
 
     //read palette
-    //_svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
-    //_svin_background_set_palette(0, palette);
+    _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
+    _svin_background_set_palette(0, palette);
 
     //setting cycle patterns for nbg access
     //_svin_set_cycle_patterns_nbg();
 
     free(palette);
     free(buffer);
-}
+}*/
 
 void _svin_background_set(char *name)
 {
@@ -815,6 +823,282 @@ void _svin_background_clear()
 {
     //set zero palette
     _svin_background_clear_palette(0);
+}
+
+
+//---------------------------------------------- Tapestry stuff ----------------------------------------------------
+
+void 
+_svin_tapestry_init()
+{
+    _svin_tapestry_movement_active = 0;
+
+    //basically it's a partial VDP1 reconfiguration
+    //instead of 4 352x224 BG tiles we work with 896 quads with 352x1 size
+    //so the list is divided into two alternative 448-quad lists
+    //to keep compatible with a "normal" 4-quad setup we keep the first 16 commands same, 
+    //but insert jump addresses into _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX and
+    // _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX commands
+    //First one jumps to command 16, and the second to the command 480.
+    //Commands space is reserved for 1024 commands, i.e. 32 kB
+
+    //-------------- setup VDP1 -------------------
+
+    //allocating a big command lists, so that we can upload them in a single vblank
+    _svin_tapestry_cmdt_list_1 = vdp1_cmdt_list_alloc(449); 
+    _svin_tapestry_cmdt_list_2 = vdp1_cmdt_list_alloc(449); 
+
+    static const int16_vec2_t local_coord_ul =
+        INT16_VEC2_INITIALIZER(0,0);
+    
+    vdp1_cmdt_t cmdt_buf;
+    vdp1_cmdt_t * cmdt_p;
+
+    vdp1_cmdt_color_bank_t dummy_bank;
+    dummy_bank.raw = 0;
+
+    vdp1_vram_partitions_set(1023,//VDP1_VRAM_DEFAULT_CMDT_COUNT,
+                              0x78000, //  VDP1_VRAM_DEFAULT_TEXTURE_SIZE,
+                               0,//  VDP1_VRAM_DEFAULT_GOURAUD_COUNT,
+                               0);//  VDP1_VRAM_DEFAULT_CLUT_COUNT);
+
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    //dirty vram clean
+    for (int i=0;i<224;i++)
+    {
+        (void)memset((void*)VDP1_VRAM(32768+i*1408), 0, 1408);
+    }  
+
+    //frame A branching first
+    (void)memset(&cmdt_buf, 0x00, sizeof(vdp1_cmdt_t));
+    vdp1_cmdt_local_coord_set(&cmdt_buf);
+    vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_jump_assign(&cmdt_buf,16*4);
+    vdp1_sync_cmdt_put(&cmdt_buf,1,32*_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX,NULL,NULL);
+    vdp_sync();
+
+    //filling first 224 quads
+    for (int i=0;i<224;i++)
+    {
+        cmdt_p = &_svin_tapestry_cmdt_list_1->cmdts[i];
+        (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+        cmdt_p->cmd_xa = 0;
+        cmdt_p->cmd_ya = i;
+        cmdt_p->cmd_size = 0x2C01;
+        cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+0) / 8;
+        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    }
+    //filling another 224 quads
+    for (int i=0;i<224;i++)
+    {
+        cmdt_p = &_svin_tapestry_cmdt_list_1->cmdts[i+224];
+        (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+        cmdt_p->cmd_xa = 352;
+        cmdt_p->cmd_ya = i;
+        cmdt_p->cmd_size = 0x2C01;
+        cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+352) / 8;
+        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    }
+
+    cmdt_p = &_svin_tapestry_cmdt_list_1->cmdts[448];
+    (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+    vdp1_cmdt_end_set(cmdt_p);
+ 
+    _svin_tapestry_cmdt_list_1->count = 449;
+
+    vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 32*16, NULL, NULL);
+    vdp_sync();
+
+    //now frame B
+    (void)memset(&cmdt_buf, 0x00, sizeof(vdp1_cmdt_t));
+    vdp1_cmdt_local_coord_set(&cmdt_buf);
+    vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_jump_assign(&cmdt_buf,480*4);
+    vdp1_sync_cmdt_put(&cmdt_buf,1,32*_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX,NULL,NULL);
+    vdp_sync();
+
+    //filling first 224 quads
+    for (int i=0;i<224;i++)
+    {
+        cmdt_p = &_svin_tapestry_cmdt_list_2->cmdts[i];
+        (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+        cmdt_p->cmd_xa = 0;
+        cmdt_p->cmd_ya = i;
+        cmdt_p->cmd_size = 0x2C01;
+        cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+704) / 8;
+        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    }
+    //filling another 224 quads
+    for (int i=0;i<224;i++)
+    {
+        cmdt_p = &_svin_tapestry_cmdt_list_2->cmdts[i+224];
+        (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+        cmdt_p->cmd_xa = 352;
+        cmdt_p->cmd_ya = i;
+        cmdt_p->cmd_size = 0x2C01;
+        cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+1056) / 8;
+        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
+    }
+
+    cmdt_p = &_svin_tapestry_cmdt_list_2->cmdts[448];
+    (void)memset(cmdt_p, 0x00, sizeof(vdp1_cmdt_t));
+    vdp1_cmdt_end_set(cmdt_p);
+
+    _svin_tapestry_cmdt_list_2->count = 449;
+
+    vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 32*480, NULL, NULL); 
+    vdp_sync();  
+}
+
+void 
+_svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int position)
+{
+    //locating the the tapestry start FAD first
+    iso9660_filelist_entry_t *file_entry;
+    _svin_tapestry_pack_fad = 0;
+    _svin_tapestry_framebuffer_start = 0;
+    _svin_tapestry_data_start = 0;
+
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    uint8_t tmp_sector[2048];
+    uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
+
+    for (unsigned int i = 0; i < _filelist->entries_count; i++)
+    {
+        file_entry = &(_filelist->entries[i]);
+        if (strcmp(file_entry->name, filename) == 0)
+        {
+            _svin_tapestry_pack_fad = file_entry->starting_fad;
+            //get filesize to load palette
+            //reading 1st block to find out number of blocks
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad, tmp_sector);
+            //getting size and number of entries
+            int iSizeY = tmp_sector_16[32+3];
+            assert(iSizeY > 0);
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + iSizeY/2 + 0, tmp_sector);
+            _svin_background_set_palette(0, tmp_sector);
+        }
+    }
+    assert(_svin_tapestry_pack_fad > 0);
+
+    //now that we know the FAD, load 224 blocks from the position start
+    for (int i=0;i<224;i++)
+    {
+        _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + position + i, tmp_sector);
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*1408), tmp_sector, 1408);
+    }
+}
+
+void 
+_svin_tapestry_move_up()
+{
+    uint8_t tmp_sector[2048];
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    //use previously opened tapestry
+    if (_svin_tapestry_pack_fad != 0)
+    {
+        if (0 == _svin_tapestry_data_start)
+            return;
+
+        //vdp_sync();
+
+        //load the sector
+        if ( 1 == _svin_tapestry_movement_active)
+        {
+            //already moving up, the sector is requested, we only need to fetch it
+            _svin_cd_block_sector_read_process(tmp_sector);
+        }
+        else
+        {
+            //starting movement, first flushing whatever was prefetched
+            _svin_cd_block_sector_read_flush(tmp_sector);
+            //now doing a full read
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0, tmp_sector);
+        }
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + ((_svin_tapestry_framebuffer_start+0)%250)*1408), tmp_sector, 1408);
+        //reindex the positions in framebuffer
+        for (int i = 0; i<224;i++)
+        {
+            int framebuffer_pos = (_svin_tapestry_framebuffer_start+i)%250;
+            _svin_tapestry_cmdt_list_1->cmdts[i    ].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+0) / 8;
+            _svin_tapestry_cmdt_list_1->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+352) / 8;
+            _svin_tapestry_cmdt_list_2->cmdts[i    ].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+704) / 8;
+            _svin_tapestry_cmdt_list_2->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+1056) / 8;
+        }
+        vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 32*16, NULL, NULL); 
+        vdp_sync();  
+        vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 32*480, NULL, NULL); 
+        vdp_sync();  
+        _svin_tapestry_framebuffer_start--;
+        _svin_tapestry_data_start--;
+        if (_svin_tapestry_framebuffer_start < 0)
+            _svin_tapestry_framebuffer_start += 250;
+        //prefetching data for consecutive movement
+        _svin_cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0); 
+        _svin_tapestry_movement_active = 1;
+    }
+}
+
+void 
+_svin_tapestry_move_down()
+{
+    uint8_t tmp_sector[2048];
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    //use previously opened tapestry
+    if (_svin_tapestry_pack_fad != 0)
+    {
+        //vdp_sync();
+        //load the sector
+        if ( -1 == _svin_tapestry_movement_active)
+        {
+            //already moving down, the sector is requested, we only need to fetch it
+            _svin_cd_block_sector_read_process(tmp_sector);
+        }
+        else
+        {
+            //starting movement, first flushing whatever was prefetched
+            _svin_cd_block_sector_read_flush(tmp_sector);
+            //now doing a full read
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224, tmp_sector);
+        }
+        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + ((_svin_tapestry_framebuffer_start+224)%250)*1408), tmp_sector, 1408);
+        //reindex the positions in framebuffer
+        for (int i = 0; i<224;i++)
+        {
+            int framebuffer_pos = (_svin_tapestry_framebuffer_start+i)%250;
+            _svin_tapestry_cmdt_list_1->cmdts[i    ].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+0) / 8;
+            _svin_tapestry_cmdt_list_1->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+352) / 8;
+            _svin_tapestry_cmdt_list_2->cmdts[i    ].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+704) / 8;
+            _svin_tapestry_cmdt_list_2->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+1056) / 8;
+        }
+        vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 32*16, NULL, NULL); 
+        vdp_sync();  
+        vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 32*480, NULL, NULL); 
+        vdp_sync();  
+        _svin_tapestry_framebuffer_start++;
+        _svin_tapestry_data_start++;
+        if (_svin_tapestry_framebuffer_start >= 250)
+            _svin_tapestry_framebuffer_start = 0;
+        //prefetching data for consecutive movement
+        _svin_cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224); 
+        _svin_tapestry_movement_active = -1;
+    }
 }
 
 //---------------------------------------------- Actor stuff ----------------------------------------------------
@@ -991,4 +1275,6 @@ void _svin_vblank_out_handler(void *work __unused)
         p[3]=0x04;
 
     //vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
+    
+    smpc_peripheral_intback_issue();
 }
