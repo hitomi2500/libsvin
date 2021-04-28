@@ -75,61 +75,12 @@ main(void)
         //_svin_actor_debug_load_test(&_filelist,"US.PAK",1);
 
         _svin_background_set_by_index(0);
-        //_svin_background_set_by_index_half(0,0,0);
-        //_svin_background_set_by_index_half(0,1,1);
 
         //vdp1_cmdt_t *cmdts;
         //cmdts = &_svin_cmdt_list->cmdts[0]; 
         //vdp1_cmdt_t *cmdt_sprite;
-        uint16_t _tmp;
-        uint16_t * p;
 
-        _svin_delay(1000);
-        for (int frame=0;frame<1;frame+=2)
-        {
-                //load first part of next image into slot 2
-                _svin_background_set_by_index_half(frame,0,2);
-                //move all starts from slot 0 to slot 1
-                for (int shift=0;shift<112; shift++)
-                {
-                        for (int k=0;k<4;k++)
-                        {
-                                p = (uint16_t*)VDP1_VRAM(0x08 + _SVIN_VDP1_ORDER_SPRITE_A0_INDEX * 0x20 + k*0x20);
-                                _tmp = p[0] + 44;//slot 0 to slot 1
-                                p[0] = _tmp;
-                                p = (uint16_t*)VDP1_VRAM(0x08 + _SVIN_VDP1_ORDER_SPRITE_B0_INDEX * 0x20 + k*0x20);
-                                _tmp = p[0] + 44;//slot 1 to slot 2
-                                p[0] = _tmp;
-                        }
-                        _svin_delay(100);
-                }
-
-                //load second part of next image into slot 0
-                _svin_background_set_by_index_half(frame,1,0);
-                //move all starts from slot 1 to slot 2
-                for (int k=0;k<4;k++)
-                {
-                        p = (uint16_t*)VDP1_VRAM(0x08 + _SVIN_VDP1_ORDER_SPRITE_B0_INDEX * 0x20 + k*0x20);
-                        _tmp = p[0] - 44*112*3;//slot 2 to slot 0
-                        p[0] = _tmp;
-                }
-                for (int shift=0;shift<112; shift++)
-                        {
-                        for (int k=0;k<4;k++)
-                        {
-                                p = (uint16_t*)VDP1_VRAM(0x08 + _SVIN_VDP1_ORDER_SPRITE_A0_INDEX * 0x20 + k*0x20);
-                                _tmp = p[0] + 44;//slot 1 to slot 2
-                                p[0] = _tmp;
-                                p = (uint16_t*)VDP1_VRAM(0x08 + _SVIN_VDP1_ORDER_SPRITE_B0_INDEX * 0x20 + k*0x20);
-                                _tmp = p[0] + 44;//slot 0 to slot 1
-                                p[0] = _tmp;
-                        }
-                        _svin_delay(100);
-                }
-
-        }
-
-        while(1);
+        //while(1);
 
         while(1)
         {

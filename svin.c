@@ -363,66 +363,36 @@ void _svin_init()
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A0_INDEX];
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2C70;
+    cmdt_sprite->cmd_size = 0x2CE0;
     cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0) ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A1_INDEX];
-    cmdt_sprite->cmd_xa = 0;
-    cmdt_sprite->cmd_ya = 112;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
-    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
-    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
-    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
-    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A2_INDEX];
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0) + 3*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    cmdt_sprite->cmd_size = 0x2CE0;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
-    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
-    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A3_INDEX];
-    cmdt_sprite->cmd_xa = 352;
-    cmdt_sprite->cmd_ya = 112;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 4*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
-    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
-    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_jump_assign(cmdt_sprite, _SVIN_VDP1_ORDER_DRAW_END_A_INDEX * 4);//skipping A2 and A3
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B0_INDEX];
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 6*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    cmdt_sprite->cmd_size = 0x2CE0;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B1_INDEX];
-    cmdt_sprite->cmd_xa = 0;
-    cmdt_sprite->cmd_ya = 112;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 7*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
-    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
-    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
-    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
-    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B2_INDEX];
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 9*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
+    cmdt_sprite->cmd_size = 0x2CE0;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
-    cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
-    cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_B3_INDEX];
-    cmdt_sprite->cmd_xa = 352;
-    cmdt_sprite->cmd_ya = 112;
-    cmdt_sprite->cmd_size = 0x2C70;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 10*_SVIN_SCREEN_WIDTH*_SVIN_SCREEN_HEIGHT/8 ) / 8;
-    vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
-    vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
+    vdp1_cmdt_jump_assign(cmdt_sprite, _SVIN_VDP1_ORDER_DRAW_END_B_INDEX * 4);//skipping B2 and B3
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
 
     vdp1_cmdt_t *cmdt_system_clip_coords;
@@ -647,7 +617,7 @@ void _svin_background_set_by_index(int index)
     vdp1_vram_partitions_t vdp1_vram_partitions;
     vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
-    /*//reading first half of the background
+    //reading first half of the background
     _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
     //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 0 * 2048), 0x00, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
@@ -655,10 +625,10 @@ void _svin_background_set_by_index(int index)
     //reading second half of the background
     _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
     //memset((uint8_t *)(_SVIN_NBG0_CHPNDR_START + 77 * 2048), 0x00, 2048 * 77);
-    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);*/
+    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
 
     //reading first half of the background
-    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
+    /*_svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
     //copying half
     for (int i=0;i<224;i++)
     {
@@ -672,7 +642,7 @@ void _svin_background_set_by_index(int index)
     {
         memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*2), buffer + i*352, 352);
         memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*3), buffer + i*352 + 352*224, 352);
-    }
+    }*/
 
     //read palette
     _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
@@ -684,60 +654,6 @@ void _svin_background_set_by_index(int index)
     free(palette);
     free(buffer);
 }
-
-//part values : 0..1
-//slot values : 0..2
-/*void _svin_background_set_by_index_half(int index, int part, int slot)
-{
-    if (index < 0)
-        return;
-
-    //allocate memory for 77 sectors
-    uint8_t *buffer = malloc(77 * 2048);
-    assert((int)(buffer) > 0);
-    //allocate memory for cram
-    uint8_t *palette = malloc(2048);
-    assert((int)(palette) > 0);
-
-    //set zero palette to hide loading
-    //_svin_background_clear_palette(0);
-
-    //setting cycle patterns for cpu access
-    //_svin_set_cycle_patterns_cpu();
-
-    uint16_t *_svin_background_index_16 = (uint16_t *)_svin_background_index;
-    uint16_t _current_sector = _svin_background_index_16[index * 32 + 36];
-
-    vdp1_vram_partitions_t vdp1_vram_partitions;
-    vdp1_vram_partitions_get(&vdp1_vram_partitions);
-
-    //reading first half of the background
-    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector, 77, buffer);
-    //copying half
-    for (int i=0;i<112;i++)
-    {
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*0 + slot*352*112), buffer + i*352 + part*352*112, 352);
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*1 + slot*352*112), buffer + i*352 + 352*224 + part*352*112, 352);
-    }
-
-    //reading second half of the background
-    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad + _current_sector + 77, 77, buffer);
-    for (int i=0;i<112;i++)
-    {
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*2 + slot*352*112), buffer + i*352 + part*352*112, 352);
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*352 + 352*336*3 + slot*352*112), buffer + i*352 + 352*224 + part*352*112, 352);
-    }
-
-    //read palette
-    _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
-    _svin_background_set_palette(0, palette);
-
-    //setting cycle patterns for nbg access
-    //_svin_set_cycle_patterns_nbg();
-
-    free(palette);
-    free(buffer);
-}*/
 
 void _svin_background_set(char *name)
 {
@@ -788,6 +704,9 @@ void _svin_background_update_by_index(int index)
     uint16_t *_svin_background_index_16 = (uint16_t *)_svin_background_index;
     uint16_t _current_sector = _svin_background_index_16[index * 32 + 36];
 
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
     //read next image while fading-to-black current one
     for (int i = 0; i < 14; i++)
     {
@@ -806,7 +725,8 @@ void _svin_background_update_by_index(int index)
     _svin_set_cycle_patterns_cpu();
 
     //copy preloaded pattern names
-    memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START), buffer, 2048 * 154);
+    //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START), buffer, 2048 * 154);
+    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base), buffer, 2048 * 154);
 
     //read palette
     _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
