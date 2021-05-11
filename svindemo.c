@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "scroll_menu.h"
 #include "svin.h"
+#include <mcufont_callbacks.h>
 
 #define MENU_ENTRY_COUNT 16
 
@@ -89,6 +89,11 @@ main(void)
                 //_svin_background_set _by_index(i);
                 _svin_background_update_by_index(i);
                 //_svin_background_set("bus_stop");
+
+
+                //render some text
+                debug_render_text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed varius quis mauris a luctus. Suspendisse eu diam vel est cursus accumsan quis a tellus. Sed varius porttitor tortor at commodo. Curabitur vehicula commodo risus in commodo. Nam pharetra nunc et tincidunt tempor. Nam eu tortor cursus, dapibus eros a, sollicitudin turpis. Sed maximus est mi, sed euismod nibh tempus eget. Ut faucibus consequat elit. Duis ante mauris, tempor et massa sed, molestie rutrum nulla. Ut a ligula viverra, ornare sem vel, facilisis erat.","DejaVuSans12");
+
                 _svin_delay(1000);
             }
         }
