@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->comboBox_mode->addItem("4-sprite VDP1 background");
     ui->comboBox_mode->addItem("8x8 cell VDP2 sprite");
-    ui->comboBox_mode->addItem("4-sprite VDP1 tapestry");
+    ui->comboBox_mode->addItem("704xHUGE single file VDP1 tapestry");
 }
 
 MainWindow::~MainWindow()
