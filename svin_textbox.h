@@ -1,3 +1,6 @@
+#ifndef _SVIN_TEXTBOX_H_
+#define _SVIN_TEXTBOX_H_
+
 #include <yaul.h>
 
 #include <assert.h>
@@ -28,4 +31,12 @@ typedef struct {
     const struct mf_font_s *font;
 } state_t;
 
-bool line_callback(const char *line, uint16_t count, void *state);
+void _svin_textbox_init();
+
+void _svin_textbox_print(const char * speaker, const char * text, const char * fontname, int speaker_color, int text_color);
+
+void _svin_textbox_clear();
+
+void _svin_textbox_init_palette();
+
+#endif

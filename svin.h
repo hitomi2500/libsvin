@@ -4,6 +4,7 @@
 //#define PORT_USE_FILECLIENT
 
 #include <yaul.h>
+#include <svin_textbox.h>
 
 //#define _SVIN_DIRTY_STATIC_LINKING
 
@@ -28,7 +29,8 @@
 //  0x00050000 - 0x00051FFF NBG0 pattern name data 64x32*4 = 0x2000
 //  0x00052000 - 0x00053FFF NBG1 pattern name data 64x32*4 = 0x2000
 // Bank 3
-//  0x00060000 - 0x0006B3FF NBG1 character pattern name data bottomright 576x80 (36x5*16x16) = 0xB400
+////  0x00060000 - 0x0006B3FF NBG1 character pattern name data bottomright 576x80 (36x5*16x16) = 0xB400
+//  0x00070000 - 0x0007EFFF NBG1 rendered font data for dialog box 640x80 (40x5*16x16) = 0x????
 //  0x0007F000 - 0x0007FFFF NBG1 character pattern name data specials
 
 #define _SVIN_NBG0_CHPNDR_START (VDP2_VRAM_ADDR(0,0))
@@ -39,6 +41,8 @@
 #define _SVIN_NBG1_CHPNDR_SIZE (576*80)
 #define _SVIN_NBG1_PNDR_START (VDP2_VRAM_ADDR(2,0x10000) + _SVIN_NBG0_PNDR_SIZE)
 #define _SVIN_NBG1_PNDR_SIZE (_SVIN_NBG0_PNDR_SIZE)
+#define _SVIN_NBG1_CHPNDR_TEXTBOX_ADDR (VDP2_VRAM_ADDR(3,0x10000))
+#define _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX ((0x70000)/32)
 #define _SVIN_NBG1_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(3,0x1F000))
 #define _SVIN_NBG1_CHPNDR_SPECIALS_INDEX ((0x7F000)/32)
 

@@ -433,26 +433,9 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on
+        //_pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
-    //writing semi-transparent characters where the dialog box should go, plane 0 first
-    /*for (int y = 22; y < 27; y++)
-    {
-        int iOffset = y * 32;
-        for (int x = 4; x < 32; x++)
-        {
-            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS * 1; //palette 1, transparency on
-        }
-    }
-    //now plane 1
-    for (int y = 22; y < 27; y++)
-    {
-        int iOffset = 32 * 32 + y * 32;
-        for (int x = 0; x < 8; x++)
-        {
-            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX + _SVIN_CHARACTER_UNITS * 1; //palette 1, transparency on
-        }
-    }*/
 
     //-------------- setup character pattern names -------------------
 
@@ -488,14 +471,61 @@ void _svin_init()
 
     //setup default palettes
     uint8_t temp_pal[3 * 256];
+    //grayscale gradient
     for (int i = 0; i < 256; i++)
     {
-        temp_pal[i * 3] = i;     //( (i/8)*0x0421 );//grayscale gradient
-        temp_pal[i * 3 + 1] = i; //( (i/8)*0x0421 );//grayscale gradient
-        temp_pal[i * 3 + 2] = i; //( (i/8)*0x0421 );//grayscale gradient
+        temp_pal[i * 3] = i;     
+        temp_pal[i * 3 + 1] = i; 
+        temp_pal[i * 3 + 2] = i; 
     }
-    for (int pal = 0; pal < 4; pal++)
-        _svin_background_set_palette(pal, temp_pal);
+    _svin_background_set_palette(0, temp_pal);
+    //red
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+        temp_pal[i * 3] = i;      
+    }
+    _svin_background_set_palette(1, temp_pal);
+    //green
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+       temp_pal[i * 3 + 1] = i;      
+    }
+    _svin_background_set_palette(2, temp_pal);
+    //blue
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+       temp_pal[i * 3 + 2] = i;      
+    }
+    _svin_background_set_palette(3, temp_pal);
+    //cyan
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+        temp_pal[i * 3 + 1] = i; 
+        temp_pal[i * 3 + 2] = i;    
+    }
+    _svin_background_set_palette(4, temp_pal);
+    //magenta
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+        temp_pal[i * 3] = i;     
+        temp_pal[i * 3 + 2] = i;    
+    }
+    _svin_background_set_palette(5, temp_pal);
+    //yellow
+    memset(temp_pal,0,sizeof(temp_pal));
+    for (int i = 0; i < 256; i++)
+    {
+        temp_pal[i * 3] = i;     
+        temp_pal[i * 3 + 1] = i; 
+    }
+    _svin_background_set_palette(6, temp_pal);  
+
+    _svin_textbox_init();
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();

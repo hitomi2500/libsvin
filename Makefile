@@ -6,12 +6,21 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= svindemo
 SH_SRCS:= \
+	mcufont/mf_encoding.c \
+    mcufont/mf_font.c \
+    mcufont/mf_justify.c \
+    mcufont/mf_kerning.c \
+    mcufont/mf_rlefont.c \
+    mcufont/mf_bwfont.c \
+    mcufont/mf_scaledfont.c \
+    mcufont/mf_wordwrap.c \
 	svindemo.c \
 	cd-block_multiread.c \
+	svin_textbox.c \
 	svin.c
 	
 SH_LIBRARIES:= tga
-SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
+SH_CFLAGS+= -O2 -I. -Imcufont -save-temps
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
