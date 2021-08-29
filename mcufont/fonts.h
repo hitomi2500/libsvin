@@ -6,4 +6,8 @@
 #include "fixed_5x8.c" 
 #include "fixed_7x14.c" 
 #include "fixed_10x20.c" 
+#include "Lato-Black12.c"
+#include "Lato-Black16.c"
+#include "NotoSans-Black12.c"
+#include "NotoSans-Black16.c"
 #include "DejaVuSans12bw_bwfont.c"
