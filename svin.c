@@ -32,6 +32,8 @@ extern int _svin_dirty_multiple_sectors_read(uint32_t fad, uint32_t number, uint
     #define _svin_cd_block_sector_read_flush cd_block_sector_read_flush
 #endif
 
+static smpc_peripheral_digital_t _digital;
+
 fad_t _svin_background_pack_fad;
 uint8_t *_svin_background_index;
 uint16_t _svin_background_files_number;
@@ -1227,4 +1229,24 @@ void _svin_vblank_out_handler(void *work __unused)
     //vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
     
     smpc_peripheral_intback_issue();
+}
+
+void _svin_wait_for_key_press_and_release()
+{
+    bool bPressed = false;
+    while (false == bPressed)
+    {
+        smpc_peripheral_process();
+        smpc_peripheral_digital_port(1, &_digital);
+        if (_digital.pressed.raw != 0)
+            bPressed = true;
+    }
+    _svin_delay(15);//debounce
+    while (true == bPressed)
+    {
+        smpc_peripheral_process();
+        smpc_peripheral_digital_port(1, &_digital);
+        if (_digital.pressed.raw == 0)
+            bPressed = false;
+    }
 }

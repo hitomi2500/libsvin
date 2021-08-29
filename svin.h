@@ -5,6 +5,7 @@
 
 #include <yaul.h>
 #include <svin_textbox.h>
+#include <svin_script.h>
 
 //#define _SVIN_DIRTY_STATIC_LINKING
 
@@ -64,6 +65,7 @@
 
 void _svin_init();
 void _svin_delay(int milliseconds);
+void _svin_wait_for_key_press_and_release();
 
 void _svin_background_fade_to_black_step();
 void _svin_background_fade_to_black();

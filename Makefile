@@ -17,6 +17,7 @@ SH_SRCS:= \
 	svindemo.c \
 	cd-block_multiread.c \
 	svin_textbox.c \
+	svin_script.c \
 	svin.c
 	
 SH_LIBRARIES:= tga

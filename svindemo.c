@@ -65,7 +65,7 @@ main(void)
         //load logo
         _svin_background_clear_palette(0);
         _svin_background_set("yaul_logo");
-        _svin_delay(2000);
+        _svin_delay(1000);
         _svin_background_fade_to_black();
 
         //_svin_background_set("int_dining_hall_people_day");
@@ -79,7 +79,13 @@ main(void)
         //cmdts = &_svin_cmdt_list->cmdts[0]; 
         //vdp1_cmdt_t *cmdt_sprite;
 
-        //while(1);
+        //_svin_background_set("ext_camp_entrance_day");
+        //_svin_textbox_clear();
+        //_svin_textbox_print("Helena","Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.","Lato_Black12",0,0);
+        //_svin_background_update("bus_stop");
+        _svin_run_script(&_filelist,"SCRIPT.TXT");
+
+        while(1);
 
         while(1)
         {
