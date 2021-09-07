@@ -592,34 +592,25 @@ void _svin_background_clear_palette(int number)
     }
 }
 
-void _svin_background_load_index(iso9660_filelist_t *_filelist)
+void _svin_background_load_index(char * filename)
 {
     //-------------- Getting FAD and index for background pack binary -------------------
-    iso9660_filelist_entry_t *file_entry;
-    _svin_background_pack_fad = 0;
-    for (unsigned int i = 0; i < _filelist->entries_count; i++)
-    {
-        file_entry = &(_filelist->entries[i]);
-        if (strcmp(file_entry->name, "BG.PAK") == 0)
-        {
-            _svin_background_pack_fad = file_entry->starting_fad;
-            //allocating temporary buf for 1 sector
-            uint8_t tmp_sector[2048];
-            uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
-            //reading 1st block to find out number of blocks
-            _svin_cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
-            //getting size and number of entries
-            assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
-            _svin_background_files_number = tmp_sector_16[4];
-            //allocating array for background pack index
-            assert(_svin_background_files_number < 200); //hard limit for backgound number
-            int blocks_for_index = (_svin_background_files_number) / 32 + 1;
-            _svin_background_index = malloc(blocks_for_index * 2048);
-            //reading
-            _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
-        }
-    }
+    _svin_background_pack_fad = _svin_filelist_search(filename);
     assert(_svin_background_pack_fad > 0);
+    //allocating temporary buf for 1 sector
+    uint8_t tmp_sector[2048];
+    uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;
+    //reading 1st block to find out number of blocks
+    _svin_cd_block_sector_read(_svin_background_pack_fad, tmp_sector);
+    //getting size and number of entries
+    assert(64 == tmp_sector_16[5]); //non-64-byte entries not supported
+    _svin_background_files_number = tmp_sector_16[4];
+    //allocating array for background pack index
+    assert(_svin_background_files_number < 200); //hard limit for backgound number
+    int blocks_for_index = (_svin_background_files_number) / 32 + 1;
+    _svin_background_index = malloc(blocks_for_index * 2048);
+    //reading
+    _svin_cd_block_multiple_sectors_read(_svin_background_pack_fad, blocks_for_index, _svin_background_index);
 }
 
 void _svin_background_set_by_index(int index)

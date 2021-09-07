@@ -17,6 +17,7 @@ SH_SRCS:= \
 	svindemo.c \
 	cd-block_multiread.c \
 	svin_textbox.c \
+	svin_filelist.c \
 	svin_script.c \
 	svin.c
 	
@@ -28,7 +29,7 @@ IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
 IP_PERIPHERALS:= JAMKST
 IP_TITLE:= libsvin demo
-IP_MASTER_STACK_ADDR:= 0x06004000
+IP_MASTER_STACK_ADDR:= 0x060C4000
 IP_SLAVE_STACK_ADDR:= 0x06001000
 IP_1ST_READ_ADDR:= 0x06004000
 

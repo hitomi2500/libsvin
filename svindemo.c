@@ -7,17 +7,14 @@
 
 #define MENU_ENTRY_COUNT 16
 
-static iso9660_filelist_t _filelist;
-static iso9660_filelist_entry_t _filelist_entries[ISO9660_FILELIST_ENTRIES_COUNT];
 
 extern vdp1_cmdt_list_t *_svin_cmdt_list;
 
 int
 main(void)
 {
-        _filelist.entries = _filelist_entries;
-        _filelist.entries_count = 0;
-        _filelist.entries_pooled_count = 0;
+
+
 
         /* Load the maximum number */
 #ifdef _SVIN_DIRTY_STATIC_LINKING
@@ -45,12 +42,10 @@ main(void)
         _filelist.entries_count = 2;
         _filelist.entries_pooled_count = 0;
 #else
-        iso9660_filelist_root_read(&_filelist, -1);
 #endif
 
 
-
-        
+        _svin_filelist_fill(); //move this to init probably
 
         _svin_init();
 
@@ -59,7 +54,7 @@ main(void)
 
         MEMORY_WRITE(32, SCU(ASR0), 0x23301FF0);
 
-        _svin_background_load_index(&_filelist);
+        _svin_background_load_index("BG.PAK");
         //_svin_actor_debug_load_index(&_filelist);
 
         //load logo
@@ -83,7 +78,7 @@ main(void)
         //_svin_textbox_clear();
         //_svin_textbox_print("Helena","Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.","Lato_Black12",0,0);
         //_svin_background_update("bus_stop");
-        _svin_run_script(&_filelist,"SCRIPT.TXT");
+        _svin_run_script("SCRIPT.TXT");
 
         while(1);
 

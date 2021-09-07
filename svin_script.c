@@ -11,29 +11,28 @@
 #define UNUSED(x) (void)(x)
 
 void 
-_svin_run_script(iso9660_filelist_t *_filelist, char * filename)
+_svin_run_script(char * filename)
 {
     char script_buffer[4096];
     char tmp_buffer[2048];
     char tmp_buffer2[32];
     bool bFinished = false;
-    char * pDebug = (char*)0x20200000;
+    char * pDebug = (char*)0x20280000;
     int i,j,k;
     int iActor;
     int iActorColor;
 
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
-    iso9660_filelist_entry_t *file_entry;
-    int _script_fad = 0;
-    for (unsigned int i = 0; i < _filelist->entries_count; i++)
+    fad_t _script_fad = _svin_filelist_search(filename);
+    /*for (unsigned int i = 0; i < _filelist->entries_count; i++)
     {
         file_entry = &(_filelist->entries[i]);
         if (strcmp(file_entry->name, filename) == 0)
         {
             _script_fad = file_entry->starting_fad;
         }
-    }
+    }*/
     assert(_script_fad > 0);
     //reading 1st block
     cd_block_sector_read(_script_fad, (uint8_t*)script_buffer);

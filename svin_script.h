@@ -8,6 +8,6 @@
 
 #include "svin.h"
 
-void _svin_run_script(iso9660_filelist_t *_filelist, char * filename);
+void _svin_run_script(char * filename);
 
 #endif
