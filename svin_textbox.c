@@ -87,19 +87,19 @@ _svin_textbox_init()
     //writing semi-transparent characters where the dialog box should go, 
     int index = 0;
     int iOffset;
-    for (int y = 22; y < 27; y++)
+    for (int y = 44; y < 54; y++)
     {
         //plane 0 first
-        iOffset = y * 32;
-        for (int x = 2; x < 32; x++)
+        iOffset = y * 64;
+        for (int x = 4; x < 64; x++)
         {
             _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
             //_pointer32[iOffset + x] = 0x00000000 + (0x100000*((x-2)%8)) + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 1, transparency off
             index++;
         }
         //now plane 1
-        iOffset = 32 * 32 + y * 32;
-        for (int x = 0; x < 10; x++)
+        iOffset = 64 * 64 + y * 64;
+        for (int x = 0; x < 20; x++)
         {
             _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
             //_pointer32[iOffset + x] = 0x00000000 + 0x100000*(y-22) + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 1, transparency off
@@ -270,26 +270,23 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
 
                 //copy speaker name
                 _p = (uint8_t *)(_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR);
-                for (int cellX = 0; cellX < 20; cellX++)
+                for (int cellX = 0; cellX < 80; cellX++)
                 {
-                        //cellY = 0;
+                        for (int cellY = 0; cellY < 2; cellY++)
                         {
-                                for (int cell=0; cell<4; cell++)
+                                for (int x=0;x<8;x++)
                                 {
-                                        for (int x=0;x<8;x++)
+                                        for (int y=0;y<8;y++)
                                         {
-                                                for (int y=0;y<8;y++)
+                                                _buf = buffer[((cellY)*8+y+4)*640+cellX*8+x];
+                                                if (_buf!=0xFF) 
                                                 {
-                                                        _buf = buffer[((cell/2)*8+y+4)*640+cellX*16+(cell%2)*8+x];
-                                                        if (_buf!=0xFF) 
-                                                        {
-                                                                _buf = speaker_color*16 + _buf/16;
-                                                                if (0==_buf)
-                                                                        _buf = 1;//0 is a transparency color, using close value
-                                                                _p[(cellX+1)*_SVIN_CHARACTER_BYTES + cell*64 + y*8 + x] = _buf;
-                                                        }
-
+                                                        _buf = speaker_color*16 + _buf/16;
+                                                        if (0==_buf)
+                                                                _buf = 1;//0 is a transparency color, using close value
+                                                        _p[(cellY * 80 + cellX+1)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
                                                 }
+
                                         }
                                 }
                         }
@@ -335,26 +332,23 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
         mf_wordwrap(font, options.width - 2 * options.margin, options.text, line_callback, &state);
 
         _p = (uint8_t *)(_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR);
-        for (int cellX = 0; cellX < 40; cellX++)
+        for (int cellX = 0; cellX < 80; cellX++)
         {
-                for (int cellY = 1; cellY < 5; cellY++)
+                for (int cellY = 2; cellY < 10; cellY++)
                 {
-                        for (int cell=0; cell<4; cell++)
+                        for (int x=0;x<8;x++)
                         {
-                                for (int x=0;x<8;x++)
+                                for (int y=0;y<8;y++)
                                 {
-                                        for (int y=0;y<8;y++)
+                                        _buf = buffer[((cellY-1)*8+y)*640+cellX*8+x];
+                                        if (_buf!=0xFF) 
                                         {
-                                                _buf = buffer[((cellY-1)*16+(cell/2)*8+y)*640+cellX*16+(cell%2)*8+x];
-                                                if (_buf!=0xFF) 
-                                                {
-                                                        _buf = text_color*16 + _buf/16;
-                                                        if (0==_buf)
-                                                                _buf = 1;//0 is a reserved coloer, using close value
-                                                        _p[(cellY*40+cellX)*_SVIN_CHARACTER_BYTES + cell*64 + y*8 + x] = _buf;
-                                                }
-
+                                                _buf = text_color*16 + _buf/16;
+                                                if (0==_buf)
+                                                        _buf = 1;//0 is a reserved coloer, using close value
+                                                _p[(cellY*80+cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
                                         }
+
                                 }
                         }
                 }

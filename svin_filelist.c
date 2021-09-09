@@ -141,7 +141,7 @@ _svin_filelist_fill()
     free (pvd);
 }
 
-//lsearches the filelist and returns fad (-1 if not found)
+//searches the filelist and returns fad (-1 if not found)
 fad_t 
 _svin_filelist_search(char * filename)
 {

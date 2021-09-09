@@ -201,7 +201,7 @@ void _svin_init()
 
     format.scroll_screen = VDP2_SCRN_NBG0;
     format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
-    format.character_size = (2 * 2);
+    format.character_size = (1 * 1);
     format.pnd_size = 2;
     format.auxiliary_mode = 1;
     format.cp_table = 0;
@@ -223,7 +223,7 @@ void _svin_init()
     //setup nbg1
     format.scroll_screen = VDP2_SCRN_NBG1;
     format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
-    format.character_size = (2 * 2);
+    format.character_size = (1 * 1);
     format.pnd_size = 2;
     format.auxiliary_mode = 1;
     format.cp_table = 0;
@@ -435,8 +435,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_PNDR_SIZE / sizeof(int); i++)
     {
-        //_pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //-------------- setup character pattern names -------------------
@@ -528,6 +527,7 @@ void _svin_init()
     _svin_background_set_palette(6, temp_pal);  
 
     _svin_textbox_init();
+    _svin_sprite_init();
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();
