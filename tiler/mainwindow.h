@@ -10,6 +10,7 @@ QT_END_NAMESPACE
 struct Image_Link {
     int recipe;
     int image;
+    int layer;
 };
 
 class MainWindow : public QMainWindow
@@ -32,7 +33,7 @@ private slots:
     void on_pushButton_Process_Sprites_clicked();
 
 private:
-    void Process_Sprite(QString filename);
+    //void Process_Sprite(QString filename);
     Ui::MainWindow *ui;
     QStringList list;
     QStringList list83;

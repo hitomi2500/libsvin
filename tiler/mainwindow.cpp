@@ -535,8 +535,6 @@ void MainWindow::on_pushButton_Set_Script_clicked()
 
 void MainWindow::on_pushButton_Process_Sprites_clicked()
 {
-    //procesing sprite files
-
     //load every sprite recipe from script into recipes list
     QFile script_file(ui->lineEdit_script->text());
     script_file.open(QIODevice::ReadOnly);
@@ -587,6 +585,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         {
             b = b.mid(b.indexOf("True"));
         }
+        int iLayer = 0;
         while (b.contains("\""))
         {
             b = b.mid(b.indexOf("\"")+1);
@@ -601,7 +600,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 //new file, append it
                 ImagePaths.append(b2);
             }
-            ImageLinks.append({i,ImagePaths.indexOf(b2)});
+            ImageLinks.append({i,ImagePaths.indexOf(b2),iLayer});
+            iLayer = 1;
             b = b.mid(b.indexOf("\"")+1);
         }
     }
@@ -623,7 +623,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         QByteArray b = ImagePaths.at(iImageNumber);
         b.prepend(path);
         QByteArray b2 = b.left(b.indexOf("."));
+        QByteArray b3 = b2;
         b2.append("_processed.png");
+        b3.append(".tim");
         //check if the file was already processed and a processed copy exist
         if (QFile::exists(b2))
         {
@@ -665,6 +667,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         int transp_color = img.pixelIndex(0,0);
 
         //let's calculate tile usage for image (no tile sharing yet)
+        //writing tile usage into file as well
+        QFile _tiled_image_file(b3);
+        _tiled_image_file.open(QIODevice::WriteOnly|QIODevice::Truncate);
         int iSizeTiledX = img.size().width()/8;
         int iSizeTiledY = img.size().height()/8;
         int iActiveTiles = 0;
@@ -686,15 +691,60 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 if (false == bEmpty)
                 {
                     iActiveTiles++;
+                    _tiled_image_file.write(QByteArray(1,1));
+                }
+                else
+                {
+                    _tiled_image_file.write(QByteArray(1,0));
                 }
             }
         }
+        //pass 2 - writing tile data
+        for (int TileY = 0; TileY < iSizeTiledY; TileY++)
+        {
+            for (int TileX = 0; TileX < iSizeTiledX; TileX++)
+            {
+                //is the tile empty?
+                bool bEmpty = true;
+                for (int x=0;x<8;x++)
+                {
+                    for (int y=0;y<8;y++)
+                    {
+                        if (img.pixelIndex(TileX*8+x,TileY*8+y) != transp_color)
+                                bEmpty = false;
+                    }
+                }
+                //if the tile is non-empty, write it
+                if (false == bEmpty)
+                {
+                    for (int x=0;x<8;x++)
+                    {
+                        for (int y=0;y<8;y++)
+                        {
+                            _tiled_image_file.write(QByteArray(1,(char)img.pixelIndex(TileX*8+x,TileY*8+y)));
+                        }
+                    }
+
+                }
+            }
+        }
+        //now write palette
+        QColor _col;
+        for (int i=0;i<256;i++)
+        {
+            _col.fromRgb(img.color(i));
+            _tiled_image_file.write(QByteArray(1,_col.red()));
+            _tiled_image_file.write(QByteArray(1,_col.green()));
+            _tiled_image_file.write(QByteArray(1,_col.blue()));
+        }
         ImageTilesUsage.append(iActiveTiles);
         iTotalTiles += iActiveTiles;
+        _tiled_image_file.close();
     }
     ui->textEdit->append(QString("Script: detected %1 total tiles").arg(iTotalTiles));
 
-    //now squashing files into packs
+
+    /*//now squashing files into packs
     QList<QList<int>> Packs;
     QList<int> PacksCellUsage;
 
@@ -802,7 +852,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         }
     }
     ui->textEdit->append(QString("Script: squished into %1 packs").arg(Packs.size()));
+    */
 
+    /*
     //now that we've got pack data, update script with exact pack links instead of recipes
     QFile script_outfile("SCRIPT.TXT");
     int iCurrentRecipe;
@@ -854,6 +906,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     }
     script_outfile.close();
 
+
     //now create all ze pack files
     for (int pa=0;pa<Packs.size();pa++)
     {
@@ -869,11 +922,107 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         }
 
         pack_outfile.close();
+    }*/
+
+    //now packing every image file into tiled image
+    //preprocessing should've compressed and paletted the image
+    //we need to save this data:
+    // 1) tile usage map, for full image size (46x56 for 373x448 sprites, 88x56 for full 704x448 sprites
+    // 2) tiles data with unused tiles skipped
+    // 3) palette, 768-byte fixed format
+    for (int iImage=0;iImage<ImagePaths.size(); iImage++)
+    {
+        QString _tiled_filename = ImagePaths[iImage];
+        _tiled_filename.chop(3);
+        _tiled_filename.append("tim");
+
     }
 
+    //creating simplified script file
+    QFile script_outfile("SCRIPT.TXT");
+    int iCurrentRecipe;
+    script_outfile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    for (int i=0;i<Script_Lines.size();i++)
+    {
+        if (Script_Lines.at(i).simplified().startsWith("show"))
+        {
+            //this is a recipe, searching the exact recipe number
+            iCurrentRecipe = -1;
+            int iPosition = 0;
+            if (Script_Lines.at(i).simplified().contains("at left"))
+                iPosition = -1;
+            else if (Script_Lines.at(i).simplified().contains("at right"))
+                iPosition = 1;
+            for (int rec =0; rec < Script_Sprite_Recipes.size(); rec++)
+            {
+                if (Script_Lines.at(i).simplified().contains(Script_Sprite_Recipes.at(rec)))
+                    iCurrentRecipe = rec;
+            }
+            if (iCurrentRecipe != -1)
+            {
+                //valid recipe? write its contents into output file, searching thru entire list
+                for (int f=0;f<ImageLinks.size();f++)
+                {
+                    //we found a match. add image.
+                    if (ImageLinks.at(f).recipe == iCurrentRecipe)
+                    {
+                        QString _tiled_filename = QString(ImagePaths[f]);
+                        _tiled_filename.chop(3);
+                        _tiled_filename.append("tim");
+                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(iPosition).arg(ImageLinks.at(f).layer).arg(_tiled_filename).toLatin1());
+                        script_outfile.write("\r");
+                    }
+                }
+
+            }
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("\""))
+        {
+            script_outfile.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=0 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("th \""))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("TEXT ACTOR=1 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("me \""))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("TEXT ACTOR=2 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("sl \""))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("TEXT ACTOR=3 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("scene bg"))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("BG "));
+            script_outfile.write("\r");
+        }
+
+        else
+        {
+            //write script data as commentary for now
+            script_outfile.write(Script_Lines.at(i).simplified().prepend("REM "));
+            script_outfile.write("\r");
+        }
+    }
+    script_outfile.write("END\r");
+    script_outfile.close();
 }
 
-void MainWindow::Process_Sprite(QString filename)
+/*void MainWindow::Process_Sprite(QString filename)
 {
     //preprocessing should've compressed and paletted the image
     //we need to save this data:
@@ -881,4 +1030,4 @@ void MainWindow::Process_Sprite(QString filename)
     // 2) tiles data with unused tiles skipped
     // 3) palette, 768-byte fixed format
 
-}
+}*/
