@@ -37,9 +37,9 @@
 #define _SVIN_NBG0_CHPNDR_SIZE (0x40000)
 #define _SVIN_NBG0_PNDR_START (VDP2_VRAM_ADDR(2,0))
 #define _SVIN_NBG0_PNDR_SIZE (128*64*4)
-#define _SVIN_NBG1_CHPNDR_START (VDP2_VRAM_ADDR(2,0x8000))
+#define _SVIN_NBG1_CHPNDR_START (VDP2_VRAM_ADDR(2,0x10000))
 #define _SVIN_NBG1_CHPNDR_SIZE (0x20000)
-#define _SVIN_NBG1_PNDR_START (VDP2_VRAM_ADDR(2,0x10000))
+#define _SVIN_NBG1_PNDR_START (VDP2_VRAM_ADDR(2,0x8000))
 #define _SVIN_NBG1_PNDR_SIZE (128*64*4)
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_ADDR (VDP2_VRAM_ADDR(3,0x10000))
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX ((0x70000)/32)
@@ -66,9 +66,14 @@ void _svin_init();
 void _svin_delay(int milliseconds);
 void _svin_wait_for_key_press_and_release();
 
+void _svin_set_cycle_patterns_cpu();
+void _svin_set_cycle_patterns_nbg();
+
 void _svin_background_fade_to_black_step();
 void _svin_background_fade_to_black();
 void _svin_background_set_palette(int number, uint8_t * pointer);
+void _svin_background_set_palette_half_lo(int number, uint8_t * pointer);
+void _svin_background_set_palette_half_hi(int number, uint8_t * pointer);
 void _svin_background_clear_palette(int number);
 void _svin_background_set_by_index(int index);
 void _svin_background_set(char *name);

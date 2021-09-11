@@ -159,9 +159,9 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
     vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
-    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_PNDR_NBG0;
-    vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_PNDR_NBG1;
-    vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_PNDR_NBG1;
+    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_PNDR_NBG1;
+    vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
+    vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[2].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[2].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -180,8 +180,8 @@ void _svin_set_cycle_patterns_nbg()
     vdp_sync();
 
     //enable transparency for NBG1 over NBG0 (might not work with sprites between
-    MEMORY_WRITE(16, VDP2(CCCTL), 0x0002); //enable cc for NBG1
-    MEMORY_WRITE(16, VDP2(CCRNA), 0x0C00); //enable cc for NBG1
+    MEMORY_WRITE(16, VDP2(CCCTL), 0x0000); //disable cc both layers
+    //MEMORY_WRITE(16, VDP2(CCRNA), 0x0C00); //enable cc for NBG1
 }
 
 void _svin_init()
@@ -207,7 +207,7 @@ void _svin_init()
     format.cp_table = 0;
     format.color_palette = 0;
     format.plane_size = (2 * 1);
-    format.sf_type = VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
+    format.sf_type = 0;//VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
     format.sf_code = VDP2_SCRN_SF_CODE_A;
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG0_PNDR_START;
@@ -229,23 +229,14 @@ void _svin_init()
     format.cp_table = 0;
     format.color_palette = 0;
     format.plane_size = (2 * 1);
-    format.sf_type = VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
+    format.sf_type = 0;//VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
     format.sf_code = VDP2_SCRN_SF_CODE_A;
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG1_PNDR_START;
 
-    //_svin_set_cycle_patterns_nbg();
-    //_svin_hang_test(31); 
-    //while(1);
-
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
     vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
-
-    
-    //_svin_set_cycle_patterns_nbg();
-    //_svin_hang_test(34); 
-    //while(1);
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
 
@@ -265,22 +256,11 @@ void _svin_init()
     //setting cycle patterns for cpu access
     _svin_set_cycle_patterns_cpu();
 
-
-    ///_svin_set_cycle_patterns_nbg();
-    //_svin_hang_test(37); 
-    //while(1);
-
-
     vdp_sync_vblank_out_set(_svin_vblank_out_handler);
     
     vdp2_tvmd_display_set();
     //cpu_intc_mask_set(0); //?????
     vdp_sync();
-
-    //_svin_set_cycle_patterns_nbg();
-    //_svin_hang_test(41); 
-    //while(1);
-
 
     //-------------- setup VDP1 -------------------
     _svin_cmdt_list = vdp1_cmdt_list_alloc(_SVIN_VDP1_ORDER_COUNT);
@@ -355,12 +335,6 @@ void _svin_init()
     vdp1_cmdt_color_bank_t dummy_bank;
     dummy_bank.raw = 0;
 
-    /*static vdp1_cmdt_color_bank_t sprite_color_bank = {
-        .type_0.data.dc = 16
-    };
-
-    sprite_color_bank.type_8.data.dc = 0;//16;*/
-
     vdp1_cmdt_t *cmdt_sprite;
     cmdt_sprite = &cmdts[_SVIN_VDP1_ORDER_SPRITE_A0_INDEX];
     cmdt_sprite->cmd_xa = 0;
@@ -411,23 +385,26 @@ void _svin_init()
     //writing pattern names for nbg0
     //starting with plane 0
     _pointer32 = (int *)_SVIN_NBG0_PNDR_START;
-    for (int y = 0; y < 28; y++)
+    /*for (int y = 0; y < 56; y++)
     {
-        int iOffset = y * 32;
-        for (int x = 0; x < 32; x++)
+        int iOffset = y * 64;
+        for (int x = 0; x < 64; x++)
         {
-            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on //(iOffset + x) * 8;
+            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on //(iOffset + x) * 8;
         }
     }
     //plane 1 goes next
-    for (int y = 0; y < 28; y++)
+    for (int y = 0; y < 56; y++)
     {
-        int iOffset = 32 * 32 + y * 32;
-        //int iOffset2 = 32 * 28 + y * 12;
-        for (int x = 0; x < 12; x++)
+        int iOffset = 64 * 64 + y * 64;
+        for (int x = 0; x < 24; x++)
         {
-            _pointer32[iOffset + x] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on; //(iOffset2 + x) * 8;
+            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on; //(iOffset2 + x) * 8;
         }
+    }*/
+    for (unsigned int i = 0; i < _SVIN_NBG0_PNDR_SIZE / sizeof(int); i++)
+    {
+        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //writing pattern names for nbg1
@@ -435,7 +412,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x10100000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //-------------- setup character pattern names -------------------
@@ -576,6 +553,28 @@ void _svin_background_set_palette(int number, uint8_t *pointer)
 {
     uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
     for (int i = 0; i < 256; i++)
+    {
+        my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
+                           ((pointer[i * 3 + 1] & 0xF8) << 2) |
+                           ((pointer[i * 3 + 0] & 0xF8) >> 3));
+    }
+}
+
+void _svin_background_set_palette_half_lo(int number, uint8_t * pointer)
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+    for (int i = 0; i < 128; i++)
+    {
+        my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
+                           ((pointer[i * 3 + 1] & 0xF8) << 2) |
+                           ((pointer[i * 3 + 0] & 0xF8) >> 3));
+    }
+}
+
+void _svin_background_set_palette_half_hi(int number, uint8_t * pointer)
+{
+    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+    for (int i = 128; i < 256; i++)
     {
         my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
                            ((pointer[i * 3 + 1] & 0xF8) << 2) |

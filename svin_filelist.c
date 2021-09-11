@@ -82,8 +82,15 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
         //now read raw folder content for LFN search
         cd_block_multiple_sectors_read(entry.starting_fad, 4, (uint8_t*)raw_buffer);
 
-        strcpy(dir,current_dir);
-        strcat(dir,"/");
+        if (strlen(current_dir)>0)
+        {
+            strcpy(dir,current_dir);
+            strcat(dir,"/");
+        }
+        else
+            strcpy(dir,"");
+
+        
         if (_svin_filelist_search_lfn(entry,parent_raw_buffer,parent_raw_buffer_len,false))
         {
             strcat(dir,_svin_filelist_long_filename);

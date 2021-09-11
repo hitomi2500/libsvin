@@ -13,14 +13,17 @@
 void 
 _svin_run_script(char * filename)
 {
-    char script_buffer[4096];
-    char tmp_buffer[2048];
-    char tmp_buffer2[32];
+    char * script_buffer;
+    char * tmp_buffer;
+    char * tmp_buffer2;
     bool bFinished = false;
     char * pDebug = (char*)0x20280000;
     int i,j,k;
     int iActor;
     int iActorColor;
+    int iLayer;
+    int iPosition;
+    //char *sprite_filename;
 
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
@@ -34,6 +37,10 @@ _svin_run_script(char * filename)
         }
     }*/
     assert(_script_fad > 0);
+
+    script_buffer = malloc(4096);
+    tmp_buffer = malloc(2048);
+    tmp_buffer2 = malloc(2048);
     //reading 1st block
     cd_block_sector_read(_script_fad, (uint8_t*)script_buffer);
     //starting parse cycle 
@@ -146,6 +153,23 @@ _svin_run_script(char * filename)
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
             if (i<4) i=4;
+            j = (int)strstr(script_buffer,"LAYER ") - (int)script_buffer;
+            j+=6;
+            iLayer=atoi(&script_buffer[j]);
+            if (iLayer<0) iLayer = 0;
+            if (iLayer>2) iLayer = 2;
+            j = (int)strstr(script_buffer,"POSITION ") - (int)script_buffer;
+            j+=9;
+            iPosition=atoi(&script_buffer[j]);
+            if (iPosition<0) iPosition = 0;
+            if (iPosition>2) iPosition = 2;
+            j = (int)strstr(script_buffer,"FILE ") - (int)script_buffer;
+            j+=5;
+            memcpy(tmp_buffer,&(script_buffer[j]),i-j);
+            tmp_buffer[i-j]=0;
+            //_svin_sprite_draw(tmp_buffer,0,0);
+            _svin_sprite_draw(tmp_buffer,iLayer,iPosition);
+            
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
