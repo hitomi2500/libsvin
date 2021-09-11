@@ -348,55 +348,7 @@ void MainWindow::on_pushButton_2_clicked()
                         ba.append(TileLibrary.size()/0x100);
                     }
                 }
-            }
-
-            /*ba_map.clear();
-            //now save usage map into file
-            for (int TileY = 0; TileY < 56; TileY++)
-            {
-                for (int TileX = 0; TileX < 88; TileX+=8)
-                {
-                    uint8_t c = 0;
-                    for (int Tile = 0; Tile<8; Tile++)
-                    {
-                        if (iUsageMap[TileX+Tile][TileY] != 0)
-                            c |= 1<<Tile;
-                    }
-                    ba_map.append(c);
-                }
-            }*/
-
-            //now save every tile within usage map
-            /*ba.clear();
-            for (int TileY = 0; TileY < 56; TileY++)
-            {
-                for (int TileX = 0; TileX < 88; TileX++)
-                {
-                    if (iUsageMap[TileX][TileY] == 1)
-                    {
-                        for (int x=0;x<8;x++)
-                        {
-                            for (int y=0;y<8;y++)
-                            {
-                                ba.append(img.pixelIndex(TileX*8+x,TileY*8+y));
-                            }
-                        }
-                    }
-
-                }
-            }*/
-
-            /*
-            ba.resize(iSizeX*iSizeY);
-            ba.fill('\0');
-            //mess with tiles
-            for (int iTileY = 0; iTileY < (iSizeY/16); iTileY++)
-                for (int iTileX = 0; iTileX < (iSizeX/16); iTileX++)
-                    for (int cell=0;cell<4;cell++)
-                        for (int y=0;y<8;y++)
-                            for (int x=0;x<8;x++)
-                                ba[(iTileY*(iSizeX/16)+iTileX)*16*16+cell*64+y*8+x] = img_c.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
-                                */
+            }           
         }      
         else //tapestry
         {
@@ -540,6 +492,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     script_file.open(QIODevice::ReadOnly);
     QList<QByteArray> Script_Lines;
     QByteArray b;
+    QByteArray ba;
+    QByteArray ba_pal;
     do {
         b = script_file.readLine();
         Script_Lines.append(b);
@@ -601,7 +555,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ImagePaths.append(b2);
             }
             ImageLinks.append({i,ImagePaths.indexOf(b2),iLayer});
-            iLayer = 1;
+            iLayer++;
             b = b.mid(b.indexOf("\"")+1);
         }
     }
@@ -626,6 +580,16 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         QByteArray b3 = b2;
         b2.append("_processed.png");
         b3.append(".tim");
+        //deciding if image should be 255 or 127 colors
+        //searching image in the recipes
+        int iCurrentLayer = 0;
+        for (int i=0;i<ImageLinks.size();i++)
+        {
+            if (ImageLinks.at(i).image == iImageNumber)
+            {
+                iCurrentLayer = ImageLinks.at(i).layer;
+            }
+        }
         //check if the file was already processed and a processed copy exist
         if (QFile::exists(b2))
         {
@@ -643,11 +607,26 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             process.open();
             process.waitForFinished();
 
-            //generate palette, VDP2 NBG palette is limited to 255 colours
+
             proc_args.clear();
             proc_args.append("tmp1.png");
+            proc_args.append("-channel");
+            proc_args.append("alpha");
+            proc_args.append("-threshold");
+            proc_args.append("99%");
+            proc_args.append("tmp2.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
+
+            //generate palette, VDP2 NBG palette is limited to 255 colours
+            proc_args.clear();
+            proc_args.append("tmp2.png");
             proc_args.append("-colors");
-            proc_args.append("255");
+            if (iCurrentLayer == 0)
+                proc_args.append("255");
+            else
+                proc_args.append("127");
             proc_args.append(b2);
             process.setArguments(proc_args);
             process.open();
@@ -670,6 +649,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         //writing tile usage into file as well
         QFile _tiled_image_file(b3);
         _tiled_image_file.open(QIODevice::WriteOnly|QIODevice::Truncate);
+        ba.clear();
         int iSizeTiledX = img.size().width()/8;
         int iSizeTiledY = img.size().height()/8;
         int iActiveTiles = 0;
@@ -692,10 +672,12 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 {
                     iActiveTiles++;
                     _tiled_image_file.write(QByteArray(1,1));
+                    //ba.append(QByteArray(1,1));
                 }
                 else
                 {
                     _tiled_image_file.write(QByteArray(1,0));
+                    //ba.append(QByteArray(1,0));
                 }
             }
         }
@@ -717,212 +699,86 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 //if the tile is non-empty, write it
                 if (false == bEmpty)
                 {
-                    for (int x=0;x<8;x++)
+                    for (int y=0;y<8;y++)
                     {
-                        for (int y=0;y<8;y++)
+                        for (int x=0;x<8;x++)
                         {
-                            _tiled_image_file.write(QByteArray(1,(char)img.pixelIndex(TileX*8+x,TileY*8+y)));
+                            //_tiled_image_file.write(QByteArray(1,(char)img.pixelIndex(TileX*8+x,TileY*8+y)));
+                            ba.append(QByteArray(1,(char)img.pixelIndex(TileX*8+x,TileY*8+y)));
                         }
                     }
 
                 }
             }
         }
+
+
         //now write palette
-        QColor _col;
+        ba_pal.clear();
+        if (iCurrentLayer == 2)
+        {
+            //for layer 2 colours are shifted
+            for (int j=0;j<128*3;j++)
+            {
+                ba_pal.append('\0');
+            }
+        }
+        for (int j=0;j<img.colorTable().size();j++)
+        {
+            ba_pal.append(QColor(img.colorTable().at(j)).red());
+            ba_pal.append(QColor(img.colorTable().at(j)).green());
+            ba_pal.append(QColor(img.colorTable().at(j)).blue());
+        }
+        while (ba_pal.size()<256*3)
+            ba_pal.append('\0');
+
+        //for VDP2 sprites 0x00 (transparent) can't be used
+        //imagemagick generates palettes from 0x00 to 0xFE, 0xFF being transparent
+        //so we only have to move color 0x00 to color 0xFF
+        /*for (int i=0;i<ba.size();i++)
+            if (ba.at(i) == 0)
+                ba[i]=-1;*/
+        //hacking palette, moving color 0x00 to color 0xFF
+        /*ba_pal[255*3] = ba_pal.at(0*3);
+        ba_pal[255*3+1] = ba_pal.at(0*3+1);
+        ba_pal[255*3+2] = ba_pal.at(0*3+2);*/
+
+        //semi-transparent colors look like shit without real transparency, so let's make them 100% transparent
+        /*QVector<QRgb> cltbl = img.colorTable();
+        for (int i=0;i<ba.size();i++)
+        {
+            if (QColor(img.colorTable().at((uint8_t)ba.at(i))).alpha() < 255)
+                ba[i]=0;
+        }*/
+
+        if (iCurrentLayer == 2)
+        {
+            //for layer 2 colours are shifted
+            for (int i=0;i<ba.size();i++)
+            {
+                if (ba[i]!='\0')
+                    ba[i] =(char) (((uint8_t)ba[i])+128);
+            }
+        }
+
+        /*QColor _col;
         for (int i=0;i<256;i++)
         {
             _col.fromRgb(img.color(i));
             _tiled_image_file.write(QByteArray(1,_col.red()));
             _tiled_image_file.write(QByteArray(1,_col.green()));
             _tiled_image_file.write(QByteArray(1,_col.blue()));
-        }
+        }*/
+
+        _tiled_image_file.write(ba);
+        _tiled_image_file.write(ba_pal);
+
         ImageTilesUsage.append(iActiveTiles);
         iTotalTiles += iActiveTiles;
         _tiled_image_file.close();
     }
     ui->textEdit->append(QString("Script: detected %1 total tiles").arg(iTotalTiles));
 
-
-    /*//now squashing files into packs
-    QList<QList<int>> Packs;
-    QList<int> PacksCellUsage;
-
-    //first allocate a pack for each recipe
-    for (int i=0; i<Script_Sprite_Recipes.size(); i++)
-    {
-        //QList<int> * l = new QList<int>();
-        Packs.append(QList<int>());
-        PacksCellUsage.append(0);
-        for (int j=0; j<ImageLinks.size();j++)
-        {
-            if (ImageLinks[j].recipe == i)
-            {
-                Packs[i].append(ImageLinks[j].image);
-            }
-        }
-    }
-
-    //remove duplicated packs
-    for (int p1=0; p1<Packs.size(); p1++)
-    {
-        for (int p2=p1+1; p2<Packs.size(); p2++)
-        {
-            //processing pair
-            bool bDuplicated = true;
-            if (Packs[p1].size() != Packs[p1].size())
-                bDuplicated = false;
-            else
-            {
-                for (int i=0;i<Packs[p1].size();i++)
-                {
-                    if (Packs[p1][i] != Packs[p2][i])
-                        bDuplicated = false;
-                }
-            }
-            if (true == bDuplicated)
-            {
-                Packs.removeAt(p2);
-                PacksCellUsage.removeAt(p2);
-                //start at the beginning
-                p1 = 0; p2 = 1;
-            }
-        }
-    }
-
-
-    bool bMergeSuccessful = true;
-
-    while (true == bMergeSuccessful)
-    {
-        //calculate total packs cell usage
-        int iTotalUsage = 0;
-        for (int i=0; i<Packs.size(); i++)
-        {
-            PacksCellUsage[i] = 0;
-            for (int j=0; j<Packs[i].size(); j++)
-            {
-                iTotalUsage += ImageTilesUsage[Packs[i][j]];
-                PacksCellUsage[i] += ImageTilesUsage[Packs[i][j]];
-            }
-        }
-
-        //parse thru every pack pair to detect merge gain
-        //TODO: squish into packs not gain-wise, but script-wise (to minimize loading time)
-        int iMaxGain = 0;
-        int iCurrentGain = 0;
-        int iMaxPack1 = 0;
-        int iMaxPack2 = 0;
-        for (int p1=0; p1<Packs.size(); p1++)
-        {
-            for (int p2=p1+1; p2<Packs.size(); p2++)
-            {
-                //processing pair
-                iCurrentGain = 0;
-                //search if any image in the packs match, and add it to the gain
-                for (int i=0; i<Packs[p1].size(); i++)
-                    for (int j=0; j<Packs[p2].size(); j++)
-                    {
-                        if (Packs[p1][i] == Packs[p2][j])
-                           iCurrentGain += ImageTilesUsage[Packs[p1][i]];
-                    }
-                //if a) gain is bigger than max, and b) packs won't overflow 128 KB, use the gain
-                if ( (iCurrentGain >= iMaxGain) && (PacksCellUsage[p1]+PacksCellUsage[p2]-iCurrentGain <= 2048) )
-                {
-                    iMaxGain = iCurrentGain;
-                    iMaxPack1 = p1;
-                    iMaxPack2 = p2;
-                }
-            }
-        }
-
-        bMergeSuccessful = false; //we're being a bit of pessimistic here.
-
-        //do we have a champion?
-        if (iMaxPack1 != iMaxPack2)
-        {
-            bMergeSuccessful = true; //yay!
-            //do an actual merge, move all unique from pack2 to pack1 first
-            for (int i=0; i<Packs[iMaxPack2].size(); i++)
-                if (false == Packs[iMaxPack1].contains(Packs[iMaxPack2].at(i)))
-                    Packs[iMaxPack1].append(Packs[iMaxPack2].at(i));
-            //now kill pack2
-            Packs.removeAt(iMaxPack2); //memory leak here? aw, who cares
-            PacksCellUsage.removeAt(iMaxPack2);
-        }
-    }
-    ui->textEdit->append(QString("Script: squished into %1 packs").arg(Packs.size()));
-    */
-
-    /*
-    //now that we've got pack data, update script with exact pack links instead of recipes
-    QFile script_outfile("SCRIPT.TXT");
-    int iCurrentRecipe;
-    script_outfile.open(QIODevice::WriteOnly|QIODevice::Truncate);
-    for (int i=0;i<Script_Lines.size();i++)
-    {
-        if (Script_Lines.at(i).simplified().startsWith("show"))
-        {
-            //this is a recipe, searching the exact recipe number
-            iCurrentRecipe = -1;
-            for (int rec =0; rec < Script_Sprite_Recipes.size(); rec++)
-            {
-                if (Script_Lines.at(i).simplified().contains(Script_Sprite_Recipes.at(rec)))
-                    iCurrentRecipe = rec;
-            }
-            if (iCurrentRecipe != -1)
-            {
-                //valid recipe? write its contents into output file
-                for (int f=0;f<ImageLinks.size();f++)
-                {
-                    //if we have a match. add image. search thru every pack until we find it somewhere
-                    if (ImageLinks.at(f).recipe == iCurrentRecipe)
-                    {
-                        int pa=0;
-                        bool bFound = false;
-                        while (false == bFound)
-                        {
-                            for (int k=0;k<Packs[pa].size();k++)
-                            {
-                                if (Packs[pa][k] == ImageLinks.at(f).image)
-                                {
-                                    bFound = true;
-                                }
-                            }
-                        }
-                        script_outfile.write(QString("SPRITE PACK %1 FILE %2").arg(pa).arg(QString(ImagePaths[f])).toLatin1());
-                        script_outfile.write("\r");
-                    }
-                }
-
-            }
-        }
-        else
-        {
-            //write script data as commentary for now
-            script_outfile.write(Script_Lines.at(i).simplified().prepend("REM "));
-            script_outfile.write("\r");
-        }
-    }
-    script_outfile.close();
-
-
-    //now create all ze pack files
-    for (int pa=0;pa<Packs.size();pa++)
-    {
-        QFile pack_outfile(QString("SPR%1.PAK").arg(pa,3));
-        pack_outfile.open(QIODevice::WriteOnly|QIODevice::Truncate);
-        //adding data to pack
-        for (int spr=0;spr<Packs[pa].size();spr++)
-        {
-            QString sprite_name = ImagePaths.at(Packs[pa][spr]);
-            //sprites are already pre-processed, using processed files instead of original
-            sprite_name = sprite_name.mid(sprite_name.indexOf(".")).append("_processed.png");
-            Process_Sprite(sprite_name);
-        }
-
-        pack_outfile.close();
-    }*/
 
     //now packing every image file into tiled image
     //preprocessing should've compressed and paletted the image
@@ -948,15 +804,23 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         {
             //this is a recipe, searching the exact recipe number
             iCurrentRecipe = -1;
-            int iPosition = 0;
+            int iPosition = 1;
             if (Script_Lines.at(i).simplified().contains("at left"))
-                iPosition = -1;
+                iPosition = 0;
             else if (Script_Lines.at(i).simplified().contains("at right"))
-                iPosition = 1;
+                iPosition = 2;
             for (int rec =0; rec < Script_Sprite_Recipes.size(); rec++)
             {
                 if (Script_Lines.at(i).simplified().contains(Script_Sprite_Recipes.at(rec)))
-                    iCurrentRecipe = rec;
+                {
+                    if (Script_Lines.at(i).simplified().contains(" far"))
+                    {
+                        if (Script_Sprite_Recipes.at(rec).contains(" far"))
+                            iCurrentRecipe = rec; //for far only far should match
+                    }
+                    else
+                        iCurrentRecipe = rec; //non-far, using as-is
+                }
             }
             if (iCurrentRecipe != -1)
             {
@@ -966,10 +830,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     //we found a match. add image.
                     if (ImageLinks.at(f).recipe == iCurrentRecipe)
                     {
-                        QString _tiled_filename = QString(ImagePaths[f]);
+                        QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
                         _tiled_filename.chop(3);
                         _tiled_filename.append("tim");
-                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(iPosition).arg(ImageLinks.at(f).layer).arg(_tiled_filename).toLatin1());
+                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(ImageLinks.at(f).layer).arg(iPosition).arg(_tiled_filename).toLatin1());
                         script_outfile.write("\r");
                     }
                 }
