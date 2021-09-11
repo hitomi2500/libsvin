@@ -7,7 +7,7 @@
 #include "svin_textbox.h"
 
 #include <mcufont.h>
-
+#include <cd-block_multiread.h>
 #define UNUSED(x) (void)(x)
 
 void 
@@ -28,21 +28,17 @@ _svin_run_script(char * filename)
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
     fad_t _script_fad = _svin_filelist_search(filename);
-    /*for (unsigned int i = 0; i < _filelist->entries_count; i++)
-    {
-        file_entry = &(_filelist->entries[i]);
-        if (strcmp(file_entry->name, filename) == 0)
-        {
-            _script_fad = file_entry->starting_fad;
-        }
-    }*/
     assert(_script_fad > 0);
 
     script_buffer = malloc(4096);
     tmp_buffer = malloc(2048);
     tmp_buffer2 = malloc(2048);
     //reading 1st block
+    //cd_block_multiple_sectors_read(_script_fad, 2, (uint8_t*)script_buffer);
+    //_script_fad+=2;
     cd_block_sector_read(_script_fad, (uint8_t*)script_buffer);
+    _script_fad++;
+    int iDataInBuffer=2048;
     //starting parse cycle 
     bFinished = false;
     int iStringNumber = 0;
@@ -117,6 +113,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
             //wait for keypress
             _svin_wait_for_key_press_and_release();
         }
@@ -134,6 +131,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
         }
         else if (strncmp(script_buffer,"REM ",4)==0)
         {
@@ -145,6 +143,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
         }
         else if (strncmp(script_buffer,"SPRITE ",7)==0)
         {
@@ -168,11 +167,32 @@ _svin_run_script(char * filename)
             memcpy(tmp_buffer,&(script_buffer[j]),i-j);
             tmp_buffer[i-j]=0;
             //_svin_sprite_draw(tmp_buffer,0,0);
+            memcpy(&pDebug[iStringNumber*32],tmp_buffer,32);
             _svin_sprite_draw(tmp_buffer,iLayer,iPosition);
             
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
+        }
+        else if (strncmp(script_buffer,"CLEAR ",6)==0)
+        {
+            sprintf(&pDebug[iStringNumber*32],"CLEAR at line %i",iStringNumber);
+            //draw sprite
+            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
+            if (i>2048) i=2048;
+            if (i<4) i=4;
+            j = (int)strstr(script_buffer,"POSITION ") - (int)script_buffer;
+            j+=9;
+            iPosition=atoi(&script_buffer[j]);
+            if (iPosition<0) iPosition = 0;
+            if (iPosition>2) iPosition = 2;
+            //_svin_sprite_clear(iPosition);
+           
+            //remove command from buffer
+            for (j=i+1;j<4096;j++)
+                script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
         }
         else if (strncmp(script_buffer,"END",3)==0)
         {
@@ -183,6 +203,24 @@ _svin_run_script(char * filename)
         else
         {
             sprintf(&pDebug[iStringNumber*32],"UNKNOWN at line %i",iStringNumber);
+            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
+            if (i>2048) i=2048;
+            if (i<4) i=4;
+            //remove command from buffer
+            for (j=i+1;j<4096;j++)
+                script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= i;
+        }
+        //should we load more data?
+        if (iDataInBuffer<2048)
+        {
+            cd_block_sector_read(_script_fad, (uint8_t*)tmp_buffer2);
+            _script_fad++;
+            for (j=0;j<2048;j++)
+            {
+                script_buffer[iDataInBuffer-1] = tmp_buffer2[j];
+                iDataInBuffer++;
+            }
         }
     }   
 }

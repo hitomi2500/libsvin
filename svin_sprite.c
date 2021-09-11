@@ -9,6 +9,10 @@
 
 #define UNUSED(x) (void)(x)
 
+#define _SVIN_SPRITE_TILES_WIDTH 29
+#define _SVIN_SPRITE_TILES_HEIGTH 56
+#define _SVIN_SPRITE_TILES (_SVIN_SPRITE_TILES_WIDTH*_SVIN_SPRITE_TILES_HEIGTH)
+
 void 
 _svin_sprite_init()
 {
@@ -16,6 +20,56 @@ _svin_sprite_init()
     memset(p,0,4096);
     p = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
     memset(p,0,2048);
+}
+
+void 
+_svin_sprite_clear(int iPosition)
+{
+    int * p32;
+    int * p32a;
+    int x,y;
+    //clear the previous image
+    _svin_set_cycle_patterns_cpu();
+    switch (iPosition)
+    {
+        case 0:
+            p32 = (int*)_SVIN_NBG0_PNDR_START;
+            p32a = (int*)_SVIN_NBG1_PNDR_START;
+            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+                for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
+                {
+                    p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+            break;
+        case 1:
+            p32 = (int*)_SVIN_NBG0_PNDR_START;
+            p32a = (int*)_SVIN_NBG1_PNDR_START;
+            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+                for (x=_SVIN_SPRITE_TILES_WIDTH;x<_SVIN_SPRITE_TILES_WIDTH*2;x++)
+                {
+                    p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+            break;
+        case 2:
+            p32 = (int*)_SVIN_NBG0_PNDR_START;
+            p32a = (int*)_SVIN_NBG1_PNDR_START;
+            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+                for (x=_SVIN_SPRITE_TILES_WIDTH*2;x<64;x++)
+                {
+                    p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+            for (y=64;y<64+_SVIN_SPRITE_TILES_WIDTH;y++)
+                for (x=0;x<(64-_SVIN_SPRITE_TILES_WIDTH*2);x++)
+                {
+                    p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+            break;
+    }
+    _svin_set_cycle_patterns_nbg();
 }
 
 void 
@@ -52,10 +106,10 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     //loading map usage
     cd_block_sector_read(_sprite_fad, tmp_buffer);
     _sprite_fad++;
-    memcpy(usage_buffer,tmp_buffer,1960);//35*56 tiles = 280 * 448
+    memcpy(usage_buffer,tmp_buffer,_SVIN_SPRITE_TILES);
     //calculating tiles number
     int iTilesNumber = 0;
-    for (i=0;i<1960;i++)
+    for (i=0;i<_SVIN_SPRITE_TILES;i++)
     {
         if (usage_buffer[i])
             iTilesNumber++;
@@ -77,7 +131,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
 
     assert(iFree > iTilesNumber); //TODO: VRAM re-allocation and management, now just give up if VRAM is full
 
-    iPointer = 1960; //position within buffer
+    iPointer = _SVIN_SPRITE_TILES; //position within buffer
 
     //VRAM available, fill it
     //choose next fill index
@@ -92,11 +146,29 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
 
     _svin_set_cycle_patterns_cpu();
 
-    for (y=0;y<56;y++)
+    int x_start=0,x_end=0;
+    switch (iPosition)
     {
-        for (x=0;x<35;x++)
+        case 0:
+            x_start = 0;
+            x_end = _SVIN_SPRITE_TILES_WIDTH;
+            break;
+        case 1:
+            x_start = _SVIN_SPRITE_TILES_WIDTH;
+            x_end = _SVIN_SPRITE_TILES_WIDTH*2;
+            break;
+        case 2:
+            x_start = _SVIN_SPRITE_TILES_WIDTH*2;
+            x_end = 64;
+            break;
+    }
+
+    for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
+    {
+        for (x=x_start;x<x_end;x++)
+        //for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
         {
-            if (usage_buffer[y*35+x])
+            if (usage_buffer[y*_SVIN_SPRITE_TILES_WIDTH+x%_SVIN_SPRITE_TILES_WIDTH])
             {
                 //searching first free tile data slot
                 bFound = false;    
@@ -157,13 +229,13 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
                 //setting tile index
                 if (iLayer_fixed == 0)
                 {
-                    p32[y*64+x+iPosition] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | iFound*2; //palette 0, transparency on
+                    p32[y*64+x] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | iFound*2; //palette 0, transparency on
                 }
                 else
                 {
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
-                        p32[y*64+x+iPosition] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | 0x2800 | iFound*2; //palette 0, transparency on
+                        p32[y*64+x] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | 0x2800 | iFound*2; //palette 0, transparency on
                 }
                 //moving pointer
                 iPointer+=64;
