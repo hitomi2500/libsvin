@@ -14,5 +14,6 @@
 void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
 void _svin_sprite_draw(char * filename, int iLayer, int iPosition);
+void _svin_sprite_draw_fast(fad_t fad, int size, int iLayer, int iPosition);
 
 #endif

@@ -27,8 +27,8 @@ _svin_run_script(char * filename)
 
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
-    fad_t _script_fad = _svin_filelist_search(filename);
-    assert(_script_fad > 0);
+    fad_t _script_fad;
+    assert(true == _svin_filelist_search(filename,&_script_fad,&i));
 
     script_buffer = malloc(4096);
     tmp_buffer = malloc(2048);
@@ -113,7 +113,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
             //wait for keypress
             _svin_wait_for_key_press_and_release();
         }
@@ -134,7 +134,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
         }
         else if (strncmp(script_buffer,"REM ",4)==0)
         {
@@ -146,11 +146,10 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
         }
         else if (strncmp(script_buffer,"SPRITE ",7)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"SPRITE at line %i",iStringNumber);
             //draw sprite
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
@@ -170,13 +169,14 @@ _svin_run_script(char * filename)
             memcpy(tmp_buffer,&(script_buffer[j]),i-j);
             tmp_buffer[i-j]=0;
             //_svin_sprite_draw(tmp_buffer,0,0);
-            memcpy(&pDebug[iStringNumber*32],tmp_buffer,32);
+            sprintf(&pDebug[iStringNumber*32],"SPRITE pos %i layer %i line %i",iPosition,iLayer,iStringNumber);
+            //memcpy(&pDebug[iStringNumber*32],tmp_buffer,32); //copy sprite name for debug
             _svin_sprite_draw(tmp_buffer,iLayer,iPosition);
             
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
         }
         else if (strncmp(script_buffer,"CLEAR ",6)==0)
         {
@@ -195,7 +195,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
         }
         else if (strncmp(script_buffer,"END",3)==0)
         {
@@ -212,7 +212,7 @@ _svin_run_script(char * filename)
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= i;
+            iDataInBuffer -= (i+1);
         }
         //should we load more data?
         if (iDataInBuffer<2048)
@@ -221,7 +221,7 @@ _svin_run_script(char * filename)
             _script_fad++;
             for (j=0;j<2048;j++)
             {
-                script_buffer[iDataInBuffer-1] = tmp_buffer2[j];
+                script_buffer[iDataInBuffer] = tmp_buffer2[j];
                 iDataInBuffer++;
             }
         }

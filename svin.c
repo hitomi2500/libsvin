@@ -593,9 +593,9 @@ void _svin_background_clear_palette(int number)
 
 void _svin_background_load_index(char * filename)
 {
+    int i;
     //-------------- Getting FAD and index for background pack binary -------------------
-    _svin_background_pack_fad = _svin_filelist_search(filename);
-    assert(_svin_background_pack_fad > 0);
+    assert(true == _svin_filelist_search(filename,&_svin_background_pack_fad,&i));
     //allocating temporary buf for 1 sector
     uint8_t tmp_sector[2048];
     uint16_t *tmp_sector_16 = (uint16_t *)tmp_sector;

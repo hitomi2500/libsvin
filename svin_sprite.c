@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "svin.h"
+#include "cd-block_multiread.h"
 
 #include <mcufont.h>
 
@@ -87,11 +88,9 @@ _svin_sprite_clear(int iPosition)
 void 
 _svin_sprite_draw(char * filename, int iLayer, int iPosition)
 {
-    uint8_t * usage_buffer = malloc(2048);
-    uint8_t * tmp_buffer = malloc(2048);
-    uint8_t * tmp_buffer2 = malloc(2048);
-    //uint8_t * tile_buffer = malloc(2048);
-    //char * pDebug = (char*)0x20200000;
+    uint8_t * usage_buffer;
+    uint8_t * tmp_buffer;
+    uint8_t * tmp_buffer2;
     int i,x,y;
     int iPointer;
     //int iTile;
@@ -102,6 +101,20 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     bool bFound;
     int iFound;
 
+    //first let's find sprite FAD
+    fad_t _sprite_fad;
+    assert(true == _svin_filelist_search(filename,&_sprite_fad,&i));
+
+    if (i < 0x10000)
+    {
+        _svin_sprite_draw_fast(_sprite_fad,i,iLayer,iPosition);
+        return;
+    }
+
+    usage_buffer = malloc(2048);
+    tmp_buffer = malloc(2048);
+    tmp_buffer2 = malloc(2048);
+
     pGlobalUsage[0] = (char*)_SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR;
     pGlobalUsage[1] = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
 
@@ -109,10 +122,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     if (iLayer == 2)
         iLayer_fixed = 1; //for layer 2 using NBG1 as well
 
-    //first let's find sprite FAD
-    int _sprite_fad = _svin_filelist_search(filename);
-    //strcpy(pDebug,filename);
-    assert(_sprite_fad > 0);
+
 
     //loading map usage
     cd_block_sector_read(_sprite_fad, tmp_buffer);
@@ -291,4 +301,161 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     free(tmp_buffer2);
     free(tmp_buffer);
     free(usage_buffer); 
+}
+
+
+void 
+_svin_sprite_draw_fast(fad_t fad, int size, int iLayer, int iPosition)
+{
+    uint8_t * big_buffer;
+    int i,x,y;
+    int iPointer;
+    //int iTile;
+    char * pGlobalUsage[2];
+    int iFree;
+    char c;
+    int * p32;
+    bool bFound;
+    int iFound;
+    int iSize_Fixed = ((size/2048)+1)*2048;
+
+    big_buffer = malloc(iSize_Fixed);
+
+    pGlobalUsage[0] = (char*)_SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR;
+    pGlobalUsage[1] = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
+
+    int iLayer_fixed = iLayer;
+    if (iLayer == 2)
+        iLayer_fixed = 1; //for layer 2 using NBG1 as well
+
+    //reading whole file at once
+    cd_block_multiple_sectors_read(fad, iSize_Fixed/2048, big_buffer);
+
+    //calculating tiles number
+    int iTilesNumber = 0;
+    for (i=0;i<_SVIN_SPRITE_TILES;i++)
+    {
+        if (big_buffer[i])
+            iTilesNumber++;
+    }
+
+    int iLastIndex_to_free = iLastIndex[iLayer_fixed];
+
+    iFree = 0;
+    while (iFree < iTilesNumber)
+    {
+        iLastIndex_to_free++;
+        if (iLastIndex_to_free > 255) iLastIndex_to_free = 1;
+        for (i=0;i<(4096-iLayer_fixed*2048);i++)
+        {
+            c = pGlobalUsage[iLayer_fixed][i];
+            if (c==iLastIndex_to_free){
+                pGlobalUsage[iLayer_fixed][i] = 0; //freeing
+            }
+        }
+        //recalculate free
+        iFree = 0;
+        for (i=0;i<(4096-iLayer_fixed*2048);i++)
+        {
+            c = pGlobalUsage[iLayer_fixed][i];
+            if (c==0){
+                iFree++;
+            }
+        }
+
+    }
+
+    iPointer = _SVIN_SPRITE_TILES; //position within buffer
+
+    //VRAM available, fill it
+    //choose next fill index
+    iLastIndex[iLayer_fixed]++;
+    if (iLastIndex[iLayer_fixed] > 255)
+        iLastIndex[iLayer_fixed] = 1;
+        
+    //fill data
+
+    iFound = 0;
+
+    _svin_set_cycle_patterns_cpu();
+
+    int x_start=0,x_end=0;
+    switch (iPosition)
+    {
+        case 0:
+            x_start = 0;
+            x_end = _SVIN_SPRITE_TILES_WIDTH;
+            break;
+        case 1:
+            x_start = _SVIN_SPRITE_TILES_WIDTH;
+            x_end = _SVIN_SPRITE_TILES_WIDTH*2;
+            break;
+        case 2:
+            x_start = _SVIN_SPRITE_TILES_WIDTH*2;
+            x_end = 64;
+            break;
+    }
+
+    for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
+    {
+        for (x=x_start;x<x_end;x++)
+        {
+            if (big_buffer[y*_SVIN_SPRITE_TILES_WIDTH+x%_SVIN_SPRITE_TILES_WIDTH])
+            {
+                //searching first free tile data slot
+                bFound = false;    
+                for (i=0;(i<(4096-iLayer_fixed*2048))&&(bFound == false);i++)
+                {
+                    if (0 == pGlobalUsage[iLayer_fixed][i]) {
+                        bFound = true;
+                        iFound = i;
+                        pGlobalUsage[iLayer_fixed][i] = iLastIndex[iLayer_fixed];
+                    }
+                }
+                //copying tile data
+                if (iLayer_fixed == 0)
+                {
+                    memcpy((char*)(_SVIN_NBG0_CHPNDR_START+iFound*64),big_buffer+iPointer,64);
+                    p32 = (int*)_SVIN_NBG0_PNDR_START;
+                }
+                else
+                {
+                    memcpy((char*)(_SVIN_NBG1_CHPNDR_START+iFound*64),big_buffer+iPointer,64);
+                    p32 = (int*)_SVIN_NBG1_PNDR_START;
+                }
+                //setting tile index
+                if (iLayer_fixed == 0)
+                {
+                    p32[y*64+x] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | iFound*2; //palette 0, transparency on
+                }
+                else
+                {
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44) || (y>53))
+                        p32[y*64+x] = 0x00000000 | 0x100000*(1+iLayer_fixed*3+iPosition) | (0x2800 + iFound*2); //palette 0, transparency on
+                }
+                //moving pointer
+                iPointer+=64;
+            }
+        }
+    }
+
+    _svin_set_cycle_patterns_nbg();
+
+    //load palette
+    //using palettes 1 thru 6
+    if (iLayer == 0)
+    {
+        _svin_background_set_palette(1+iLayer_fixed*3+iPosition,big_buffer+iPointer);
+    }
+    else if  (iLayer == 1)
+    {
+        _svin_background_set_palette_half_lo(1+iLayer_fixed*3+iPosition,big_buffer+iPointer);
+    }
+    else //palette 2
+    {
+        _svin_background_set_palette_half_hi(1+iLayer_fixed*3+iPosition,big_buffer+iPointer);
+    }
+
+    free(big_buffer);
 }

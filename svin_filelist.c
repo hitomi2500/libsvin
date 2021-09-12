@@ -52,10 +52,11 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
     int raw_size;
 
     fad_t * _rec_pfad = (fad_t*)(_SVIN_FILELIST_ADDRESS+256*_svin_filelist_size);
-    char * _rec_p8 = (char*)(_SVIN_FILELIST_ADDRESS+256*_svin_filelist_size+4);
+    char * _rec_p8 = (char*)(_SVIN_FILELIST_ADDRESS+256*_svin_filelist_size+8);
     
     if (ISO9660_ENTRY_TYPE_FILE == entry.type) {
         _rec_pfad[0] = entry.starting_fad;
+        _rec_pfad[1] = entry.size;
         if (strlen(current_dir)>0)
         {
             strcpy(_rec_p8,current_dir);
@@ -149,17 +150,19 @@ _svin_filelist_fill()
 }
 
 //searches the filelist and returns fad (-1 if not found)
-fad_t 
-_svin_filelist_search(char * filename)
+bool 
+_svin_filelist_search(char * filename, fad_t * fad, int * size)
 {
     fad_t * pfad = (fad_t *)(_SVIN_FILELIST_ADDRESS);
     //doing a simple linear search for now
     for (int i=0;i<_svin_filelist_size;i++)
     {
-        if (strcmp(filename,(char*)(_SVIN_FILELIST_ADDRESS+i*256+4)) == 0)
+        if (strcmp(filename,(char*)(_SVIN_FILELIST_ADDRESS+i*256+8)) == 0)
         {
-            return pfad[i*64];
+            fad[0] = pfad[i*64];
+            size[0] = pfad[i*64+1];
+            return true;
         }
     }
-    return -1;
+    return false;
 }

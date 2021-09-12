@@ -18,6 +18,7 @@ SH_SRCS:= \
 	cd-block_multiread.c \
 	svin_textbox.c \
 	svin_filelist.c \
+	svin_sprite.c \
 	svin_script.c \
 	svin.c
 	

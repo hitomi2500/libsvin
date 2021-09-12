@@ -5,6 +5,6 @@
 #define _SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT 256
 
 void _svin_filelist_fill();
-fad_t _svin_filelist_search(char * filename);
+bool _svin_filelist_search(char * filename, fad_t * fad, int * size);
 
 #endif

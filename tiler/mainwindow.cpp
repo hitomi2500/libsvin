@@ -639,8 +639,11 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             return;
 
         //let's crop image to tile size
-        if ( (img.size().width()%8 != 0) || (img.size().height()%8 != 0) )
-            img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
+        //if ( (img.size().width()%8 != 0) || (img.size().height()%8 != 0) )
+            //img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
+
+        //let's crop image to 232x448 for now. how should we deal with overlaps, another layer?
+        img = img.copy((img.size().width()-232)/2,0,232,448);
 
         //let's detect a transparent color
         int transp_color = img.pixelIndex(0,0);
@@ -825,10 +828,24 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             if (iCurrentRecipe != -1)
             {
                 //valid recipe? write its contents into output file, searching thru entire list
-                for (int f=0;f<ImageLinks.size();f++)
+                //but first let's issue "clear" instruction
+                bool bFound = false;
+                for (int f=0;((f<ImageLinks.size())&&(bFound==false));f++)
                 {
                     //we found a match. add image.
                     if (ImageLinks.at(f).recipe == iCurrentRecipe)
+                    {
+                        bFound = true;
+                        script_outfile.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
+                        script_outfile.write("\r");
+                    }
+                }
+
+                //now all non-zero layer because... you know, they should go first
+                for (int f=0;f<ImageLinks.size();f++)
+                {
+                    //we found a match. add image.
+                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).layer != 0))
                     {
                         QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
                         _tiled_filename.chop(3);
@@ -838,6 +855,19 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     }
                 }
 
+                //now all zero layer
+                for (int f=0;f<ImageLinks.size();f++)
+                {
+                    //we found a match. add image.
+                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).layer == 0))
+                    {
+                        QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
+                        _tiled_filename.chop(3);
+                        _tiled_filename.append("tim");
+                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(ImageLinks.at(f).layer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                        script_outfile.write("\r");
+                    }
+                }
             }
         }
         else if (Script_Lines.at(i).simplified().startsWith("\""))
