@@ -120,6 +120,9 @@ _svin_run_script(char * filename)
         else if (strncmp(script_buffer,"BG ",3)==0)
         {
             sprintf(&pDebug[iStringNumber*32],"BG at line %i",iStringNumber);
+            //temporary measures - removing all sprites when changing BG
+            for (i=0;i<3;i++)
+                _svin_sprite_clear(i);
             //set bg
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
@@ -177,7 +180,6 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"CLEAR ",6)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"CLEAR at line %i",iStringNumber);
             //draw sprite
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
@@ -187,7 +189,8 @@ _svin_run_script(char * filename)
             iPosition=atoi(&script_buffer[j]);
             if (iPosition<0) iPosition = 0;
             if (iPosition>2) iPosition = 2;
-            //_svin_sprite_clear(iPosition);
+            _svin_sprite_clear(iPosition);
+            sprintf(&pDebug[iStringNumber*32],"CLEAR %i at line %i",iPosition,iStringNumber);
            
             //remove command from buffer
             for (j=i+1;j<4096;j++)

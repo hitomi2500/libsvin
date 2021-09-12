@@ -13,6 +13,8 @@
 #define _SVIN_SPRITE_TILES_HEIGTH 56
 #define _SVIN_SPRITE_TILES (_SVIN_SPRITE_TILES_WIDTH*_SVIN_SPRITE_TILES_HEIGTH)
 
+int iLastIndex[2];
+
 void 
 _svin_sprite_init()
 {
@@ -20,6 +22,8 @@ _svin_sprite_init()
     memset(p,0,4096);
     p = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
     memset(p,0,2048);
+    iLastIndex[0] = 0;
+    iLastIndex[1] = 0;
 }
 
 void 
@@ -35,37 +39,45 @@ _svin_sprite_clear(int iPosition)
         case 0:
             p32 = (int*)_SVIN_NBG0_PNDR_START;
             p32a = (int*)_SVIN_NBG1_PNDR_START;
-            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
                 {
                     p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44) || (y>53))
+                        p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
         case 1:
             p32 = (int*)_SVIN_NBG0_PNDR_START;
             p32a = (int*)_SVIN_NBG1_PNDR_START;
-            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=_SVIN_SPRITE_TILES_WIDTH;x<_SVIN_SPRITE_TILES_WIDTH*2;x++)
                 {
                     p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44) || (y>53))
+                        p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
         case 2:
             p32 = (int*)_SVIN_NBG0_PNDR_START;
             p32a = (int*)_SVIN_NBG1_PNDR_START;
-            for (y=0;y<_SVIN_SPRITE_TILES_WIDTH;y++)
+            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=_SVIN_SPRITE_TILES_WIDTH*2;x<64;x++)
                 {
                     p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44) || (y>53))
+                        p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
-            for (y=64;y<64+_SVIN_SPRITE_TILES_WIDTH;y++)
+            for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<(64-_SVIN_SPRITE_TILES_WIDTH*2);x++)
                 {
                     p32[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44+64) || (y>53+64))
+                        p32a[y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
     }
@@ -85,7 +97,6 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     //int iTile;
     char * pGlobalUsage[2];
     int iFree;
-    int iLastIndex;
     char c;
     int * p32;
     bool bFound;
@@ -114,31 +125,41 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
         if (usage_buffer[i])
             iTilesNumber++;
     }
-    //verifying if vram have enough free data
-    iFree = 0;
-    iLastIndex = 0;
-    for (i=0;i<(4096-iLayer_fixed*2048);i++)
-    {
-        c = pGlobalUsage[iLayer_fixed][i];
-        if (c==0){
-            iFree++;
-        }
-        else{
-            if (iLastIndex < c)
-                iLastIndex = c;
-        }
-    }
 
-    assert(iFree > iTilesNumber); //TODO: VRAM re-allocation and management, now just give up if VRAM is full
+    int iLastIndex_to_free = iLastIndex[iLayer_fixed];
+
+    iFree = 0;
+    while (iFree < iTilesNumber)
+    {
+        iLastIndex_to_free++;
+        if (iLastIndex_to_free > 255) iLastIndex_to_free = 1;
+        for (i=0;i<(4096-iLayer_fixed*2048);i++)
+        {
+            c = pGlobalUsage[iLayer_fixed][i];
+            if (c==iLastIndex_to_free){
+                pGlobalUsage[iLayer_fixed][i] = 0; //freeing
+            }
+        }
+        //recalculate free
+        iFree = 0;
+        for (i=0;i<(4096-iLayer_fixed*2048);i++)
+        {
+            c = pGlobalUsage[iLayer_fixed][i];
+            if (c==0){
+                iFree++;
+            }
+        }
+
+    }
 
     iPointer = _SVIN_SPRITE_TILES; //position within buffer
 
     //VRAM available, fill it
     //choose next fill index
-    if (iLastIndex > 254)
-        iLastIndex = 1;
-    else
-        iLastIndex++;
+    iLastIndex[iLayer_fixed]++;
+    if (iLastIndex[iLayer_fixed] > 255)
+        iLastIndex[iLayer_fixed] = 1;
+        
     //fill data
     
     //iTile = 0;
@@ -177,7 +198,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
                     if (0 == pGlobalUsage[iLayer_fixed][i]) {
                         bFound = true;
                         iFound = i;
-                        pGlobalUsage[iLayer_fixed][i] = iLastIndex;
+                        pGlobalUsage[iLayer_fixed][i] = iLastIndex[iLayer_fixed];
                     }
                 }
                 //do we need to load data?
