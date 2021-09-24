@@ -82,6 +82,8 @@ _svin_textbox_init()
 {
     int *_pointer32;
 
+    _svin_set_cycle_patterns_cpu();
+
     //-------------- setup pattern names -------------------
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     //writing semi-transparent characters where the dialog box should go, 
@@ -119,6 +121,8 @@ _svin_textbox_init()
     //-------------- setup palette 7 specifically for text  -------------------
 
     _svin_textbox_init_palette(); //disable textbox by default, will be enabled when required
+
+    _svin_set_cycle_patterns_nbg();
 
 }
 

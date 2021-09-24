@@ -197,6 +197,25 @@ _svin_run_script(char * filename)
                 script_buffer[j-i-1] = script_buffer[j];
             iDataInBuffer -= (i+1);
         }
+        else if (strncmp(script_buffer,"ENABLE ",6)==0)
+        {
+            //draw sprite
+            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
+            if (i>2048) i=2048;
+            if (i<4) i=4;
+            j = (int)strstr(script_buffer,"POSITION ") - (int)script_buffer;
+            j+=9;
+            iPosition=atoi(&script_buffer[j]);
+            if (iPosition<0) iPosition = 0;
+            if (iPosition>2) iPosition = 2;
+            _svin_set_cycle_patterns_nbg();//position ignored
+            sprintf(&pDebug[iStringNumber*32],"ENABLE %i at line %i",iPosition,iStringNumber);
+           
+            //remove command from buffer
+            for (j=i+1;j<4096;j++)
+                script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= (i+1);
+        }
         else if (strncmp(script_buffer,"END",3)==0)
         {
             sprintf(&pDebug[iStringNumber*32],"END at line %i",iStringNumber);

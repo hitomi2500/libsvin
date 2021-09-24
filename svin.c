@@ -741,9 +741,6 @@ void _svin_background_update_by_index(int index)
         _svin_background_fade_to_black_step();
     }
 
-    //setting cycle patterns for cpu access
-    _svin_set_cycle_patterns_cpu();
-
     //copy preloaded pattern names
     //memcpy((uint8_t *)(_SVIN_NBG0_CHPNDR_START), buffer, 2048 * 154);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base), buffer, 2048 * 154);
@@ -751,9 +748,6 @@ void _svin_background_update_by_index(int index)
     //read palette
     _svin_cd_block_sector_read(_svin_background_pack_fad + _current_sector + 154, palette);
     _svin_background_set_palette(0, palette);
-
-    //setting cycle patterns for nbg access
-    _svin_set_cycle_patterns_nbg();
 
     free(buffer);
     free(palette);
