@@ -100,6 +100,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     int iFound;
     int iSize, iSize_Fixed;
     int iOffset;
+    int iTilesNumberForLayer;
 
     //first let's find sprite FAD
     fad_t _sprite_fad;
@@ -114,6 +115,23 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     int iLayer_fixed = iLayer;
     if (iLayer == 2)
         iLayer_fixed = 1; //for layer 2 using NBG1 as well
+
+    switch(iLayer_fixed)
+    {
+        case 0:
+            iTilesNumberForLayer = _SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES;
+            break;
+        case 1:
+            iTilesNumberForLayer = _SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES;
+            break;
+        case 2:
+            iTilesNumberForLayer = _SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES;
+            break;
+        default:
+            iTilesNumberForLayer = 0;
+    }
+    
+    assert (iTilesNumberForLayer > 0);
 
     //reading whole file at once
     cd_block_multiple_sectors_read(_sprite_fad, iSize_Fixed/2048, big_buffer);
@@ -133,7 +151,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
     {
         iLastIndex_to_free++;
         if (iLastIndex_to_free > 255) iLastIndex_to_free = 1;
-        for (i=0;i<(3584-iLayer_fixed*1024);i++)
+        for (i=0;i<iTilesNumberForLayer;i++)
         {
             c = pGlobalUsage[iLayer_fixed][i];
             if (c==iLastIndex_to_free){
@@ -142,7 +160,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
         }
         //recalculate free
         iFree = 0;
-        for (i=0;i<(3584-iLayer_fixed*1024);i++)
+        for (i=0;i<iTilesNumberForLayer;i++)
         {
             c = pGlobalUsage[iLayer_fixed][i];
             if (c==0){
@@ -191,7 +209,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition)
             {
                 //searching first free tile data slot
                 bFound = false;    
-                for (i=0;(i<(3584-iLayer_fixed*1024))&&(bFound == false);i++)
+                for (i=0;(i<iTilesNumberForLayer)&&(bFound == false);i++)
                 {
                     if (0 == pGlobalUsage[iLayer_fixed][i]) {
                         bFound = true;

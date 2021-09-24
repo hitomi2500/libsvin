@@ -22,29 +22,40 @@
 //using VDP2 VRAM static allocation with everything contingent
 // Bank 0
 //  0x00000000 - 0x00007FFF NBG0 pattern name data 128x64*4 = 0x8000
-//  0x00008000 - 0x0001FFFF NBG0 character pattern name data (up to 2048 8x8 tiles) = 0x18000
+//  0x00008000 - 0x0001FFFF NBG0 character pattern name data (up to 1536 8x8 tiles) = 0x18000
 // Bank 1
-//  0x00020000 - 0x00037FFF NBG0 character pattern name data (up to 2048 8x8 tiles) = 0x28000
+//  0x00020000 - 0x00037FFF NBG0 character pattern name data (up to 1536 8x8 tiles) = 0x18000
+//  0x00038000 - 0x0003FFFF NBG2 pattern name data 128x64*4 = 0x8000
 // Bank 2
 //  0x00040000 - 0x00047FFF NBG1 pattern name data 128x64*4 = 0x8000
-//  0x00048000 - 0x0005FFFF NBG1 character pattern name data (up to 1024 8x8 tiles) = 0x18000
+//  0x00048000 - 0x0005FFFF NBG1 character pattern name data (up to 1536 8x8 tiles) = 0x18000
 // Bank 3
-//  0x00060000 - 0x0006FFFF NBG1 character pattern name data (up to 1024 8x8 tiles) = 0x10000
+//  0x00060000 - 0x00067FFF NBG1 character pattern name data (up to 512 8x8 tiles) = 0x8000
+//  0x00068000 - 0x0006FFFF NBG2 character pattern name data (up to 512 8x8 tiles) = 0x8000
 //  0x00070000 - 0x0007EFFF NBG1 rendered font data for dialog box 640x80 (40x5*16x16) = 0x????
 //  0x0007F000 - 0x0007FFFF NBG1 character pattern name data specials
 
+
 #define _SVIN_NBG0_CHPNDR_START (VDP2_VRAM_ADDR(0,0x8000))
-#define _SVIN_NBG0_CHPNDR_SIZE (0x38000)
+#define _SVIN_NBG0_CHPNDR_SIZE (0x30000)
 #define _SVIN_NBG0_PNDR_START (VDP2_VRAM_ADDR(0,0))
 #define _SVIN_NBG0_PNDR_SIZE (128*64*4)
+
 #define _SVIN_NBG1_CHPNDR_START (VDP2_VRAM_ADDR(2,0x8000))
-#define _SVIN_NBG1_CHPNDR_SIZE (0x28000)
+#define _SVIN_NBG1_CHPNDR_SIZE (0x20000)
 #define _SVIN_NBG1_PNDR_START (VDP2_VRAM_ADDR(2,0))
 #define _SVIN_NBG1_PNDR_SIZE (128*64*4)
+
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_ADDR (VDP2_VRAM_ADDR(3,0x10000))
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX ((0x70000)/32)
 #define _SVIN_NBG1_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(3,0x1F000))
 #define _SVIN_NBG1_CHPNDR_SPECIALS_INDEX ((0x7F000)/32)
+
+#define _SVIN_NBG2_CHPNDR_START (VDP2_VRAM_ADDR(1,0x18000))
+#define _SVIN_NBG2_CHPNDR_SIZE (0x8000)
+#define _SVIN_NBG2_PNDR_START (VDP2_VRAM_ADDR(3,0x8000))
+#define _SVIN_NBG2_PNDR_SIZE (128*64*4)
+
 
 //VDP1 command list order
 #define _SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX  0

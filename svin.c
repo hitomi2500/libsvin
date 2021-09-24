@@ -135,11 +135,10 @@ void _svin_set_cycle_patterns_cpu()
 void _svin_set_cycle_patterns_nbg()
 {
     //swithcing everything to NBG accesses, CPU can't write data anymore
-    //these settings are proved to work on real hardware, please do the test if you plan to change them
 
     struct vdp2_vram_cycp vram_cycp;
 
-    vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
     vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
@@ -151,14 +150,14 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[1].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[1].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_PNDR_NBG2;
     vram_cycp.pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
-    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
-    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_PNDR_NBG1;
+    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG1;
+    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -169,7 +168,7 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[3].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[3].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[3].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
-    vram_cycp.pt[3].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
+    vram_cycp.pt[3].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG2;
     vram_cycp.pt[3].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[3].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[3].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
