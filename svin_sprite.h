@@ -3,6 +3,7 @@
 
 #define _SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR 0x202F0000
 #define _SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR 0x202F2000
+#define _SVIN_SPRITE_NBG2_GLOBAL_USAGE_ADDR 0x202F4000
 
 #include <yaul.h>
 
@@ -13,7 +14,6 @@
 
 void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
-void _svin_sprite_draw(char * filename, int iLayer, int iPosition);
-void _svin_sprite_draw_fast(fad_t fad, int size, int iLayer, int iPosition);
+void _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette);
 
 #endif

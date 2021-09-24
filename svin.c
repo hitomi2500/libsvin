@@ -235,6 +235,24 @@ void _svin_init()
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
     vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
 
+    //setup nbg2
+    format.scroll_screen = VDP2_SCRN_NBG2;
+    format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
+    format.character_size = (1 * 1);
+    format.pnd_size = 2;
+    format.auxiliary_mode = 1;
+    format.cp_table = 0;
+    format.color_palette = 0;
+    format.plane_size = (2 * 1);
+    format.sf_type = 0;//VDP2_SCRN_SF_TYPE_COLOR_CALCULATION;
+    format.sf_code = VDP2_SCRN_SF_CODE_A;
+    format.sf_mode = 0;
+    format.map_bases.plane_a = _SVIN_NBG2_PNDR_START;
+
+    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
+
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
 
     color_rgb1555_t bs_color;
@@ -382,23 +400,6 @@ void _svin_init()
     //writing pattern names for nbg0
     //starting with plane 0
     _pointer32 = (int *)_SVIN_NBG0_PNDR_START;
-    /*for (int y = 0; y < 56; y++)
-    {
-        int iOffset = y * 64;
-        for (int x = 0; x < 64; x++)
-        {
-            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on //(iOffset + x) * 8;
-        }
-    }
-    //plane 1 goes next
-    for (int y = 0; y < 56; y++)
-    {
-        int iOffset = 64 * 64 + y * 64;
-        for (int x = 0; x < 24; x++)
-        {
-            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 1, transparency on; //(iOffset2 + x) * 8;
-        }
-    }*/
     for (unsigned int i = 0; i < _SVIN_NBG0_PNDR_SIZE / sizeof(int); i++)
     {
         _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
@@ -408,6 +409,14 @@ void _svin_init()
     //nbg1  is mostly transparent, so fill with that one
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_PNDR_SIZE / sizeof(int); i++)
+    {
+        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+    }
+
+    //writing pattern names for nbg2
+    //nbg2  is mostly transparent, so fill with that one
+    _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
+    for (unsigned int i = 0; i < _SVIN_NBG2_PNDR_SIZE / sizeof(int); i++)
     {
         _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
@@ -424,6 +433,13 @@ void _svin_init()
     //clearing character pattern names data for nbg1
     _pointer32 = (int *)_SVIN_NBG1_CHPNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_CHPNDR_SIZE / sizeof(int); i++)
+    {
+        _pointer32[i] = 0;
+    }
+
+    //clearing character pattern names data for nbg2
+    _pointer32 = (int *)_SVIN_NBG2_CHPNDR_START;
+    for (unsigned int i = 0; i < _SVIN_NBG2_CHPNDR_SIZE / sizeof(int); i++)
     {
         _pointer32[i] = 0;
     }

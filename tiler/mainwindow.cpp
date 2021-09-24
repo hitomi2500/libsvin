@@ -539,7 +539,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         {
             b = b.mid(b.indexOf("True"));
         }
-        int iLayer = 0;
+        int iBigPalette = 1; //only 1st image goes with big palette
+        int iShiftedPalette = 0;
         while (b.contains("\""))
         {
             b = b.mid(b.indexOf("\"")+1);
@@ -554,8 +555,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 //new file, append it
                 ImagePaths.append(b2);
             }
-            ImageLinks.append({i,ImagePaths.indexOf(b2),iLayer});
-            iLayer++;
+            ImageLinks.append({i,ImagePaths.indexOf(b2),iBigPalette,iShiftedPalette});
+            if (iBigPalette == 0)
+                iShiftedPalette = 1;
+            iBigPalette = 0;
             b = b.mid(b.indexOf("\"")+1);
         }
     }
@@ -582,12 +585,14 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         b3.append(".tim");
         //deciding if image should be 255 or 127 colors
         //searching image in the recipes
-        int iCurrentLayer = 0;
+        int iBigPalette = 0;
+        int iShiftedPalette = 0;
         for (int i=0;i<ImageLinks.size();i++)
         {
             if (ImageLinks.at(i).image == iImageNumber)
             {
-                iCurrentLayer = ImageLinks.at(i).layer;
+                iBigPalette = ImageLinks.at(i).big_palette;
+                iShiftedPalette =  ImageLinks.at(i).shifted_palette;
             }
         }
         //check if the file was already processed and a processed copy exist
@@ -623,10 +628,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             proc_args.clear();
             proc_args.append("tmp2.png");
             proc_args.append("-colors");
-            if (iCurrentLayer == 0)
-                proc_args.append("255");
-            else
+            if (iBigPalette == 0)
                 proc_args.append("127");
+            else
+                proc_args.append("255");
             proc_args.append(b2);
             process.setArguments(proc_args);
             process.open();
@@ -640,7 +645,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
         //let's crop image to tile size
         //if ( (img.size().width()%8 != 0) || (img.size().height()%8 != 0) )
-            //img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
+//            img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
 
         //let's crop image to 232x448 for now. how should we deal with overlaps, another layer?
         img = img.copy((img.size().width()-232)/2,0,232,448);
@@ -655,6 +660,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         ba.clear();
         int iSizeTiledX = img.size().width()/8;
         int iSizeTiledY = img.size().height()/8;
+        //_tiled_image_file.write(QByteArray(1,iSizeTiledX));
+        //_tiled_image_file.write(QByteArray(1,iSizeTiledY));
         int iActiveTiles = 0;
         for (int TileY = 0; TileY < iSizeTiledY; TileY++)
         {
@@ -718,9 +725,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
         //now write palette
         ba_pal.clear();
-        if (iCurrentLayer == 2)
+        //for mid layer 2 or right-left layer 1 colours are shifted
+        if (iShiftedPalette > 0)
         {
-            //for layer 2 colours are shifted
+
             for (int j=0;j<128*3;j++)
             {
                 ba_pal.append('\0');
@@ -754,7 +762,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ba[i]=0;
         }*/
 
-        if (iCurrentLayer == 2)
+        if (iShiftedPalette > 0)
         {
             //for layer 2 colours are shifted
             for (int i=0;i<ba.size();i++)
@@ -845,12 +853,20 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 for (int f=0;f<ImageLinks.size();f++)
                 {
                     //we found a match. add image.
-                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).layer != 0))
+                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 0))
                     {
                         QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
                         _tiled_filename.chop(3);
                         _tiled_filename.append("tim");
-                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(ImageLinks.at(f).layer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                        int iLayer = 1;
+                        int iPalette = 1;
+                        if (ImageLinks.at(f).shifted_palette == 0)
+                        {
+                            iPalette++;
+                        }
+                        if (iPosition == 1)
+                            iLayer++;
+                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
                         script_outfile.write("\r");
                     }
                 }
@@ -859,15 +875,22 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 for (int f=0;f<ImageLinks.size();f++)
                 {
                     //we found a match. add image.
-                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).layer == 0))
+                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 1))
                     {
                         QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
                         _tiled_filename.chop(3);
                         _tiled_filename.append("tim");
-                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 FILE %3").arg(ImageLinks.at(f).layer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                        int iLayer = 0;
+                        if (iPosition == 1)
+                            iLayer++;
+                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
                         script_outfile.write("\r");
                     }
                 }
+
+                bFound = true;
+                script_outfile.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
+                script_outfile.write("\r");
             }
         }
         else if (Script_Lines.at(i).simplified().startsWith("\""))
@@ -894,6 +917,20 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             QByteArray _tmp = Script_Lines.at(i).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             script_outfile.write(_tmp.prepend("TEXT ACTOR=3 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("un \""))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("TEXT ACTOR=4 "));
+            script_outfile.write("\r");
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("dv \""))
+        {
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("TEXT ACTOR=5 "));
             script_outfile.write("\r");
         }
         else if (Script_Lines.at(i).simplified().startsWith("scene bg"))

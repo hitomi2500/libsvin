@@ -10,7 +10,8 @@ QT_END_NAMESPACE
 struct Image_Link {
     int recipe;
     int image;
-    int layer;
+    int big_palette;
+    int shifted_palette;
 };
 
 class MainWindow : public QMainWindow

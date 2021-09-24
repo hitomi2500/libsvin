@@ -23,6 +23,7 @@ _svin_run_script(char * filename)
     int iActorColor;
     int iLayer;
     int iPosition;
+    int iPalette;
     //char *sprite_filename;
 
     //first let's find script FAD, browsing root folder
@@ -164,14 +165,19 @@ _svin_run_script(char * filename)
             iPosition=atoi(&script_buffer[j]);
             if (iPosition<0) iPosition = 0;
             if (iPosition>2) iPosition = 2;
+            j = (int)strstr(script_buffer,"PALETTE ") - (int)script_buffer;
+            j+=8;
+            iPalette=atoi(&script_buffer[j]);
+            if (iPalette<0) iPalette = 0;
+            if (iPalette>2) iPalette = 2;
             j = (int)strstr(script_buffer,"FILE ") - (int)script_buffer;
             j+=5;
             memcpy(tmp_buffer,&(script_buffer[j]),i-j);
             tmp_buffer[i-j]=0;
             //_svin_sprite_draw(tmp_buffer,0,0);
-            sprintf(&pDebug[iStringNumber*32],"SPRITE pos %i layer %i line %i",iPosition,iLayer,iStringNumber);
+            sprintf(&pDebug[iStringNumber*32],"SPRITE pos%ilayer%ipal%iline%i",iPosition,iLayer,iPalette,iStringNumber);
             //memcpy(&pDebug[iStringNumber*32],tmp_buffer,32); //copy sprite name for debug
-            _svin_sprite_draw(tmp_buffer,iLayer,iPosition);
+            _svin_sprite_draw(tmp_buffer,iLayer,iPosition,iPalette);
             
             //remove command from buffer
             for (j=i+1;j<4096;j++)
