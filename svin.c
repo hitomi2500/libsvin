@@ -47,7 +47,6 @@ uint16_t _svin_actor_left[4];
 uint16_t _svin_actor_top[4];
 uint16_t _svin_actor_sizex[4];
 uint16_t _svin_actor_sizey[4];
-uint8_t _svin_current_field = 0;
 vdp1_cmdt_list_t *_svin_cmdt_list;
 vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_1;
 vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_2;
@@ -188,7 +187,6 @@ void _svin_init()
 {
     int *_pointer32;
     _svin_init_done = 0;
-    _svin_current_field = 0;
 
     //-------------- setup VDP2 -------------------
 
@@ -1204,12 +1202,11 @@ void _svin_vblank_out_handler(void *work __unused)
 {
     if (0==_svin_init_done)
         return;
-    _svin_current_field++;
 
     //smpc_peripheral_intback_issue();
     uint8_t * p = (uint8_t *)VDP1_VRAM(0); 
 
-    if (_svin_current_field % 2 == 0)
+    if (VDP2_TVMD_TV_FIELD_SCAN_ODD == vdp2_tvmd_field_scan_get())
         //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX * 4);
         p[3]=0x1C;
     else
