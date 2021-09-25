@@ -643,12 +643,18 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         if (img.size().width() <= 0 )
             return;
 
-        //let's crop image to tile size
-        //if ( (img.size().width()%8 != 0) || (img.size().height()%8 != 0) )
-//            img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
+        /*if (img.size().width()>44*8)
+        {
+            //let's crop image to 232x448 for now. how should we deal with overlaps, another layer?
+            //img = img.copy((img.size().width()-232)/2,0,232,448);
+        }
+        else*/
+        {
+            //let's crop image to tile size
+            if ( (img.size().width()%8 != 0) || (img.size().height()%8 != 0) )
+                img = img.copy(0,0,(img.size().width()/8)*8,(img.size().height()/8)*8);
+        }
 
-        //let's crop image to 232x448 for now. how should we deal with overlaps, another layer?
-        img = img.copy((img.size().width()-232)/2,0,232,448);
 
         //let's detect a transparent color
         int transp_color = img.pixelIndex(0,0);
@@ -660,8 +666,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         ba.clear();
         int iSizeTiledX = img.size().width()/8;
         int iSizeTiledY = img.size().height()/8;
-        //_tiled_image_file.write(QByteArray(1,iSizeTiledX));
-        //_tiled_image_file.write(QByteArray(1,iSizeTiledY));
+        _tiled_image_file.write(QByteArray(1,iSizeTiledX));
+        _tiled_image_file.write(QByteArray(1,iSizeTiledY));
         int iActiveTiles = 0;
         for (int TileY = 0; TileY < iSizeTiledY; TileY++)
         {

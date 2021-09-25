@@ -10,9 +10,8 @@
 
 #define UNUSED(x) (void)(x)
 
-#define _SVIN_SPRITE_TILES_WIDTH 29
+#define _SVIN_SPRITE_TILES_WIDTH 44
 #define _SVIN_SPRITE_TILES_HEIGTH 56
-#define _SVIN_SPRITE_TILES (_SVIN_SPRITE_TILES_WIDTH*_SVIN_SPRITE_TILES_HEIGTH)
 
 int iLastIndex[3];
 
@@ -44,6 +43,7 @@ _svin_sprite_clear(int iPosition)
     switch (iPosition)
     {
         case 0:
+            //for left clearing NBG0 and NBG1
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
                 {
@@ -51,15 +51,23 @@ _svin_sprite_clear(int iPosition)
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+            break;
+        case 1:
+            //for mid clearing NBG1 and NBG2
+            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
+                for (x=_SVIN_SPRITE_TILES_WIDTH/2;x<64;x++)
+                {
+                    //not killing textbox, lines 44 thru 53
+                    if ((y<44) || (y>53))
+                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     if ((y<44) || (y>53))
                         p32[2][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
-        case 1:
-            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=_SVIN_SPRITE_TILES_WIDTH;x<_SVIN_SPRITE_TILES_WIDTH*2;x++)
+            for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
+                for (x=0;x<(_SVIN_SPRITE_TILES_WIDTH*3/4) - 64;x++)
                 {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
@@ -68,29 +76,26 @@ _svin_sprite_clear(int iPosition)
                 }
             break;
         case 2:
+            //for right clearing NBG0 and NBG1
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=_SVIN_SPRITE_TILES_WIDTH*2;x<64;x++)
+                for (x=_SVIN_SPRITE_TILES_WIDTH;x<64;x++)
                 {
                     p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=0;x<(64-_SVIN_SPRITE_TILES_WIDTH*2);x++)
+                for (x=0;x<_SVIN_SPRITE_TILES_WIDTH*2-64;x++)
                 {
                     p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44+64) || (y>53+64))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    if ((y<44+64) || (y>53+64))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
     }
-    //_svin_set_cycle_patterns_nbg();
+    _svin_set_cycle_patterns_nbg();
 }
 
 void 
@@ -108,6 +113,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     int iSize, iSize_Fixed;
     int iOffset;
     int iTilesNumberForLayer;
+    uint8_t iSizeX,iSizeY;
 
     //first let's find sprite FAD
     fad_t _sprite_fad;
@@ -161,15 +167,20 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     //reading whole file at once
     cd_block_multiple_sectors_read(_sprite_fad, iSize_Fixed/2048, big_buffer);
 
+    //getting sizes in tiles
+    iSizeX = big_buffer[0];
+    iSizeY = big_buffer[1];
+
+    assert (iSizeY == _SVIN_SPRITE_TILES_HEIGTH);
+    //assert (iSizeX <= _SVIN_SPRITE_TILES_WIDTH);
+
     //calculating tiles number
     int iTilesNumber = 0;
-    for (i=0;i<_SVIN_SPRITE_TILES;i++)
+    for (i=0;i<iSizeX*iSizeY;i++)
     {
-        if (big_buffer[i])
+        if (big_buffer[i+2])
             iTilesNumber++;
     }
-
-    //if (2 == iPalette) return;
 
     int iLastIndex_to_free = iLastIndex[iLayer];
 
@@ -197,7 +208,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 
     }
 
-    iPointer = _SVIN_SPRITE_TILES; //position within buffer
+    iPointer = iSizeX*iSizeY+2; //position within buffer
 
     //VRAM available, fill it
     //choose next fill index
@@ -216,23 +227,21 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     {
         case 0:
             x_start = 0;
-            x_end = _SVIN_SPRITE_TILES_WIDTH;
             break;
         case 1:
-            x_start = _SVIN_SPRITE_TILES_WIDTH;
-            x_end = _SVIN_SPRITE_TILES_WIDTH*2;
+            x_start = _SVIN_SPRITE_TILES_WIDTH - (iSizeX/2);
             break;
         case 2:
-            x_start = _SVIN_SPRITE_TILES_WIDTH*2;
-            x_end = 64;
+            x_start = _SVIN_SPRITE_TILES_WIDTH*2 - iSizeX;
             break;
     }
+    x_end = x_start + iSizeX;
 
-    for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
+    for (y=0;y<iSizeY;y++)
     {
         for (x=x_start;x<x_end;x++)
         {
-            if (big_buffer[y*_SVIN_SPRITE_TILES_WIDTH+x%_SVIN_SPRITE_TILES_WIDTH])
+            if (big_buffer[y*iSizeX+(x-x_start)+2])
             {
                 //searching first free tile data slot
                 bFound = false;    
@@ -265,14 +274,20 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                 {
                     case 0:
                         iOffset = (_SVIN_NBG0_CHPNDR_START - VDP2_VRAM_ADDR(0,0))/32;
-                        p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                        if (x<64)
+                            p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                        else
+                            p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
                         break;
                     case 1:
                         //not killing textbox, lines 44 thru 53
                         if ((y<44) || (y>53))
                         {
                             iOffset = (_SVIN_NBG1_CHPNDR_START - VDP2_VRAM_ADDR(0,0))/32;
-                            p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                            if (x<64)
+                                p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                            else
+                                p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
                         }
                         break;
                     case 2:
@@ -280,7 +295,10 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                         if ((y<44) || (y>53))
                         {
                             iOffset = (_SVIN_NBG2_CHPNDR_START - VDP2_VRAM_ADDR(0,0))/32;
-                            p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                            if (x<64)
+                                p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
+                            else
+                                p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
                         }
                         break; 
                 }
@@ -305,7 +323,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             break;
     }
 
-    //_svin_set_cycle_patterns_nbg();
+    _svin_set_cycle_patterns_nbg();
 
     free(big_buffer);
 }
