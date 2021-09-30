@@ -8,6 +8,7 @@
 #include <svin_script.h>
 #include <svin_filelist.h>
 #include <svin_sprite.h>
+#include <svin_background.h>
 
 //#define _SVIN_DIRTY_STATIC_LINKING
 
@@ -79,20 +80,12 @@ void _svin_wait_for_key_press_and_release();
 void _svin_set_cycle_patterns_cpu();
 void _svin_set_cycle_patterns_nbg();
 
-void _svin_background_fade_to_black_step();
-void _svin_background_fade_to_black();
-void _svin_background_set_palette(int number, uint8_t * pointer);
-void _svin_background_set_palette_half_lo(int number, uint8_t * pointer);
-void _svin_background_set_palette_half_hi(int number, uint8_t * pointer);
-void _svin_background_clear_palette(int number);
-void _svin_background_set_by_index(int index);
-void _svin_background_set(char *name);
-void _svin_background_update_by_index(int index);
-void _svin_background_update(char *name);
-void _svin_background_clear();
-void _svin_background_fade_to_black();
-void _svin_background_load_index(char * filename);
-//void _svin_background_set_by_index_half(int index, int part, int slot);
+
+
+void _svin_set_palette(int number, uint8_t * pointer);
+void _svin_set_palette_half_lo(int number, uint8_t * pointer);
+void _svin_set_palette_half_hi(int number, uint8_t * pointer);
+void _svin_clear_palette(int number);
 
 void _svin_tapestry_init();
 void _svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int position);

@@ -58,7 +58,7 @@ main(void)
         //_svin_actor_debug_load_index(&_filelist);
 
         //load logo
-        _svin_background_clear_palette(0);
+        _svin_clear_palette(0);
         _svin_background_set("yaul_logo");
         _svin_delay(1000);
         _svin_background_fade_to_black();

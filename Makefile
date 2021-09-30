@@ -16,6 +16,7 @@ SH_SRCS:= \
     mcufont/mf_wordwrap.c \
 	svindemo.c \
 	cd-block_multiread.c \
+	svin_background.c \
 	svin_textbox.c \
 	svin_filelist.c \
 	svin_sprite.c \

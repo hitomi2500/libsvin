@@ -76,11 +76,14 @@ void MainWindow::on_pushButton_2_clicked()
     int iSectorsUsed;
     QList<QByteArray> TileLibrary;
     int written;
+    QFile outfile_pack;
+    QFile outfile_bg;
+    QByteArray b;
 
     int iLimit = 127;
     if (ui->comboBox_mode->currentIndex() == 2)
         iLimit = 1; //only a single file in tapestry mode
-    if (list.size() > iLimit)
+    if ((true == ui->checkBox_PackBG->isChecked())&&(list.size() > iLimit))
     {
         QMessageBox msgBox;
         msgBox.setWindowTitle("Oopsie daisy");
@@ -89,52 +92,56 @@ void MainWindow::on_pushButton_2_clicked()
         return;
     }
 
-    //making big bin instead of independent small NBG/PAL
-    QFile outfile_pack(QString("DATA.PAK"));
-    outfile_pack.open(QIODevice::WriteOnly);
 
-    //pass 1 - create filelist table
-    //first 64-byte entry is a system header
-    outfile_pack.write(QByteArray("SVINPACK"));
-    qint16_be s = (qint16_be)list83.size();//files in pack
-    outfile_pack.write((char*)&s,2);
-    s = 64;//filename size
-    outfile_pack.write((char*)&s,2);
-    QByteArray b;
-    b.fill('\0',52);
-    outfile_pack.write(b);
+    if (true == ui->checkBox_PackBG->isChecked())
+    {
+        //making big bin instead of independent small NBG/PAL
+        outfile_pack.setFileName(QString("DATA.PAK"));
+        outfile_pack.open(QIODevice::WriteOnly);
 
-    //64 bytes per entry, zero-terminated
-    written = 64;
-    for (int i=0; i<list83.size(); i++)
-    {
-        QByteArray _name;
-        _name.append("1234567890");//placeholder for : LEFT, TOP, SIZE_X, SIZE_Y, sector
-        _name.append(list83.at(i).toLatin1());
-        while (_name.size()<64)
-            _name.append('\0');
-        outfile_pack.write(_name);
-        written+=64;
-    }
-    if (ui->comboBox_mode->currentIndex() == 1)
-    {
-        //for VDP2 format add a special "tile library" file at the end of the pack
-        QByteArray _name;
-        _name.append("1234567890_svin_tile_library");
-        while (_name.size()<64)
-            _name.append('\0');
-        outfile_pack.write(_name);
-        written+=64;
-    }
-    //up to 127 files per pack, that's 8192 bytes = 4 sectors
-    //filling rest
-    while (written < 8192)
-    {
-        QByteArray _name;
-        while (_name.size()<64)
-            _name.append('\0');
-        outfile_pack.write(_name);
-        written+=64;
+        //pass 1 - create filelist table
+        //first 64-byte entry is a system header
+        outfile_pack.write(QByteArray("SVINPACK"));
+        qint16_be s = (qint16_be)list83.size();//files in pack
+        outfile_pack.write((char*)&s,2);
+        s = 64;//filename size
+        outfile_pack.write((char*)&s,2);
+        b.clear();
+        b.fill('\0',52);
+        outfile_pack.write(b);
+
+        //64 bytes per entry, zero-terminated
+        written = 64;
+        for (int i=0; i<list83.size(); i++)
+        {
+            QByteArray _name;
+            _name.append("1234567890");//placeholder for : LEFT, TOP, SIZE_X, SIZE_Y, sector
+            _name.append(list83.at(i).toLatin1());
+            while (_name.size()<64)
+                _name.append('\0');
+            outfile_pack.write(_name);
+            written+=64;
+        }
+        if (ui->comboBox_mode->currentIndex() == 1)
+        {
+            //for VDP2 format add a special "tile library" file at the end of the pack
+            QByteArray _name;
+            _name.append("1234567890_svin_tile_library");
+            while (_name.size()<64)
+                _name.append('\0');
+            outfile_pack.write(_name);
+            written+=64;
+        }
+        //up to 127 files per pack, that's 8192 bytes = 4 sectors
+        //filling rest
+        while (written < 8192)
+        {
+            QByteArray _name;
+            while (_name.size()<64)
+                _name.append('\0');
+            outfile_pack.write(_name);
+            written+=64;
+        }
     }
 
     int iCurrentSector = (list.size())/32 + 1;
@@ -247,20 +254,22 @@ void MainWindow::on_pushButton_2_clicked()
         int iSizeX=img.width();
         int iSizeY=img.height();
 
-        //updating rect in header
-        //qint64 SeekBackup = outfile_pack.pos();
-        outfile_pack.seek(64+64*iImageNumber);
-        qint16_be s = (qint16_be)iLeft;
-        outfile_pack.write((char*)&s,2);
-        s = (qint16_be)iTop;
-        outfile_pack.write((char*)&s,2);
-        s = (qint16_be)(iSizeX);
-        outfile_pack.write((char*)&s,2);
-        s = (qint16_be)(iSizeY);
-        outfile_pack.write((char*)&s,2);
-        s = (qint16_be)iCurrentSector;
-        outfile_pack.write((char*)&s,2);
-        outfile_pack.seek(iCurrentSector*2048);
+        if (true == ui->checkBox_PackBG->isChecked())
+        {
+            //qint64 SeekBackup = outfile_pack.pos();
+            outfile_pack.seek(64+64*iImageNumber);
+            qint16_be s = (qint16_be)iLeft;
+            outfile_pack.write((char*)&s,2);
+            s = (qint16_be)iTop;
+            outfile_pack.write((char*)&s,2);
+            s = (qint16_be)(iSizeX);
+            outfile_pack.write((char*)&s,2);
+            s = (qint16_be)(iSizeY);
+            outfile_pack.write((char*)&s,2);
+            s = (qint16_be)iCurrentSector;
+            outfile_pack.write((char*)&s,2);
+            outfile_pack.seek(iCurrentSector*2048);
+        }
 
         if (ui->comboBox_mode->currentIndex() == 0) //VDP1 4-sprites mode
         {
@@ -277,28 +286,6 @@ void MainWindow::on_pushButton_2_clicked()
                     ba[352*224*3 + y*352+x] = img.pixelIndex(352+x,y*2+1);
                 }
         }
-        /*else if (ui->comboBox_mode->currentIndex() == 1)
-        {
-            ba.resize(704*448);
-            ba.fill('\0');
-            //mess with tiles
-            //plane 1 processing
-            for (int iTileY = 0; iTileY < 28; iTileY++)
-                for (int iTileX = 0; iTileX < 32; iTileX++)
-                    for (int cell=0;cell<4;cell++)
-                        for (int y=0;y<8;y++)
-                            for (int x=0;x<8;x++)
-                                ba[(iTileY*32+iTileX)*16*16+cell*64+y*8+x] = img.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
-
-            //plane 2 processing
-            for (int iTileY = 0; iTileY < 28; iTileY++)
-                for (int iTileX = 32; iTileX < 44; iTileX++)
-                    for (int cell=0;cell<4;cell++)
-                        for (int y=0;y<8;y++)
-                            for (int x=0;x<8;x++)
-                                ba[32*28*16*16+(iTileY*12+(iTileX-32))*16*16+cell*64+y*8+x] = img.pixelIndex(iTileX*16+(cell%2)*8+x,iTileY*16+(cell/2)*8+y);
-
-        }*/
         else if (ui->comboBox_mode->currentIndex() == 1) //tile mode
         {
             //let's do some heavy tiling.
@@ -424,52 +411,94 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
 
-        outfile_pack.write(ba); //write recipe
-        written = ba.size();
+        if (true == ui->checkBox_PackBG->isChecked())
+        {
+            outfile_pack.write(ba); //write recipe
+            written = ba.size();
+            //fill last cluster
+            while (written%2048 > 0)
+            {
+                written++;
+                outfile_pack.write("\0",1);
+            }
+            iSectorsUsed = (ba.size() - 1)/2048 + 1;
+            iCurrentSector += iSectorsUsed;//adding used sectors
+
+            outfile_pack.write(ba_pal); //write palette
+            written = ba_pal.size();
+            //fill last cluster
+            while (written%2048 > 0)
+            {
+                written++;
+                outfile_pack.write("\0",1);
+            }
+            iCurrentSector++;//adding sector for palette
+        }
+        else
+        {
+            //single file, care less about sectors and clusters
+            //open file first
+            QByteArray b = list83.at(iImageNumber).toLatin1();
+            QByteArray b2 = b;
+            b2.append(".bg");
+            outfile_bg.setFileName(b2);
+            outfile_bg.open(QIODevice::WriteOnly);
+            qint16_be s = (qint16_be)iLeft;
+            outfile_bg.write((char*)&s,2);
+            s = (qint16_be)iTop;
+            outfile_bg.write((char*)&s,2);
+            s = (qint16_be)(iSizeX);
+            outfile_bg.write((char*)&s,2);
+            s = (qint16_be)(iSizeY);
+            outfile_bg.write((char*)&s,2);
+            s = (qint16_be)iCurrentSector;
+            outfile_bg.write((char*)&s,2);
+            outfile_bg.write(list83.at(iImageNumber).toLatin1());
+            while (outfile_bg.size()<2048)
+                outfile_bg.write(QByteArray(1,'\0'));
+            //now save bg data
+            outfile_bg.write(ba);
+            //fill last cluster of bg
+            while (written%2048 > 0)
+            {
+                written++;
+                outfile_bg.write("\0",1);
+            }
+            //now save paletteg data
+            outfile_bg.write(ba_pal); //write palette
+            written = ba_pal.size();
+            //fill last cluster
+            while (written%2048 > 0)
+            {
+                written++;
+                outfile_bg.write("\0",1);
+            }
+            outfile_bg.close();
+        }
+
+    }
+
+    if (true == ui->checkBox_PackBG->isChecked())
+    {
+        //saving tile library. it is a last file, everything else is processed, so wa can save it safely
+        written = 0;
+        for (int i=0;i<TileLibrary.size();i++)
+        {
+            outfile_pack.write(TileLibrary.at(i)); //write tile
+            written += TileLibrary.at(i).size();
+        }
+
         //fill last cluster
         while (written%2048 > 0)
         {
             written++;
             outfile_pack.write("\0",1);
         }
-        iSectorsUsed = (ba.size() - 1)/2048 + 1;
-        iCurrentSector += iSectorsUsed;//adding used sectors
 
-        outfile_pack.write(ba_pal); //write palette
-        written = ba_pal.size();
-        //fill last cluster
-        while (written%2048 > 0)
-        {
-            written++;
-            outfile_pack.write("\0",1);
-        }
-        iCurrentSector++;//adding sector for palette
+        //don't care about iCurrentSector because it's the last file
 
-        /*outfile_pack.write(ba_map);
-        //fill last cluster
-        while (outfile_pack.size()%2048 > 0)
-            outfile_pack.write("\0",1);
-        iCurrentSector++;//adding sector for usagemap */
+        outfile_pack.close();
     }
-
-    //saving tile library. it is a last file, everything else is processed, so wa can save it safely
-    written = 0;
-    for (int i=0;i<TileLibrary.size();i++)
-    {
-        outfile_pack.write(TileLibrary.at(i)); //write tile
-        written += TileLibrary.at(i).size();
-    }
-
-    //fill last cluster
-    while (written%2048 > 0)
-    {
-        written++;
-        outfile_pack.write("\0",1);
-    }
-
-    //don't care about iCurrentSector because it's the last file
-
-    outfile_pack.close();
 
 }
 

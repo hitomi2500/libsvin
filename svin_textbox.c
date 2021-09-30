@@ -203,7 +203,7 @@ _svin_textbox_init_palette()
         }
     }
 
-    _svin_background_set_palette(7, temp_pal);
+    _svin_set_palette(7, temp_pal);
 
     _svin_textbox_clear();
 }

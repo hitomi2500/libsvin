@@ -313,13 +313,13 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     switch (iPalette)
     {
         case 0:
-            _svin_background_set_palette(iPaletteIndex,big_buffer+iPointer);
+            _svin_set_palette(iPaletteIndex,big_buffer+iPointer);
             break;
         case 1:
-            _svin_background_set_palette_half_hi(iPaletteIndex,big_buffer+iPointer);
+            _svin_set_palette_half_hi(iPaletteIndex,big_buffer+iPointer);
             break;
         case 2:
-            _svin_background_set_palette_half_lo(iPaletteIndex,big_buffer+iPointer);
+            _svin_set_palette_half_lo(iPaletteIndex,big_buffer+iPointer);
             break;
     }
 
