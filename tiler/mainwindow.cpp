@@ -976,6 +976,18 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile.write(_tmp.prepend("BG images/bg/").append(".bg"));
             script_outfile.write("\r");
         }
+        else if (Script_Lines.at(i).simplified().startsWith("scene cg"))
+        {
+            //CG is same as BG, but no sprites
+            script_outfile.write(QString("CLEAR POSITION 0 \r").toLatin1());
+            script_outfile.write(QString("CLEAR POSITION 1 \r").toLatin1());
+            script_outfile.write(QString("CLEAR POSITION 2 \r").toLatin1());
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile.write(_tmp.prepend("BG images/cg/").append(".bg"));
+            script_outfile.write("\r");
+        }
 
         else
         {
