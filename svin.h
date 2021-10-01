@@ -9,6 +9,7 @@
 #include <svin_filelist.h>
 #include <svin_sprite.h>
 #include <svin_background.h>
+#include <svin_tapestry.h>
 
 //#define _SVIN_DIRTY_STATIC_LINKING
 
@@ -80,23 +81,9 @@ void _svin_wait_for_key_press_and_release();
 void _svin_set_cycle_patterns_cpu();
 void _svin_set_cycle_patterns_nbg();
 
-
-
 void _svin_set_palette(int number, uint8_t * pointer);
 void _svin_set_palette_half_lo(int number, uint8_t * pointer);
 void _svin_set_palette_half_hi(int number, uint8_t * pointer);
 void _svin_clear_palette(int number);
-
-void _svin_tapestry_init();
-void _svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int position);
-void _svin_tapestry_move_up();
-void _svin_tapestry_move_down();
-
-
-
-//void _svin_actor_load_index(iso9660_filelist_t * _filelist, char * actor_code);
-void _svin_actor_debug_load_index(iso9660_filelist_t *_filelist);
-void _svin_actor_debug_load_test(iso9660_filelist_t *_filelist, char *filename, int actor_id);
-
 
 #endif

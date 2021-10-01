@@ -17,6 +17,7 @@ SH_SRCS:= \
 	svindemo.c \
 	cd-block_multiread.c \
 	svin_background.c \
+	svin_tapestry.c \
 	svin_textbox.c \
 	svin_filelist.c \
 	svin_sprite.c \

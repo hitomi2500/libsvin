@@ -973,7 +973,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             QByteArray _tmp = Script_Lines.at(i).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("BG "));
+            script_outfile.write(_tmp.prepend("BG images/bg/").append(".bg"));
             script_outfile.write("\r");
         }
 

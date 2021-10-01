@@ -49,35 +49,14 @@ main(void)
 
         _svin_init();
 
-        //_svin_hang_test(9);   
-        //while(1);   
-
         MEMORY_WRITE(32, SCU(ASR0), 0x23301FF0);
-
-        _svin_background_load_index("BG.PAK");
-        //_svin_actor_debug_load_index(&_filelist);
 
         //load logo
         _svin_clear_palette(0);
-        _svin_background_set("yaul_logo");
+        _svin_background_set("images/bg/yaul_logo.bg");
         _svin_delay(1000);
         _svin_background_fade_to_black();
 
-        //_svin_background_set("int_dining_hall_people_day");
-        //_svin_background_set_by_index(0);
-        //_svin_actor_debug_load_test(&_filelist,"SL.PAK",0);
-        //_svin_actor_debug_load_test(&_filelist,"US.PAK",1);
-
-        //_svin_background_set_by_index(0);
-
-        //vdp1_cmdt_t *cmdts;
-        //cmdts = &_svin_cmdt_list->cmdts[0]; 
-        //vdp1_cmdt_t *cmdt_sprite;
-
-        //_svin_background_set("ext_camp_entrance_day");
-        //_svin_textbox_clear();
-        //_svin_textbox_print("Helena","Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.","Lato_Black12",0,0);
-        //_svin_background_update("bus_stop");
         _svin_run_script("SCRIPT.TXT");
 
         while(1);
@@ -86,9 +65,7 @@ main(void)
         {
                 for (unsigned int i=0; i< 100; i++)
                 {
-                //_svin_background_set _by_index(i);
-                _svin_background_update_by_index(i);
-                //_svin_background_set("bus_stop");
+                _svin_background_set("images/bg/bus_stop.bg");
 
                 //render some text
                 _svin_textbox_clear();

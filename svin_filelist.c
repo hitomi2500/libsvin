@@ -16,21 +16,17 @@ _svin_filelist_search_lfn(iso9660_filelist_entry_t entry, char * raw_buffer, int
     if (bFolder)
         strcat(search_buf,";1");
     int len = strlen(search_buf);
-    //bool bFound = false;
 
-    //for (int i=0;(i<8100)&&(bFound==false);i++)
     for (int i=0;i<parent_raw_buffer_len-len-1;i++)
     {
         if (0==memcmp(search_buf,raw_buffer+i,len))
         {
-            //bFound = true;
             //scanning forward until NM signature
-            while ((i<8100)&&(0!=memcmp("NM",raw_buffer+i,2)))
+            while ((i<parent_raw_buffer_len)&&(0!=memcmp("NM",raw_buffer+i,2)))
                 i++;
             len = raw_buffer[i+2]-5;
             memcpy(_svin_filelist_long_filename,(uint8_t*)&(raw_buffer[i+5]),len);
             _svin_filelist_long_filename[len] = 0;
-            //strcpy(_svin_filelist_long_filename,"Some long filename");
             return true;
         }
     }
@@ -78,10 +74,11 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
     }
     else if (ISO9660_ENTRY_TYPE_DIRECTORY == entry.type){
         //recursively allocating another buffer
-        raw_size = 8192;//TODO: detect this automatically
+        raw_size = entry.size;//8192;//TODO: detect this automatically
+        raw_size = (((raw_size-1)/2048)+1)*2048;
         raw_buffer = malloc(raw_size);
         //now read raw folder content for LFN search
-        cd_block_multiple_sectors_read(entry.starting_fad, 4, (uint8_t*)raw_buffer);
+        cd_block_multiple_sectors_read(entry.starting_fad, raw_size/2048, (uint8_t*)raw_buffer);
 
         if (strlen(current_dir)>0)
         {
