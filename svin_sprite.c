@@ -15,18 +15,24 @@
 
 int iLastIndex[3];
 
+char * _svin_sprite_NBG0_usage;
+char * _svin_sprite_NBG1_usage;
+char * _svin_sprite_NBG2_usage;
+_svin_sprite_t * _svin_sprite_cache;
+
 void 
 _svin_sprite_init()
 {
-    char * p = (char*)_SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR;
-    memset(p,0,4096);
-    p = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
-    memset(p,0,2048);
-    p = (char*)_SVIN_SPRITE_NBG2_GLOBAL_USAGE_ADDR;
-    memset(p,0,512);
+    _svin_sprite_NBG0_usage = malloc(4096);
+    memset(_svin_sprite_NBG0_usage,0,4096);
+    _svin_sprite_NBG1_usage = malloc(2048);
+    memset(_svin_sprite_NBG1_usage,0,2048);
+    _svin_sprite_NBG2_usage = malloc(512);
+    memset(_svin_sprite_NBG2_usage,0,512);
     iLastIndex[0] = 0;
     iLastIndex[1] = 0;
     iLastIndex[2] = 0;
+    _svin_sprite_cache = malloc(sizeof(_svin_sprite_t)*SVIN_SPRITE_CACHE_SIZE);
 }
 
 void 
@@ -122,9 +128,9 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 
     big_buffer = malloc(iSize_Fixed);
 
-    pGlobalUsage[0] = (char*)_SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR;
-    pGlobalUsage[1] = (char*)_SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR;
-    pGlobalUsage[2] = (char*)_SVIN_SPRITE_NBG2_GLOBAL_USAGE_ADDR;
+    pGlobalUsage[0] = _svin_sprite_NBG0_usage;
+    pGlobalUsage[1] = _svin_sprite_NBG1_usage;
+    pGlobalUsage[2] = _svin_sprite_NBG2_usage;
 
     switch(iLayer)
     {

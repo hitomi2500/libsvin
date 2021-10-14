@@ -1,16 +1,19 @@
 #ifndef _SVIN_SPRITE_H_
 #define _SVIN_SPRITE_H_
 
-#define _SVIN_SPRITE_NBG0_GLOBAL_USAGE_ADDR 0x202F0000
-#define _SVIN_SPRITE_NBG1_GLOBAL_USAGE_ADDR 0x202F2000
-#define _SVIN_SPRITE_NBG2_GLOBAL_USAGE_ADDR 0x202F4000
-
 #include <yaul.h>
 
 #include <assert.h>
 #include <stdlib.h>
 
 #include "svin.h"
+
+typedef struct {
+    const char *filename;
+    bool valid;
+} _svin_sprite_t;
+
+#define SVIN_SPRITE_CACHE_SIZE 256
 
 void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
