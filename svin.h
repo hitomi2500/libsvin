@@ -1,7 +1,7 @@
 #ifndef _SVIN_H_
 #define _SVIN_H_
 
-//#define PORT_USE_FILECLIENT
+//#define ROM_MODE
 
 #include <yaul.h>
 #include <svin_textbox.h>
@@ -10,8 +10,7 @@
 #include <svin_sprite.h>
 #include <svin_background.h>
 #include <svin_tapestry.h>
-
-//#define _SVIN_DIRTY_STATIC_LINKING
+#include <svin_cd_access.h>
 
 #define _SVIN_SCREEN_WIDTH    704
 #define _SVIN_SCREEN_HEIGHT   448

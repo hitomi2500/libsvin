@@ -6,9 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cd-block_multiread.h>
-
-extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
 static void _svin_vblank_out_handler(void *);
 
 static smpc_peripheral_digital_t _digital;

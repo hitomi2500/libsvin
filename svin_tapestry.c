@@ -6,10 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cd-block_multiread.h>
-
-extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
-
 fad_t _svin_background_pack_fad;
 uint8_t *_svin_background_index;
 uint16_t _svin_background_files_number;
@@ -179,11 +175,11 @@ _svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int 
             _svin_tapestry_pack_fad = file_entry->starting_fad;
             //get filesize to load palette
             //reading 1st block to find out number of blocks
-            cd_block_sector_read(_svin_tapestry_pack_fad, tmp_sector);
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad, tmp_sector);
             //getting size and number of entries
             int iSizeY = tmp_sector_16[32+3];
             assert(iSizeY > 0);
-            cd_block_sector_read(_svin_tapestry_pack_fad + 1 + iSizeY/2 + 0, tmp_sector);
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + iSizeY/2 + 0, tmp_sector);
             _svin_set_palette(0, tmp_sector);
         }
     }
@@ -192,7 +188,7 @@ _svin_tapestry_load_position(iso9660_filelist_t *_filelist, char *filename, int 
     //now that we know the FAD, load 224 blocks from the position start
     for (int i=0;i<224;i++)
     {
-        cd_block_sector_read(_svin_tapestry_pack_fad + 1 + position + i, tmp_sector);
+        _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + position + i, tmp_sector);
         memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + i*1408), tmp_sector, 1408);
     }
 }
@@ -216,14 +212,14 @@ _svin_tapestry_move_up()
         if ( 1 == _svin_tapestry_movement_active)
         {
             //already moving up, the sector is requested, we only need to fetch it
-            cd_block_sector_read_process(tmp_sector);
+            _svin_cd_block_sector_read_process(tmp_sector);
         }
         else
         {
             //starting movement, first flushing whatever was prefetched
-            cd_block_sector_read_flush(tmp_sector);
+            _svin_cd_block_sector_read_flush(tmp_sector);
             //now doing a full read
-            cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0, tmp_sector);
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0, tmp_sector);
         }
         memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + ((_svin_tapestry_framebuffer_start+0)%250)*1408), tmp_sector, 1408);
         //reindex the positions in framebuffer
@@ -244,7 +240,7 @@ _svin_tapestry_move_up()
         if (_svin_tapestry_framebuffer_start < 0)
             _svin_tapestry_framebuffer_start += 250;
         //prefetching data for consecutive movement
-        cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0); 
+        _svin_cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 0); 
         _svin_tapestry_movement_active = 1;
     }
 }
@@ -264,14 +260,14 @@ _svin_tapestry_move_down()
         if ( -1 == _svin_tapestry_movement_active)
         {
             //already moving down, the sector is requested, we only need to fetch it
-            cd_block_sector_read_process(tmp_sector);
+            _svin_cd_block_sector_read_process(tmp_sector);
         }
         else
         {
             //starting movement, first flushing whatever was prefetched
-            cd_block_sector_read_flush(tmp_sector);
+            _svin_cd_block_sector_read_flush(tmp_sector);
             //now doing a full read
-            cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224, tmp_sector);
+            _svin_cd_block_sector_read(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224, tmp_sector);
         }
         memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + ((_svin_tapestry_framebuffer_start+224)%250)*1408), tmp_sector, 1408);
         //reindex the positions in framebuffer
@@ -292,7 +288,7 @@ _svin_tapestry_move_down()
         if (_svin_tapestry_framebuffer_start >= 250)
             _svin_tapestry_framebuffer_start = 0;
         //prefetching data for consecutive movement
-        cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224); 
+        _svin_cd_block_sector_read_request(_svin_tapestry_pack_fad + 1 + _svin_tapestry_data_start + 224); 
         _svin_tapestry_movement_active = -1;
     }
 }

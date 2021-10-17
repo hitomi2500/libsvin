@@ -1,7 +1,7 @@
 #include <yaul.h>
+#include <svin.h>
 #include <stdlib.h>
 #include "svin_filelist.h"
-#include "cd-block_multiread.h"
 #include "iso9660-internal-local.h"
 
 int _svin_filelist_size;
@@ -78,7 +78,7 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
         raw_size = (((raw_size-1)/2048)+1)*2048;
         raw_buffer = malloc(raw_size);
         //now read raw folder content for LFN search
-        cd_block_multiple_sectors_read(entry.starting_fad, raw_size/2048, (uint8_t*)raw_buffer);
+        _svin_cd_block_sectors_read(entry.starting_fad,  (uint8_t*)raw_buffer, raw_size);
 
         if (strlen(current_dir)>0)
         {
@@ -97,7 +97,11 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
         {
             strcat(dir,entry.name); //using short filename if no LFN is available
         }    
-        iso9660_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
+        #ifdef ROM_MODE
+            iso9660_rom_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
+        #else
+            iso9660_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
+        #endif
 
         for (_rec_i=0;_rec_i<_rec_filelist.entries_count;_rec_i++)
         {
@@ -119,28 +123,80 @@ _svin_filelist_fill()
     uint32_t i;
     iso9660_pvd_t * pvd = malloc(sizeof(iso9660_pvd_t));
     iso9660_dirent_t dirent_root;
+    //uint8_t *tmp;//[2048];
 
     _svin_filelist_size = 0;
 
     //reading pvd
-    cd_block_sector_read(LBA2FAD(16), (uint8_t*)pvd);
-            
+    _svin_cd_block_sector_read(LBA2FAD(16), (uint8_t*)pvd);
+    //dirent_root = (iso9660_dirent_t *)((pvd->root_directory_record)); 
+    //assert (pvd->type[0] == 1);
+    //assert (dirent_root->length[0] == 34);
+    /*    uint8_t * tmp;
+        tmp = (uint8_t*)pvd;
+        char str[1024];
+        _svin_init();
+        sprintf(str,"FAD = %i pvd->type[0]=%x dirent_root->length=%x %x %x %x %x %x %x %x  ",
+                LBA2FAD(16),
+                tmp[0],
+                tmp[156],
+                tmp[157],
+                tmp[158],
+                tmp[159],
+                tmp[160],
+                tmp[161],
+                tmp[162],
+                tmp[163]
+                );
+        _svin_textbox_print("minidump",str,"Lato_Black12",3,3);
+        while(1);*/
+/*        assert (tmp[0] == 0x53);
+    tmp = (uint8_t *)0x22030000;
+    assert (tmp[0] == 0x05);    
+    tmp = (uint8_t *)0x22100002;
+    assert (tmp[0] == 0x47);   */
+
+
     //getting root size
     memcpy(&dirent_root, pvd->root_directory_record, sizeof(dirent_root));
     int root_length = isonum_733(dirent_root.data_length);
     root_length = (((root_length-1)/2048)+1)*2048;
     int root_start = isonum_733(dirent_root.extent);
     char * raw_buffer = malloc(root_length);
-    cd_block_multiple_sectors_read(LBA2FAD(root_start), root_length/2048, (uint8_t*)raw_buffer);
+    assert (root_start > 0);
+    _svin_cd_block_sectors_read(LBA2FAD(root_start), (uint8_t*)raw_buffer,root_length);
 
     //allocating global  buffer for filename
     _svin_filelist_long_filename = malloc(256);//ought to be enough for everyone
 
-    iso9660_filelist_root_read(&_filelist, _SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+#ifdef ROM_MODE
+    //cook up a "root entry"
+    iso9660_filelist_entry_t root_dummy_entry;
+    root_dummy_entry.type = ISO9660_ENTRY_TYPE_DIRECTORY;
+    for (int i=0;i<12;i++)
+        root_dummy_entry.name[i] = '\0';
+    root_dummy_entry.starting_fad = LBA2FAD(root_start);
+    root_dummy_entry.size = root_length;
+    root_dummy_entry.sector_count = ((root_length-1)/2048 + 1);
+    assert(root_dummy_entry.starting_fad > 150);
+    iso9660_rom_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+#else
+    ///cook up a "root entry"
+    iso9660_filelist_entry_t root_dummy_entry;
+    root_dummy_entry.type = ISO9660_ENTRY_TYPE_DIRECTORY;
+    for (int i=0;i<12;i++)
+        root_dummy_entry.name[i] = '\0';
+    root_dummy_entry.starting_fad = LBA2FAD(root_start);
+    root_dummy_entry.size = root_length;
+    root_dummy_entry.sector_count = ((root_length-1)/2048 + 1);
+    assert(root_dummy_entry.starting_fad > 150);
+    iso9660_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+    //iso9660_filelist_root_read(&_filelist, _SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+#endif
 
     for (i=0;i<_filelist.entries_count;i++)
         _svin_filelist_fill_recursive(_filelist.entries[i],"",raw_buffer,root_length);
-
+    
     free (raw_buffer);
     free (_svin_filelist_long_filename);
     free (pvd);

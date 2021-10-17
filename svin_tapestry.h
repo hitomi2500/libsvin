@@ -1,8 +1,6 @@
 #ifndef _SVIN_TAPESTRY_H_
 #define _SVIN_TAPESTRY_H_
 
-//#define PORT_USE_FILECLIENT
-
 #include <yaul.h>
 #include <svin.h>
 

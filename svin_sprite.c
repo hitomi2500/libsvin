@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include "svin.h"
-#include "cd-block_multiread.h"
 
 #include <mcufont.h>
 
@@ -171,7 +170,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     assert (iPaletteIndex < 7);
 
     //reading whole file at once
-    cd_block_multiple_sectors_read(_sprite_fad, iSize_Fixed/2048, big_buffer);
+    _svin_cd_block_sectors_read(_sprite_fad, big_buffer, iSize_Fixed);
 
     //getting sizes in tiles
     iSizeX = big_buffer[0];

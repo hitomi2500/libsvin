@@ -5,10 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cd-block_multiread.h>
-
-extern int cd_block_multiple_sectors_read(uint32_t fad, uint32_t number, uint8_t *output_buffer);
-
 vdp1_cmdt_list_t *_svin_cmdt_list;
 extern uint8_t _svin_init_done;
 
@@ -69,15 +65,15 @@ void _svin_background_set(char * filename)
     vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
     //reading first half of the background
-    cd_block_multiple_sectors_read(_bg_fad + 1, 77, buffer);
+    _svin_cd_block_sectors_read(_bg_fad + 1, buffer, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
 
     //reading second half of the background
-    cd_block_multiple_sectors_read(_bg_fad + 1 + 77, 77, buffer);
+    _svin_cd_block_sectors_read(_bg_fad + 1 + 77, buffer, 2048 * 77);
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
 
     //read palette
-    cd_block_sector_read(_bg_fad + 1 + 154, palette);
+    _svin_cd_block_sector_read(_bg_fad + 1 + 154, palette);
     _svin_set_palette(0, palette);
 
     free(palette);
@@ -107,7 +103,7 @@ void _svin_background_update(char *filename)
     //read next image while fading-to-black current one
     for (int i = 0; i < 14; i++)
     {
-        cd_block_multiple_sectors_read(_bg_fad + 1 + i * 11, 11, &(buffer[11 * 2048 * i]));
+        _svin_cd_block_sectors_read(_bg_fad + 1 + i * 11, &(buffer[11 * 2048 * i]), 11 * 2048);
         _svin_background_fade_to_black_step();
     }
 
@@ -122,7 +118,7 @@ void _svin_background_update(char *filename)
     memcpy((uint8_t *)(vdp1_vram_partitions.texture_base), buffer, 2048 * 154);
 
     //read palette
-    cd_block_sector_read(_bg_fad + 1 + 154, palette);
+    _svin_cd_block_sector_read(_bg_fad + 1 + 154, palette);
     _svin_set_palette(0, palette);
 
     free(buffer);

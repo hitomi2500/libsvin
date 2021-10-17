@@ -7,7 +7,6 @@
 #include "svin_textbox.h"
 
 #include <mcufont.h>
-#include <cd-block_multiread.h>
 #define UNUSED(x) (void)(x)
 
 void 
@@ -34,10 +33,7 @@ _svin_run_script(char * filename)
     script_buffer = malloc(4096);
     tmp_buffer = malloc(2048);
     tmp_buffer2 = malloc(2048);
-    //reading 1st block
-    //cd_block_multiple_sectors_read(_script_fad, 2, (uint8_t*)script_buffer);
-    //_script_fad+=2;
-    cd_block_sector_read(_script_fad, (uint8_t*)script_buffer);
+    _svin_cd_block_sector_read(_script_fad, (uint8_t*)script_buffer);
     _script_fad++;
     int iDataInBuffer=2048;
     //starting parse cycle 
@@ -242,7 +238,7 @@ _svin_run_script(char * filename)
         //should we load more data?
         if (iDataInBuffer<2048)
         {
-            cd_block_sector_read(_script_fad, (uint8_t*)tmp_buffer2);
+            _svin_cd_block_sector_read(_script_fad, (uint8_t*)tmp_buffer2);
             _script_fad++;
             for (j=0;j<2048;j++)
             {
