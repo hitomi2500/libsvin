@@ -52,7 +52,7 @@ _svin_sprite_clear(int iPosition)
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
                 {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
@@ -85,7 +85,7 @@ _svin_sprite_clear(int iPosition)
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=_SVIN_SPRITE_TILES_WIDTH;x<64;x++)
                 {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
@@ -93,7 +93,7 @@ _svin_sprite_clear(int iPosition)
             for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH*2-64;x++)
                 {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44+64) || (y>53+64))
                         p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on

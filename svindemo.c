@@ -35,16 +35,11 @@ main(void)
                 tmp[0x110002]);
         _svin_textbox_print("minidump",str,"Lato_Black12",3,3);
         while(1);*/
-/*        assert (tmp[0] == 0x53);
-    tmp = (uint8_t *)0x22030000;
-    assert (tmp[0] == 0x05);    
-    tmp = (uint8_t *)0x22100002;
-    assert (tmp[0] == 0x47);   */
-        
-        
+       
         //load logo
         _svin_clear_palette(0);
         _svin_background_set("images/bg/yaul_logo.bg");
+        //while(1);
         _svin_delay(1000);
         _svin_background_fade_to_black();
 

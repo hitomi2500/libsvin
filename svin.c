@@ -68,7 +68,7 @@ void _svin_set_cycle_patterns_cpu()
     vram_cycp.pt[3].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
     vdp2_vram_cycp_set(&vram_cycp);
-    vdp_sync();
+    vdp2_sync();
 }
 
 void _svin_set_cycle_patterns_nbg()
@@ -80,7 +80,7 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
     vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_NO_ACCESS;//VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -114,7 +114,7 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[3].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
     vdp2_vram_cycp_set(&vram_cycp);
-    vdp_sync();
+    vdp2_sync();
 
     //enable transparency for NBG1 over NBG0 (might not work with sprites between
     MEMORY_WRITE(16, VDP2(CCCTL), 0x0000); //disable cc both layers
@@ -152,9 +152,6 @@ void _svin_init()
     vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 3);
     vdp2_scrn_display_set(VDP2_SCRN_NBG0, true);
     vdp2_cram_mode_set(1);
-
-    //_svin_hang_test(2); 
-    //while(1);
 
     //setup nbg1
     format.scroll_screen = VDP2_SCRN_NBG1;
@@ -198,23 +195,23 @@ void _svin_init()
     bs_color = COLOR_RGB1555(1, 0, 0, 0);
     vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
 
-    vdp2_sprite_priority_set(0, 2);
-    vdp2_sprite_priority_set(1, 2);
-    vdp2_sprite_priority_set(2, 2);
-    vdp2_sprite_priority_set(3, 2);
-    vdp2_sprite_priority_set(4, 2);
-    vdp2_sprite_priority_set(5, 2);
-    vdp2_sprite_priority_set(6, 2);
-    vdp2_sprite_priority_set(7, 2);
+    vdp2_sprite_priority_set(0, 1);
+    vdp2_sprite_priority_set(1, 1);
+    vdp2_sprite_priority_set(2, 1);
+    vdp2_sprite_priority_set(3, 1);
+    vdp2_sprite_priority_set(4, 1);
+    vdp2_sprite_priority_set(5, 1);
+    vdp2_sprite_priority_set(6, 1);
+    vdp2_sprite_priority_set(7, 1);
 
     //setting cycle patterns for cpu access
     _svin_set_cycle_patterns_cpu();
 
-    vdp_sync_vblank_out_set(_svin_vblank_out_handler);
+    vdp_sync_vblank_out_set(_svin_vblank_out_handler, NULL);
     
     vdp2_tvmd_display_set();
     //cpu_intc_mask_set(0); //?????
-    vdp_sync();
+    vdp2_sync();
 
     //-------------- setup VDP1 -------------------
     _svin_cmdt_list = vdp1_cmdt_list_alloc(_SVIN_VDP1_ORDER_COUNT);
@@ -332,7 +329,7 @@ void _svin_init()
     cmdt_system_clip_coords->cmd_yc = _SVIN_SCREEN_HEIGHT - 1;
 
     vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
-    vdp_sync();
+    vdp1_sync();
 
     //-------------- setup pattern names -------------------
 
@@ -341,7 +338,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG0_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG0_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x00000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //writing pattern names for nbg1
@@ -349,7 +346,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG1_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x00000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //writing pattern names for nbg2
@@ -357,7 +354,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG2_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x00000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //-------------- setup character pattern names -------------------
@@ -381,6 +378,20 @@ void _svin_init()
     for (unsigned int i = 0; i < _SVIN_NBG2_CHPNDR_SIZE / sizeof(int); i++)
     {
         _pointer32[i] = 0;
+    }
+
+    //setting up "transparent" character for nbg0
+    _pointer32 = (int *)_SVIN_NBG0_CHPNDR_SPECIALS_ADDR;
+    for (unsigned int i = 0; i < _SVIN_CHARACTER_BYTES / sizeof(int); i++)
+    {
+        _pointer32[i] = 0;
+    }
+
+    //setting up "semi-transparent" character for nbg0
+    _pointer32 = (int *)(_SVIN_NBG0_CHPNDR_SPECIALS_ADDR + _SVIN_CHARACTER_BYTES);
+    for (unsigned int i = 0; i < _SVIN_CHARACTER_BYTES / sizeof(int); i++)
+    {
+        _pointer32[i] = 0x7F7F7F7F;
     }
 
     //setting up "transparent" character for nbg1
@@ -460,6 +471,8 @@ void _svin_init()
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();
+
+    _svin_debug_init();
 
     //-------------- init end -------------------  
     //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX * 4);

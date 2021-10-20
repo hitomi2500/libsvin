@@ -1,7 +1,7 @@
 #ifndef _SVIN_H_
 #define _SVIN_H_
 
-//#define ROM_MODE
+#define ROM_MODE
 
 #include <yaul.h>
 #include <svin_textbox.h>
@@ -11,6 +11,7 @@
 #include <svin_background.h>
 #include <svin_tapestry.h>
 #include <svin_cd_access.h>
+#include <svin_debug.h>
 
 #define _SVIN_SCREEN_WIDTH    704
 #define _SVIN_SCREEN_HEIGHT   448
@@ -48,6 +49,8 @@
 
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_ADDR (VDP2_VRAM_ADDR(3,0x10000))
 #define _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX ((0x70000)/32)
+#define _SVIN_NBG0_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(0,0x1F000))
+#define _SVIN_NBG0_CHPNDR_SPECIALS_INDEX ((0x1F000)/32)
 #define _SVIN_NBG1_CHPNDR_SPECIALS_ADDR (VDP2_VRAM_ADDR(3,0x1F000))
 #define _SVIN_NBG1_CHPNDR_SPECIALS_INDEX ((0x7F000)/32)
 
