@@ -75,12 +75,17 @@ void _svin_set_cycle_patterns_nbg()
 {
     //swithcing everything to NBG accesses, CPU can't write data anymore
 
+    // D0 D0 D2 D2
+    // D0 D0 D1 D1
+    // i0 i1 D1 D1
+    // -- i2 D2 D2
+
     struct vdp2_vram_cycp vram_cycp;
 
-    vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
+    vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_NO_ACCESS;//VDP2_VRAM_CYCP_CHPNDR_NBG0;
+    vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG2;
+    vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG2;
     vram_cycp.pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -88,15 +93,15 @@ void _svin_set_cycle_patterns_nbg()
 
     vram_cycp.pt[1].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[1].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-    vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_PNDR_NBG2;
+    vram_cycp.pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
+    vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
-    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG1;
-    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
+    vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
+    vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_PNDR_NBG1;
     vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
     vram_cycp.pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -104,9 +109,9 @@ void _svin_set_cycle_patterns_nbg()
     vram_cycp.pt[2].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[2].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
-    vram_cycp.pt[3].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
-    vram_cycp.pt[3].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
-    vram_cycp.pt[3].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
+    vram_cycp.pt[3].t0 = VDP2_VRAM_CYCP_NO_ACCESS;
+    vram_cycp.pt[3].t1 = VDP2_VRAM_CYCP_PNDR_NBG2;
+    vram_cycp.pt[3].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG2;
     vram_cycp.pt[3].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG2;
     vram_cycp.pt[3].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
     vram_cycp.pt[3].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -167,9 +172,9 @@ void _svin_init()
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG1_PNDR_START;
 
-    vdp2_scrn_cell_format_set(&format);
-    vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
+    //vdp2_scrn_cell_format_set(&format);
+    //vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
+    //vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
 
     //setup nbg2
     format.scroll_screen = VDP2_SCRN_NBG2;
@@ -185,9 +190,9 @@ void _svin_init()
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG2_PNDR_START;
 
-    vdp2_scrn_cell_format_set(&format);
-    vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
+    //vdp2_scrn_cell_format_set(&format);
+    //vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
+    //vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
 

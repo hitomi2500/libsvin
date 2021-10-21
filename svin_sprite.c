@@ -17,21 +17,21 @@ int iLastIndex[3];
 char * _svin_sprite_NBG0_usage;
 char * _svin_sprite_NBG1_usage;
 char * _svin_sprite_NBG2_usage;
-_svin_sprite_t * _svin_sprite_cache;
+//_svin_sprite_t * _svin_sprite_cache;
 
 void 
 _svin_sprite_init()
 {
-    _svin_sprite_NBG0_usage = malloc(4096);
-    memset(_svin_sprite_NBG0_usage,0,4096);
-    _svin_sprite_NBG1_usage = malloc(2048);
-    memset(_svin_sprite_NBG1_usage,0,2048);
-    _svin_sprite_NBG2_usage = malloc(512);
-    memset(_svin_sprite_NBG2_usage,0,512);
+    _svin_sprite_NBG0_usage = malloc(_SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    memset(_svin_sprite_NBG0_usage,0,_SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    _svin_sprite_NBG1_usage = malloc(_SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    memset(_svin_sprite_NBG1_usage,0,_SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    _svin_sprite_NBG2_usage = malloc(_SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    memset(_svin_sprite_NBG2_usage,0,_SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
     iLastIndex[0] = 0;
     iLastIndex[1] = 0;
     iLastIndex[2] = 0;
-    _svin_sprite_cache = malloc(sizeof(_svin_sprite_t)*SVIN_SPRITE_CACHE_SIZE);
+    //_svin_sprite_cache = malloc(sizeof(_svin_sprite_t)*SVIN_SPRITE_CACHE_SIZE);
 }
 
 void 
@@ -158,7 +158,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             break;
         case 1:
             //mid, only layers NBG1 and NBG2
-            iPaletteIndex = 2+iLayer;
+            iPaletteIndex = 3+iLayer;
             break;
         case 2:
             //right, only layers NBG0 and NBG1
