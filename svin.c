@@ -172,9 +172,9 @@ void _svin_init()
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG1_PNDR_START;
 
-    //vdp2_scrn_cell_format_set(&format);
-    //vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
-    //vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
+    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
 
     //setup nbg2
     format.scroll_screen = VDP2_SCRN_NBG2;
