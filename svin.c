@@ -190,9 +190,9 @@ void _svin_init()
     format.sf_mode = 0;
     format.map_bases.plane_a = _SVIN_NBG2_PNDR_START;
 
-    //vdp2_scrn_cell_format_set(&format);
-    //vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
-    //vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
+    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
 
@@ -359,7 +359,7 @@ void _svin_init()
     _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
     for (unsigned int i = 0; i < _SVIN_NBG2_PNDR_SIZE / sizeof(int); i++)
     {
-        _pointer32[i] = 0x00000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        _pointer32[i] = 0x00000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
     }
 
     //-------------- setup character pattern names -------------------
@@ -408,6 +408,20 @@ void _svin_init()
 
     //setting up "semi-transparent" character for nbg1
     _pointer32 = (int *)(_SVIN_NBG1_CHPNDR_SPECIALS_ADDR + _SVIN_CHARACTER_BYTES);
+    for (unsigned int i = 0; i < _SVIN_CHARACTER_BYTES / sizeof(int); i++)
+    {
+        _pointer32[i] = 0x7F7F7F7F;
+    }
+
+    //setting up "transparent" character for nbg1
+    _pointer32 = (int *)_SVIN_NBG2_CHPNDR_SPECIALS_ADDR;
+    for (unsigned int i = 0; i < _SVIN_CHARACTER_BYTES / sizeof(int); i++)
+    {
+        _pointer32[i] = 0;
+    }
+
+    //setting up "semi-transparent" character for nbg1
+    _pointer32 = (int *)(_SVIN_NBG2_CHPNDR_SPECIALS_ADDR + _SVIN_CHARACTER_BYTES);
     for (unsigned int i = 0; i < _SVIN_CHARACTER_BYTES / sizeof(int); i++)
     {
         _pointer32[i] = 0x7F7F7F7F;

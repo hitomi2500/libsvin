@@ -85,7 +85,7 @@ _svin_textbox_init()
     _svin_set_cycle_patterns_cpu();
 
     //-------------- setup pattern names -------------------
-    _pointer32 = (int *)_SVIN_NBG1_PNDR_START;
+    _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
     //writing semi-transparent characters where the dialog box should go, 
     int index = 0;
     int iOffset;
@@ -95,25 +95,23 @@ _svin_textbox_init()
         iOffset = y * 64;
         for (int x = 4; x < 64; x++)
         {
-            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
-            //_pointer32[iOffset + x] = 0x00000000 + (0x100000*((x-2)%8)) + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 1, transparency off
+            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
             index++;
         }
         //now plane 1
         iOffset = 64 * 64 + y * 64;
         for (int x = 0; x < 20; x++)
         {
-            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
-            //_pointer32[iOffset + x] = 0x00000000 + 0x100000*(y-22) + _SVIN_NBG1_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 1, transparency off
+            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
             index++;
         }
     }
 
     //-------------- setup character pattern names ------------------
 
-    //setting up textbox placeholder for nbg1, 5x40 chars = 640x80
-    _pointer32 = (int *)(_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR);
-    for (unsigned int i = 0; i < (_SVIN_CHARACTER_BYTES*200) / sizeof(int); i++)
+    //setting up textbox placeholder for nbg2, 5x40 chars = 640x80
+    _pointer32 = (int *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
+    for (unsigned int i = 0; i < (_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE) / sizeof(int); i++)
     {
         _pointer32[i] = 0x0F0F0F0F;//0x7F7F7F7F;
     }
@@ -212,7 +210,7 @@ void
 _svin_textbox_clear()
 {
     //filling entire textbox range with transparent color 0
-    memset((void*)_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR,0,640*80);
+    memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
 }
 
 void
@@ -231,7 +229,7 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
 
         buffer = malloc(32 * 2048);
 
-        memset((void*)_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR,0x0F,640*80);
+        memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0x0F,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
 
         // Rendering speaker name first, 1st line, shifted 1 quad to the right
 
@@ -273,7 +271,7 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
                 mf_wordwrap(font, options.width - 2 * options.margin, options.text, line_callback, &state);
 
                 //copy speaker name
-                _p = (uint8_t *)(_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR);
+                _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
                 for (int cellX = 0; cellX < 80; cellX++)
                 {
                         for (int cellY = 0; cellY < 2; cellY++)
@@ -335,7 +333,7 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
         // Render the text
         mf_wordwrap(font, options.width - 2 * options.margin, options.text, line_callback, &state);
 
-        _p = (uint8_t *)(_SVIN_NBG1_CHPNDR_TEXTBOX_ADDR);
+        _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
         for (int cellX = 0; cellX < 80; cellX++)
         {
                 for (int cellY = 2; cellY < 10; cellY++)

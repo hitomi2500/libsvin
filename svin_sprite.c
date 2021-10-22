@@ -48,55 +48,58 @@ _svin_sprite_clear(int iPosition)
     switch (iPosition)
     {
         case 0:
-            //for left clearing NBG0 and NBG1
+            //for left 
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
                 {
                     p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
-                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
         case 1:
-            //for mid clearing NBG1 and NBG2
+            //for mid 
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=_SVIN_SPRITE_TILES_WIDTH/2;x<64;x++)
                 {
+                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
-                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
             for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<(_SVIN_SPRITE_TILES_WIDTH*3/4) - 64;x++)
                 {
+                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
-                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
         case 2:
-            //for right clearing NBG0 and NBG1
+            //for right 
             for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=_SVIN_SPRITE_TILES_WIDTH;x<64;x++)
                 {
                     p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44) || (y>53))
-                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
                 for (x=0;x<_SVIN_SPRITE_TILES_WIDTH*2-64;x++)
                 {
                     p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                     //not killing textbox, lines 44 thru 53
                     if ((y<44+64) || (y>53+64))
-                        p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
     }
@@ -286,7 +289,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                         break;
                     case 1:
                         //not killing textbox, lines 44 thru 53
-                        if ((y<44) || (y>53))
+                        //if ((y<44) || (y>53))
                         {
                             iOffset = (_SVIN_NBG1_CHPNDR_START - VDP2_VRAM_ADDR(0,0))/32;
                             if (x<64)
