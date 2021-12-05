@@ -21,7 +21,7 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_pushButton_Select_BGs_clicked()
 {
     QFileDialog dia;
     list.clear();
@@ -34,37 +34,7 @@ void MainWindow::on_pushButton_clicked()
     {
         QFileInfo info(list.at(i));
         QString str = info.fileName();
-        /*QString str2,str3;
-        if(str.startsWith("ext_"))
-        {
-            str2.append("E_");
-            str = str.mid(4);
-        }
-        else if(str.startsWith("int_"))
-        {
-            str2.append("I_");
-            str = str.mid(4);
-        }
-        while ( (str.length() > 0) && (str2.length() < 8) )
-        {
-            if (str.startsWith("of_"))
-                str = str.mid(3);
-            str2.append(str.left(3).toUpper());
-            str2.append("_");
-            if (str2.length()>8) str2 = str2.left(8);
-            if (str.indexOf('_')> 0)
-            {
-                str = str.mid(str.indexOf('_')+1);
-            }
-        }
-        str3 = str2;
-        str3.append(".NBG");
-        //list83.append(str3);*/
-        list83.append(info.baseName());//.append(".nbg"));
-        //str3 = str2;
-        //str3.append(".PAL");
-        //list83pal.append(str3);
-        //list83pal.append(info.baseName().append(".pal"));
+        list83.append(info.baseName());
     }
 }
 
@@ -899,8 +869,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                         {
                             iPalette++;
                         }
-                        if (iPosition == 1)
-                            iLayer++;
+                        //if (iPosition == 1)
+                        //    iLayer++;
                         script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
                         script_outfile.write("\r");
                     }
@@ -916,8 +886,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                         _tiled_filename.chop(3);
                         _tiled_filename.append("tim");
                         int iLayer = 0;
-                        if (iPosition == 1)
-                            iLayer++;
+                        //if (iPosition == 1)
+                        //    iLayer++;
                         script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
                         script_outfile.write("\r");
                     }
