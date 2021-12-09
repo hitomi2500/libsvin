@@ -58,6 +58,23 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     }
     ui->textEdit->append(QString("Script: detected %1 labels").arg(Script_Labels.size()));
 
+    QList<QByteArray> Script_Variables;
+    for (int i=0;i<Script_Lines.size();i++)
+    {
+        if (Script_Lines.at(i).simplified().startsWith("$ ")) //variable or func
+        {
+            if ( (false == Script_Lines.at(i).contains('(')) || (false == Script_Lines.at(i).contains(')')) ) //not func
+            {
+                QByteArray b2 = Script_Lines.at(i).simplified();
+                b2 = b2.mid(2); //remove "$ "
+                b2 = b2.left(b2.indexOf(" ")); //remove everything after variable name
+                if (false == Script_Variables.contains(b2))
+                    Script_Variables.append(b2);
+            }
+        }
+    }
+    ui->textEdit->append(QString("Script: detected %1 variables").arg(Script_Variables.size()));
+
     //now find a corresponding recipe for each entry from recipe list
     QFile recipes_file(ui->lineEdit_Recipes_List->text());
     recipes_file.open(QIODevice::ReadOnly);
@@ -518,7 +535,67 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 }
             }
             if (false == bFound)
-                script_outfile.write(QString("ERROR JUMP UNKNOWN : %1 \r").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).toLatin1());
+                ui->textEdit->append(QString("Script ERROR: unknown jump %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("$ "))
+        {
+            //search variable in da list
+            if ( (false == Script_Lines.at(i).contains('(')) || (false == Script_Lines.at(i).contains(')')) ) //not func
+            {
+                bool bFound = false;
+                for (int j=0;j<Script_Variables.size();j++)
+                {
+                    if (Script_Lines.at(i).simplified().mid(2).startsWith(Script_Variables.at(j)))
+                    {
+                        bFound = true;
+                        script_outfile.write(QString("SET VAR%1 = ").arg(j).toLatin1());
+                        //parse equation
+                        QByteArray b2 = Script_Lines.at(i).simplified();
+                        b2 = b2.mid(b2.indexOf("=")+2);
+                        if (b2.contains("+"))
+                        {
+                            //simple summ
+                            QByteArray b3 = b2.left(b2.indexOf("+")-1).simplified();
+                            if (Script_Variables.contains(b3))
+                                script_outfile.write(QString("VAR%1 + ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            else
+                                script_outfile.write(QString("%1 + ").arg(b3.toInt()).toLatin1());
+                            b3 = b2.mid(b2.indexOf("+")+1).simplified();
+                            if (Script_Variables.contains(b3))
+                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            else
+                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                        }
+                        else if (b2.contains("-"))
+                        {
+                            //simple difference
+                            QByteArray b3 = b2.left(b2.indexOf("-")-1).simplified();
+                            if (Script_Variables.contains(b3))
+                                script_outfile.write(QString("VAR%1 - ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            else
+                                script_outfile.write(QString("%1 - ").arg(b3.toInt()).toLatin1());
+                            b3 = b2.mid(b2.indexOf("-")+1).simplified();
+                            if (Script_Variables.contains(b3))
+                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            else
+                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                        }
+                        else
+                        {
+                            //constant or variable
+                            QByteArray b3 = b2.simplified();
+                            if (Script_Variables.contains(b3))
+                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            else
+                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                        }
+                        script_outfile.write("\r");
+                    }
+
+                }
+                if (false == bFound)
+                    ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
+            }
         }
         else
         {
@@ -529,6 +606,20 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     }
     script_outfile.write("END\r");
     script_outfile.close();
+
+    QFile script_outfile_labels("SCRIPT.LBL");
+    script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    for (int i=0;i<Script_Labels_Position_Processed.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Labels_Position_Processed.at(i);
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
+    script_outfile_labels.close();
 }
 
 /*void MainWindow::Process_Sprite(QString filename)
