@@ -25,7 +25,7 @@ public:
 private slots:
     void on_pushButton_Select_BGs_clicked();
 
-    void on_pushButton_2_clicked();
+    void on_pushButton_process_BGs_clicked();
 
     void on_pushButton_Set_reciles_List_clicked();
 
