@@ -7,10 +7,34 @@
 
 void MainWindow::on_pushButton_Process_Sprites_clicked()
 {
+    QList<QByteArray> Script_Lines;
+    QList<QByteArray> Script_Lines_Eng;
+    QList<QByteArray> Script_Actors;
+    QList<QByteArray> Script_Actors_Aliases;
+    QByteArray b;
+    QByteArray ba;
+    QByteArray ba_pal;
+
     //filling actors list first
     QFile script_file_actors("actors.txt");
     script_file_actors.open(QIODevice::ReadOnly);
-
+    do {
+        b = script_file_actors.readLine();
+        if (b.simplified().size() > 0)
+            if (b.simplified().contains("{"))
+                if (true == b.contains('\"'))
+                {
+                    b = b.simplified();
+                    b = b.mid(b.indexOf('\"')+1);
+                    b = b.left(b.indexOf('\"'));
+                    Script_Actors_Aliases.append(b);
+                    QByteArray b2 = script_file_actors.readLine().simplified();
+                    b2 = b2.mid(b2.indexOf(':')+1);
+                    b2 = b2.mid(b2.indexOf('\"')+1);
+                    b2 = b2.left(b2.indexOf('\"'));
+                    Script_Actors.append(b2);
+                }
+    } while (b.length()>0);
     script_file_actors.close();
 
     //load every sprite recipe from script into recipes list
@@ -18,18 +42,17 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     QFile script_file_eng("eng.txt");
     script_file.open(QIODevice::ReadOnly);
     script_file_eng.open(QIODevice::ReadOnly);
-    QList<QByteArray> Script_Lines;
-    QList<QByteArray> Script_Lines_Eng;
-    QByteArray b;
-    QByteArray ba;
-    QByteArray ba_pal;
+
     do {
         b = script_file.readLine();
         Script_Lines.append(b);
     } while (b.length()>0);
     do {
         b = script_file_eng.readLine();
-        if (b.simplified().size() > 0) Script_Lines_Eng.append(b);
+        if (b.simplified().size() > 0)
+            if (false == b.simplified().startsWith("#TODO"))
+                if (b.simplified().contains('\"'))
+                    Script_Lines_Eng.append(b);
     } while (b.length()>0);
     ui->textEdit->append(QString("Loaded %1 strings from script, %2 english lines").arg(Script_Lines.size()).arg(Script_Lines_Eng.size()));
     script_file.close();
@@ -55,7 +78,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
     QList<QByteArray> Script_Labels;
     QList<int> Script_Labels_Position;
-    QList<int> Script_Labels_Position_Processed;
+    QList<int> Script_Labels_Position_Processed_Rus;
+    QList<int> Script_Labels_Position_Processed_Eng;
     for (int i=0;i<Script_Lines.size();i++)
     {
         if (Script_Lines.at(i).simplified().endsWith(":"))
@@ -67,7 +91,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 b2 = b2.mid(6); //remove "label"
                 Script_Labels.append(b2);
                 Script_Labels_Position.append((i));
-                Script_Labels_Position_Processed.append(0);
+                Script_Labels_Position_Processed_Rus.append(0);
+                Script_Labels_Position_Processed_Eng.append(0);
             }
         }
     }
@@ -415,18 +440,30 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     }
 
     //creating simplified script file
-    QFile script_outfile("SCRIPT.TXT");
+    QFile script_outfile_rus("SCRIPT_RUS.TXT");
+    QFile script_outfile_eng("SCRIPT_ENG.TXT");
     int iCurrentRecipe;
-    script_outfile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    int iActiveLines = 0;
+    script_outfile_rus.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    script_outfile_eng.open(QIODevice::WriteOnly|QIODevice::Truncate);
     for (int i=0;i<Script_Lines.size();i++)
     {
         //if there is a label aimed at this position, set its processed location
         for (int j=0;j<Script_Labels.size();j++)
         {
             if (Script_Labels_Position.at(j) == i)
-                Script_Labels_Position_Processed[j] = script_outfile.size();
+            {
+                Script_Labels_Position_Processed_Rus[j] = script_outfile_rus.size();
+                Script_Labels_Position_Processed_Eng[j] = script_outfile_eng.size();
+            }
         }
-        if (Script_Lines.at(i).simplified().startsWith("show"))
+        //fetch first word
+        QByteArray first_word = Script_Lines.at(i).simplified().left(Script_Lines.at(i).simplified().indexOf(" "));
+        if (Script_Lines.at(i).simplified().size()==0)
+        {
+            //skipping empty input
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("show"))
         {
             //this is a recipe, searching the exact recipe number
             iCurrentRecipe = -1;
@@ -459,8 +496,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     if (ImageLinks.at(f).recipe == iCurrentRecipe)
                     {
                         bFound = true;
-                        script_outfile.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
-                        script_outfile.write("\r");
+                        script_outfile_eng.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
+                        script_outfile_eng.write("\r");
+                        script_outfile_rus.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
+                        script_outfile_rus.write("\r");
                     }
                 }
 
@@ -481,8 +520,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                         }
                         //if (iPosition == 1)
                         //    iLayer++;
-                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
-                        script_outfile.write("\r");
+                        script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
+                        script_outfile_eng.write("\r");
+                        script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
+                        script_outfile_rus.write("\r");
                     }
                 }
 
@@ -498,75 +539,46 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                         int iLayer = 0;
                         //if (iPosition == 1)
                         //    iLayer++;
-                        script_outfile.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
-                        script_outfile.write("\r");
+                        script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                        script_outfile_eng.write("\r");
+                        script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                        script_outfile_rus.write("\r");
                     }
                 }
 
                 bFound = true;
-                script_outfile.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
-                script_outfile.write("\r");
+                script_outfile_eng.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
+                script_outfile_eng.write("\r");
+                script_outfile_rus.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
+                script_outfile_rus.write("\r");
             }
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("\""))
-        {
-            script_outfile.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=0 "));
-            script_outfile.write("\r");
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("th \""))
-        {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("TEXT ACTOR=1 "));
-            script_outfile.write("\r");
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("me \""))
-        {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("TEXT ACTOR=2 "));
-            script_outfile.write("\r");
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("sl \""))
-        {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("TEXT ACTOR=3 "));
-            script_outfile.write("\r");
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("un \""))
-        {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("TEXT ACTOR=4 "));
-            script_outfile.write("\r");
-        }
-        else if (Script_Lines.at(i).simplified().startsWith("dv \""))
-        {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("TEXT ACTOR=5 "));
-            script_outfile.write("\r");
         }
         else if (Script_Lines.at(i).simplified().startsWith("scene bg"))
         {
             QByteArray _tmp = Script_Lines.at(i).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("BG images/bg/").append(".bg"));
-            script_outfile.write("\r");
+            script_outfile_eng.write(_tmp.prepend("BG images/bg/").append(".bg"));
+            script_outfile_eng.write("\r");
+            script_outfile_rus.write(_tmp.prepend("BG images/bg/").append(".bg"));
+            script_outfile_rus.write("\r");
         }
         else if (Script_Lines.at(i).simplified().startsWith("scene cg"))
         {
             //CG is same as BG, but no sprites
-            script_outfile.write(QString("CLEAR POSITION 0 \r").toLatin1());
-            script_outfile.write(QString("CLEAR POSITION 1 \r").toLatin1());
-            script_outfile.write(QString("CLEAR POSITION 2 \r").toLatin1());
+            script_outfile_eng.write(QString("CLEAR POSITION 0 \r").toLatin1());
+            script_outfile_eng.write(QString("CLEAR POSITION 1 \r").toLatin1());
+            script_outfile_eng.write(QString("CLEAR POSITION 2 \r").toLatin1());
+            script_outfile_rus.write(QString("CLEAR POSITION 0 \r").toLatin1());
+            script_outfile_rus.write(QString("CLEAR POSITION 1 \r").toLatin1());
+            script_outfile_rus.write(QString("CLEAR POSITION 2 \r").toLatin1());
             QByteArray _tmp = Script_Lines.at(i).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile.write(_tmp.prepend("BG images/cg/").append(".bg"));
-            script_outfile.write("\r");
+            script_outfile_eng.write(_tmp.prepend("BG images/cg/").append(".bg"));
+            script_outfile_eng.write("\r");
+            script_outfile_rus.write(_tmp.prepend("BG images/cg/").append(".bg"));
+            script_outfile_rus.write("\r");
         }
         else if (Script_Lines.at(i).simplified().startsWith("jump "))
         {
@@ -577,7 +589,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 if (0 == Script_Labels.at(j).compare(Script_Lines.at(i).simplified().mid(5)))
                 {
                     bFound = true;
-                    script_outfile.write(QString("JUMP %1 \r").arg(j).toLatin1());
+                    script_outfile_eng.write(QString("JUMP %1 \r").arg(j).toLatin1());
+                    script_outfile_rus.write(QString("JUMP %1 \r").arg(j).toLatin1());
                 }
             }
             if (false == bFound)
@@ -594,7 +607,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     if (Script_Lines.at(i).simplified().mid(2).startsWith(Script_Variables.at(j)))
                     {
                         bFound = true;
-                        script_outfile.write(QString("SET VAR%1 = ").arg(j).toLatin1());
+                        script_outfile_eng.write(QString("SET VAR%1 = ").arg(j).toLatin1());
+                        script_outfile_rus.write(QString("SET VAR%1 = ").arg(j).toLatin1());
                         //parse equation
                         QByteArray b2 = Script_Lines.at(i).simplified();
                         b2 = b2.mid(b2.indexOf("=")+2);
@@ -603,39 +617,70 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                             //simple summ
                             QByteArray b3 = b2.left(b2.indexOf("+")-1).simplified();
                             if (Script_Variables.contains(b3))
-                                script_outfile.write(QString("VAR%1 + ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("VAR%1 + ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                                script_outfile_rus.write(QString("VAR%1 + ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            }
                             else
-                                script_outfile.write(QString("%1 + ").arg(b3.toInt()).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("%1 + ").arg(b3.toInt()).toLatin1());
+                                script_outfile_rus.write(QString("%1 + ").arg(b3.toInt()).toLatin1());
+                            }
                             b3 = b2.mid(b2.indexOf("+")+1).simplified();
                             if (Script_Variables.contains(b3))
-                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                                script_outfile_rus.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            }
                             else
-                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("%1").arg(b3.toInt()).toLatin1());
+                                script_outfile_rus.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            }
                         }
                         else if (b2.contains("-"))
                         {
                             //simple difference
                             QByteArray b3 = b2.left(b2.indexOf("-")-1).simplified();
                             if (Script_Variables.contains(b3))
-                                script_outfile.write(QString("VAR%1 - ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("VAR%1 - ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                                script_outfile_rus.write(QString("VAR%1 - ").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            }
                             else
-                                script_outfile.write(QString("%1 - ").arg(b3.toInt()).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("%1 - ").arg(b3.toInt()).toLatin1());
+                                script_outfile_rus.write(QString("%1 - ").arg(b3.toInt()).toLatin1());
+                            }
                             b3 = b2.mid(b2.indexOf("-")+1).simplified();
                             if (Script_Variables.contains(b3))
-                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                                script_outfile_rus.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            }
                             else
-                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("%1").arg(b3.toInt()).toLatin1());
+                                script_outfile_rus.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            }
                         }
                         else
                         {
                             //constant or variable
                             QByteArray b3 = b2.simplified();
                             if (Script_Variables.contains(b3))
-                                script_outfile.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                                script_outfile_rus.write(QString("VAR%1").arg(Script_Variables.indexOf(b3)).toLatin1());
+                            }
                             else
-                                script_outfile.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            {
+                                script_outfile_eng.write(QString("%1").arg(b3.toInt()).toLatin1());
+                                script_outfile_rus.write(QString("%1").arg(b3.toInt()).toLatin1());
+                            }
                         }
-                        script_outfile.write("\r");
+                        script_outfile_eng.write("\r");
+                        script_outfile_rus.write("\r");
                     }
 
                 }
@@ -652,22 +697,75 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             }
 
         }
+        else if (Script_Lines.at(i).simplified().startsWith("\""))
+        {
+            //narrator text
+            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=255 ").append("\r");
+            script_outfile_rus.write(b_rus);
+            QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=255 ").append("\r");
+            script_outfile_eng.write(b_eng);
+            script_outfile_eng.write("\r");
+            if (false == Script_Lines_Eng[iActiveLines].startsWith("\""))
+                ui->textEdit->append(QString("Script: ERROR, active  line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+            iActiveLines++;
+#error here - active lines in menu as well
+        }
+        else if (Script_Lines.at(i).simplified().startsWith("th \""))
+        {
+            //protagonist thoughts text
+            script_outfile_eng.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 "));
+            script_outfile_eng.write("\r");
+            script_outfile_rus.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 "));
+            script_outfile_rus.write("\r");
+            iActiveLines++;
+        }
+        else if (Script_Actors_Aliases.contains(first_word))
+        {
+            int iActorID = Script_Actors_Aliases.indexOf(first_word);
+            QByteArray _tmp = Script_Lines.at(i).simplified();
+            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            script_outfile_eng.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
+            script_outfile_eng.write(_tmp);
+            script_outfile_eng.write("\r");
+            script_outfile_rus.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
+            script_outfile_rus.write(_tmp);
+            script_outfile_rus.write("\r");
+            iActiveLines++;
+        }
         else
         {
-            //write script data as commentary for now
-            script_outfile.write(Script_Lines.at(i).simplified().prepend("REM "));
-            script_outfile.write("\r");
+            //write anything unparsed as commentary for now
+            script_outfile_eng.write(Script_Lines.at(i).simplified().prepend("REM "));
+            script_outfile_eng.write("\r");
+            script_outfile_rus.write(Script_Lines.at(i).simplified().prepend("REM "));
+            script_outfile_rus.write("\r");
         }
     }
-    script_outfile.write("END\r");
-    script_outfile.close();
+    script_outfile_eng.write("END\r");
+    script_outfile_eng.close();
+    script_outfile_rus.write("END\r");
+    script_outfile_rus.close();
+    ui->textEdit->append(QString("Script: processed %1 active lines").arg(iActiveLines));
 
-    QFile script_outfile_labels("SCRIPT.LBL");
+    QFile script_outfile_labels("SCRIPT_RUS.LBL");
     script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
-    for (int i=0;i<Script_Labels_Position_Processed.size();i++)
+    for (int i=0;i<Script_Labels_Position_Processed_Rus.size();i++)
     {
         int tmp[2];
-        tmp[0] = Script_Labels_Position_Processed.at(i);
+        tmp[0] = Script_Labels_Position_Processed_Rus.at(i);
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
+    script_outfile_labels.close();
+    script_outfile_labels.setFileName("SCRIPT_ENG.LBL");
+    script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    for (int i=0;i<Script_Labels_Position_Processed_Eng.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Labels_Position_Processed_Eng.at(i);
         uint8_t * c = (uint8_t *)tmp;
         script_outfile_labels.write(QByteArray(1,c[3]));
         script_outfile_labels.write(QByteArray(1,c[2]));
