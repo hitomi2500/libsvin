@@ -7,10 +7,19 @@
 
 void MainWindow::on_pushButton_Process_Sprites_clicked()
 {
+    //filling actors list first
+    QFile script_file_actors("actors.txt");
+    script_file_actors.open(QIODevice::ReadOnly);
+
+    script_file_actors.close();
+
     //load every sprite recipe from script into recipes list
     QFile script_file(ui->lineEdit_script->text());
+    QFile script_file_eng("eng.txt");
     script_file.open(QIODevice::ReadOnly);
+    script_file_eng.open(QIODevice::ReadOnly);
     QList<QByteArray> Script_Lines;
+    QList<QByteArray> Script_Lines_Eng;
     QByteArray b;
     QByteArray ba;
     QByteArray ba_pal;
@@ -18,7 +27,13 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         b = script_file.readLine();
         Script_Lines.append(b);
     } while (b.length()>0);
-    ui->textEdit->append(QString("Loaded %1 strings from script").arg(Script_Lines.size()));
+    do {
+        b = script_file_eng.readLine();
+        if (b.simplified().size() > 0) Script_Lines_Eng.append(b);
+    } while (b.length()>0);
+    ui->textEdit->append(QString("Loaded %1 strings from script, %2 english lines").arg(Script_Lines.size()).arg(Script_Lines_Eng.size()));
+    script_file.close();
+    script_file_eng.close();
 
     QList<QByteArray> Script_Sprite_Recipes;
     QList<int> Script_Sprite_Recipes_Position;
@@ -74,6 +89,37 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         }
     }
     ui->textEdit->append(QString("Script: detected %1 variables").arg(Script_Variables.size()));
+
+
+    QList<int> Script_Menus_Starts;
+    QList<int> Script_Menus_Lines;
+    for (int i=0;i<Script_Lines.size();i++)
+    {
+        if (Script_Lines.at(i).simplified().startsWith("menu:")) //variable or func
+        {
+            QByteArray b2 = Script_Lines.at(i);
+            int iTabSize = b2.indexOf('m');
+            int iTabSizeCurrent = iTabSize-1;
+            Script_Menus_Starts.append(i);
+            while (iTabSizeCurrent != iTabSize)
+            {
+                Script_Menus_Lines.append(i);
+                i++;
+                b2 = Script_Lines.at(i);
+                if (b2.simplified().size() == 0)
+                {
+                    iTabSizeCurrent = 0;
+                }
+                else
+                {
+                    char c = b2.simplified().at(0);
+                    iTabSizeCurrent = b2.indexOf(c);
+                }
+            }
+        }
+    }
+    ui->textEdit->append(QString("Script: detected %1 menus, %2 lines total").arg(Script_Menus_Starts.size()).arg(Script_Menus_Lines.size()));
+
 
     //now find a corresponding recipe for each entry from recipe list
     QFile recipes_file(ui->lineEdit_Recipes_List->text());
@@ -596,6 +642,15 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 if (false == bFound)
                     ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
             }
+        }
+        else if (Script_Menus_Starts.contains(i))
+        {
+            //menu start moving, going to the end, parse later
+            while (Script_Menus_Lines.contains(i+1))
+            {
+                i++;
+            }
+
         }
         else
         {
