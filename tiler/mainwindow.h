@@ -14,6 +14,13 @@ struct Image_Link {
     int shifted_palette;
 };
 
+struct Menu_Choise {
+    int menu_id;
+    int choise_id;
+    QByteArray value;
+};
+
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

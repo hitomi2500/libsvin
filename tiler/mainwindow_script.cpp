@@ -118,6 +118,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
     QList<int> Script_Menus_Starts;
     QList<int> Script_Menus_Lines;
+    QList<Menu_Choise> Script_Menus_Choises;
+    Menu_Choise _m;
     for (int i=0;i<Script_Lines.size();i++)
     {
         if (Script_Lines.at(i).simplified().startsWith("menu:")) //variable or func
@@ -126,10 +128,21 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             int iTabSize = b2.indexOf('m');
             int iTabSizeCurrent = iTabSize-1;
             Script_Menus_Starts.append(i);
+            Script_Menus_Lines.append(i);
+            int iChoise = 0;
             while (iTabSizeCurrent != iTabSize)
             {
-                Script_Menus_Lines.append(i);
+                //Script_Menus_Lines.append(i);//do not append every line, only starts and choises
                 i++;
+                if ( Script_Lines.at(i).simplified().startsWith("\"") && (Script_Lines.at(i).simplified().endsWith("\":") ) )
+                {
+                     _m.menu_id = Script_Menus_Starts.size();
+                     _m.choise_id = iChoise;
+                     iChoise++;
+                     _m.value = Script_Lines.at(i).simplified();
+                     Script_Menus_Choises.append(_m);
+                     Script_Menus_Lines.append(i);
+                }
                 b2 = Script_Lines.at(i);
                 if (b2.simplified().size() == 0)
                 {
@@ -143,7 +156,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             }
         }
     }
-    ui->textEdit->append(QString("Script: detected %1 menus, %2 lines total").arg(Script_Menus_Starts.size()).arg(Script_Menus_Lines.size()));
+    ui->textEdit->append(QString("Script: detected %1 menus, %2 choises, %3 lines total").arg(Script_Menus_Starts.size()).arg(Script_Menus_Choises.size()).arg(Script_Menus_Lines.size()));
 
 
     //now find a corresponding recipe for each entry from recipe list
@@ -706,30 +719,31 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_eng.write(b_eng);
             script_outfile_eng.write("\r");
             if (false == Script_Lines_Eng[iActiveLines].startsWith("\""))
-                ui->textEdit->append(QString("Script: ERROR, active  line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+                ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
-#error here - active lines in menu as well
         }
         else if (Script_Lines.at(i).simplified().startsWith("th \""))
         {
             //protagonist thoughts text
-            script_outfile_eng.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 "));
-            script_outfile_eng.write("\r");
-            script_outfile_rus.write(Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 "));
-            script_outfile_rus.write("\r");
+            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 ").append("\r");
+            script_outfile_rus.write(b_rus);
+            QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=254 ").append("\r");
+            script_outfile_eng.write(b_eng);
+            if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
+                ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
         }
         else if (Script_Actors_Aliases.contains(first_word))
         {
             int iActorID = Script_Actors_Aliases.indexOf(first_word);
-            QByteArray _tmp = Script_Lines.at(i).simplified();
-            _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
-            script_outfile_eng.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
-            script_outfile_eng.write(_tmp);
-            script_outfile_eng.write("\r");
+            QByteArray b_rus = Script_Lines.at(i).simplified();
+            b_rus = b_rus.mid(b_rus.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_rus.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
-            script_outfile_rus.write(_tmp);
-            script_outfile_rus.write("\r");
+            QByteArray b_eng = Script_Lines_Eng[iActiveLines].simplified();
+            b_eng = b_eng.mid(b_eng.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
+            script_outfile_eng.write(b_eng);
+            if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
+                ui->textEdit->append(QString("Script: ERROR, active (%3) line mismatch, script %1 english %2").arg(i).arg(iActiveLines).arg(QString::fromLatin1(first_word)));
             iActiveLines++;
         }
         else
