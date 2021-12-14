@@ -58,6 +58,12 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     script_file.close();
     script_file_eng.close();
 
+    /*script_file_eng.setFileName("eng_out.txt");
+    script_file_eng.open(QIODevice::WriteOnly);
+    for (int i = 0;i<Script_Lines_Eng.size();i++)
+        script_file_eng.write(Script_Lines_Eng.at(i));
+    script_file_eng.close();*/
+
     QList<QByteArray> Script_Sprite_Recipes;
     QList<int> Script_Sprite_Recipes_Position;
     for (int i=0;i<Script_Lines.size();i++)
@@ -701,13 +707,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
             }
         }
-        else if (Script_Menus_Starts.contains(i))
+        else if (Script_Menus_Lines.contains(i))
         {
             //menu start moving, going to the end, parse later
-            while (Script_Menus_Lines.contains(i+1))
-            {
-                i++;
-            }
+            //TODO: do somethin with menus
 
         }
         else if (Script_Lines.at(i).simplified().startsWith("\""))
@@ -721,6 +724,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             if (false == Script_Lines_Eng[iActiveLines].startsWith("\""))
                 ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
+            while (Script_Lines_Eng.size() <= iActiveLines)
+                Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
         }
         else if (Script_Lines.at(i).simplified().startsWith("th \""))
         {
@@ -732,6 +737,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
                 ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
+            while (Script_Lines_Eng.size() <= iActiveLines)
+                Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
         }
         else if (Script_Actors_Aliases.contains(first_word))
         {
@@ -742,9 +749,11 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             QByteArray b_eng = Script_Lines_Eng[iActiveLines].simplified();
             b_eng = b_eng.mid(b_eng.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_eng.write(b_eng);
-            if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
+            if (false == Script_Lines_Eng[iActiveLines].startsWith(first_word))
                 ui->textEdit->append(QString("Script: ERROR, active (%3) line mismatch, script %1 english %2").arg(i).arg(iActiveLines).arg(QString::fromLatin1(first_word)));
             iActiveLines++;
+            while (Script_Lines_Eng.size() <= iActiveLines)
+                Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
         }
         else
         {
@@ -754,6 +763,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(Script_Lines.at(i).simplified().prepend("REM "));
             script_outfile_rus.write("\r");
         }
+
     }
     script_outfile_eng.write("END\r");
     script_outfile_eng.close();
