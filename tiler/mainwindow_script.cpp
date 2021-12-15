@@ -121,11 +121,12 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     }
     ui->textEdit->append(QString("Script: detected %1 variables").arg(Script_Variables.size()));
 
-
-    QList<int> Script_Menus_Starts;
-    QList<int> Script_Menus_Lines;
+    QList<int> Script_Menus_Starts;//lines to skip while processing later
+    QList<int> Script_Menus_Lines;//lines to skip while processing later
     QList<Menu_Choise> Script_Menus_Choises;
-    Menu_Choise _m;
+    QList<Menu> Script_Menus;
+    Menu_Choise _mc;
+    Menu _me;
     for (int i=0;i<Script_Lines.size();i++)
     {
         if (Script_Lines.at(i).simplified().startsWith("menu:")) //variable or func
@@ -133,20 +134,37 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             QByteArray b2 = Script_Lines.at(i);
             int iTabSize = b2.indexOf('m');
             int iTabSizeCurrent = iTabSize-1;
+            _me.choise_id_list.clear();
+            _me.start_line = i;
+            _me.start_line_processed_ru = -1;//unknown for now
+            _me.start_line_processed_en = -1;//unknown for now
+            Script_Menus.append(_me);
             Script_Menus_Starts.append(i);
-            Script_Menus_Lines.append(i);
-            int iChoise = 0;
             while (iTabSizeCurrent != iTabSize)
             {
-                //Script_Menus_Lines.append(i);//do not append every line, only starts and choises
                 i++;
                 if ( Script_Lines.at(i).simplified().startsWith("\"") && (Script_Lines.at(i).simplified().endsWith("\":") ) )
                 {
-                     _m.menu_id = Script_Menus_Starts.size();
-                     _m.choise_id = iChoise;
-                     iChoise++;
-                     _m.value = Script_Lines.at(i).simplified();
-                     Script_Menus_Choises.append(_m);
+                     _mc.parent_menu_id = Script_Menus.size()-1;
+                     _mc.start_line = i;
+                     _mc.start_line_processed_en = -1;//unknown for now
+                     _mc.start_line_processed_ru = -1;//unknown for now
+                     _mc.end_line = -1;//unknown for now
+                     _mc.end_line_processed_en = -1;//unknown for now
+                     _mc.end_line_processed_ru = -1;//unknown for now
+                     _mc.value = Script_Lines.at(i).simplified();
+                     Script_Menus_Choises.append(_mc);
+                     if (Script_Menus_Choises.size() > 1)
+                     {
+                         //if there was a previous choise, closing its end
+                         if (Script_Menus_Choises[Script_Menus_Choises.size()-2].parent_menu_id == _mc.parent_menu_id)
+                         {
+                             Script_Menus_Choises[Script_Menus_Choises.size()-2].end_line = i-1;
+                         }
+                     }
+
+
+
                      Script_Menus_Lines.append(i);
                 }
                 b2 = Script_Lines.at(i);
@@ -160,9 +178,14 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     iTabSizeCurrent = b2.indexOf(c);
                 }
             }
+            Script_Menus[Script_Menus.size()-1].end_line = i;
+            Script_Menus[Script_Menus.size()-1].end_line_processed_en = -1;//unknown for now
+            Script_Menus[Script_Menus.size()-1].end_line_processed_ru = -1;//unknown for now
+            //closing last choise
+            Script_Menus_Choises[Script_Menus_Choises.size()-1].end_line = i-1;
         }
     }
-    ui->textEdit->append(QString("Script: detected %1 menus, %2 choises, %3 lines total").arg(Script_Menus_Starts.size()).arg(Script_Menus_Choises.size()).arg(Script_Menus_Lines.size()));
+    ui->textEdit->append(QString("Script: detected %1 menus, %2 choises, %3 lines total").arg(Script_Menus.size()).arg(Script_Menus_Choises.size()).arg(Script_Menus_Lines.size()));
 
 
     //now find a corresponding recipe for each entry from recipe list
@@ -465,37 +488,37 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     int iActiveLines = 0;
     script_outfile_rus.open(QIODevice::WriteOnly|QIODevice::Truncate);
     script_outfile_eng.open(QIODevice::WriteOnly|QIODevice::Truncate);
-    for (int i=0;i<Script_Lines.size();i++)
+    for (int iLine=0;iLine<Script_Lines.size();iLine++)
     {
         //if there is a label aimed at this position, set its processed location
         for (int j=0;j<Script_Labels.size();j++)
         {
-            if (Script_Labels_Position.at(j) == i)
+            if (Script_Labels_Position.at(j) == iLine)
             {
                 Script_Labels_Position_Processed_Rus[j] = script_outfile_rus.size();
                 Script_Labels_Position_Processed_Eng[j] = script_outfile_eng.size();
             }
         }
         //fetch first word
-        QByteArray first_word = Script_Lines.at(i).simplified().left(Script_Lines.at(i).simplified().indexOf(" "));
-        if (Script_Lines.at(i).simplified().size()==0)
+        QByteArray first_word = Script_Lines.at(iLine).simplified().left(Script_Lines.at(iLine).simplified().indexOf(" "));
+        if (Script_Lines.at(iLine).simplified().size()==0)
         {
             //skipping empty input
         }
-        else if (Script_Lines.at(i).simplified().startsWith("show"))
+        else if (Script_Lines.at(iLine).simplified().startsWith("show"))
         {
             //this is a recipe, searching the exact recipe number
             iCurrentRecipe = -1;
             int iPosition = 1;
-            if (Script_Lines.at(i).simplified().contains("at left"))
+            if (Script_Lines.at(iLine).simplified().contains("at left"))
                 iPosition = 0;
-            else if (Script_Lines.at(i).simplified().contains("at right"))
+            else if (Script_Lines.at(iLine).simplified().contains("at right"))
                 iPosition = 2;
             for (int rec =0; rec < Script_Sprite_Recipes.size(); rec++)
             {
-                if (Script_Lines.at(i).simplified().contains(Script_Sprite_Recipes.at(rec)))
+                if (Script_Lines.at(iLine).simplified().contains(Script_Sprite_Recipes.at(rec)))
                 {
-                    if (Script_Lines.at(i).simplified().contains(" far"))
+                    if (Script_Lines.at(iLine).simplified().contains(" far"))
                     {
                         if (Script_Sprite_Recipes.at(rec).contains(" far"))
                             iCurrentRecipe = rec; //for far only far should match
@@ -572,9 +595,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 script_outfile_rus.write("\r");
             }
         }
-        else if (Script_Lines.at(i).simplified().startsWith("scene bg"))
+        else if (Script_Lines.at(iLine).simplified().startsWith("scene bg"))
         {
-            QByteArray _tmp = Script_Lines.at(i).simplified();
+            QByteArray _tmp = Script_Lines.at(iLine).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             script_outfile_eng.write(_tmp.prepend("BG images/bg/").append(".bg"));
@@ -582,7 +605,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(_tmp.prepend("BG images/bg/").append(".bg"));
             script_outfile_rus.write("\r");
         }
-        else if (Script_Lines.at(i).simplified().startsWith("scene cg"))
+        else if (Script_Lines.at(iLine).simplified().startsWith("scene cg"))
         {
             //CG is same as BG, but no sprites
             script_outfile_eng.write(QString("CLEAR POSITION 0 \r").toLatin1());
@@ -591,7 +614,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(QString("CLEAR POSITION 0 \r").toLatin1());
             script_outfile_rus.write(QString("CLEAR POSITION 1 \r").toLatin1());
             script_outfile_rus.write(QString("CLEAR POSITION 2 \r").toLatin1());
-            QByteArray _tmp = Script_Lines.at(i).simplified();
+            QByteArray _tmp = Script_Lines.at(iLine).simplified();
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             script_outfile_eng.write(_tmp.prepend("BG images/cg/").append(".bg"));
@@ -599,13 +622,13 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(_tmp.prepend("BG images/cg/").append(".bg"));
             script_outfile_rus.write("\r");
         }
-        else if (Script_Lines.at(i).simplified().startsWith("jump "))
+        else if (Script_Lines.at(iLine).simplified().startsWith("jump "))
         {
             //search label in da list
             bool bFound = 0;
             for (int j=0;j<Script_Labels.size();j++)
             {
-                if (0 == Script_Labels.at(j).compare(Script_Lines.at(i).simplified().mid(5)))
+                if (0 == Script_Labels.at(j).compare(Script_Lines.at(iLine).simplified().mid(5)))
                 {
                     bFound = true;
                     script_outfile_eng.write(QString("JUMP %1 \r").arg(j).toLatin1());
@@ -613,23 +636,23 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 }
             }
             if (false == bFound)
-                ui->textEdit->append(QString("Script ERROR: unknown jump %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
+                ui->textEdit->append(QString("Script ERROR: unknown jump %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(iLine).simplified())).arg(iLine));
         }
-        else if (Script_Lines.at(i).simplified().startsWith("$ "))
+        else if (Script_Lines.at(iLine).simplified().startsWith("$ "))
         {
             //search variable in da list
-            if ( (false == Script_Lines.at(i).contains('(')) || (false == Script_Lines.at(i).contains(')')) ) //not func
+            if ( (false == Script_Lines.at(iLine).contains('(')) || (false == Script_Lines.at(iLine).contains(')')) ) //not func
             {
                 bool bFound = false;
                 for (int j=0;j<Script_Variables.size();j++)
                 {
-                    if (Script_Lines.at(i).simplified().mid(2).startsWith(Script_Variables.at(j)))
+                    if (Script_Lines.at(iLine).simplified().mid(2).startsWith(Script_Variables.at(j)))
                     {
                         bFound = true;
                         script_outfile_eng.write(QString("SET VAR%1 = ").arg(j).toLatin1());
                         script_outfile_rus.write(QString("SET VAR%1 = ").arg(j).toLatin1());
                         //parse equation
-                        QByteArray b2 = Script_Lines.at(i).simplified();
+                        QByteArray b2 = Script_Lines.at(iLine).simplified();
                         b2 = b2.mid(b2.indexOf("=")+2);
                         if (b2.contains("+"))
                         {
@@ -704,38 +727,50 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
                 }
                 if (false == bFound)
-                    ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(i).simplified())).arg(i));
+                    ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(iLine).simplified())).arg(iLine));
             }
         }
-        else if (Script_Menus_Lines.contains(i))
+        else if (Script_Menus_Starts.contains(iLine))
         {
-            //menu start moving, going to the end, parse later
-            //TODO: do somethin with menus
+                //menus starts are transformed into a MENU header commands, it includes all options
+                Menu _me;
+                _me = Script_Menus.at(Script_Menus_Starts.indexOf(iLine));
 
+                for (int j=0;j<_me.choise_id_list.size();j++)
+                {
+                    int id = _me.choise_id_list.at(j);
+                    script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+                    script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+                }
         }
-        else if (Script_Lines.at(i).simplified().startsWith("\""))
+        else if (Script_Menus_Lines.contains(iLine))
+        {
+            //choise starts
+            //TODO: do something here
+        }
+        else if (Script_Lines.at(iLine).simplified().startsWith("\""))
         {
             //narrator text
-            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=255 ").append("\r");
+            QByteArray b_rus = Script_Lines.at(iLine).simplified().prepend("TEXT ACTOR=255 ").append("\r");
             script_outfile_rus.write(b_rus);
             QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=255 ").append("\r");
             script_outfile_eng.write(b_eng);
             script_outfile_eng.write("\r");
             if (false == Script_Lines_Eng[iActiveLines].startsWith("\""))
-                ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+                ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(iLine).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
         }
-        else if (Script_Lines.at(i).simplified().startsWith("th \""))
+        else if (Script_Lines.at(iLine).simplified().startsWith("th \""))
         {
             //protagonist thoughts text
-            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 ").append("\r");
+            QByteArray b_rus = Script_Lines.at(iLine).simplified().prepend("TEXT ACTOR=254 ").append("\r");
             script_outfile_rus.write(b_rus);
             QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=254 ").append("\r");
             script_outfile_eng.write(b_eng);
             if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
-                ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+                ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(iLine).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
@@ -743,14 +778,14 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         else if (Script_Actors_Aliases.contains(first_word))
         {
             int iActorID = Script_Actors_Aliases.indexOf(first_word);
-            QByteArray b_rus = Script_Lines.at(i).simplified();
+            QByteArray b_rus = Script_Lines.at(iLine).simplified();
             b_rus = b_rus.mid(b_rus.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_rus.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
             QByteArray b_eng = Script_Lines_Eng[iActiveLines].simplified();
             b_eng = b_eng.mid(b_eng.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_eng.write(b_eng);
             if (false == Script_Lines_Eng[iActiveLines].startsWith(first_word))
-                ui->textEdit->append(QString("Script: ERROR, active (%3) line mismatch, script %1 english %2").arg(i).arg(iActiveLines).arg(QString::fromLatin1(first_word)));
+                ui->textEdit->append(QString("Script: ERROR, active (%3) line mismatch, script %1 english %2").arg(iLine).arg(iActiveLines).arg(QString::fromLatin1(first_word)));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
@@ -758,9 +793,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         else
         {
             //write anything unparsed as commentary for now
-            script_outfile_eng.write(Script_Lines.at(i).simplified().prepend("REM "));
+            script_outfile_eng.write(Script_Lines.at(iLine).simplified().prepend("REM "));
             script_outfile_eng.write("\r");
-            script_outfile_rus.write(Script_Lines.at(i).simplified().prepend("REM "));
+            script_outfile_rus.write(Script_Lines.at(iLine).simplified().prepend("REM "));
             script_outfile_rus.write("\r");
         }
 

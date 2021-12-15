@@ -14,11 +14,42 @@ struct Image_Link {
     int shifted_palette;
 };
 
-struct Menu_Choise {
-    int menu_id;
-    int choise_id;
-    QByteArray value;
+
+//every menu is defined by:
+//menu start line in unprocessed script
+//menu end line in unprocessed script
+//menu start line in processed script
+//menu end line in processed script
+//list of choises (ids)
+struct Menu {
+    QList<int> choise_id_list;
+    int start_line;
+    int end_line;
+    int start_line_processed_en;
+    int start_line_processed_ru;
+    int end_line_processed_en;
+    int end_line_processed_ru;
 };
+
+//every choise is defined by:
+//parent menu id
+//text
+//line to jump to in unprocessed script
+//line to jump from to the end of menu in unprocessed script
+//line to jump to in processed script
+//line to jump from to the end of menu in processed script
+struct Menu_Choise {
+    int parent_menu_id;
+    QByteArray value;
+    int start_line;
+    int end_line;
+    int start_line_processed_en;
+    int start_line_processed_ru;
+    int end_line_processed_en;
+    int end_line_processed_ru;
+};
+
+
 
 
 class MainWindow : public QMainWindow
