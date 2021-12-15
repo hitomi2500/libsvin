@@ -623,7 +623,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(_tmp.prepend("BG images/cg/").append(".bg"));
             script_outfile_rus.write("\r");
         }
-        else if (Script_Lines.at(i).simplified().startsWith("jump "))
+        else if (Script_Lines.at(iLine).simplified().startsWith("jump "))
         {
             //search label in da list
             bool bFound = 0;
@@ -642,18 +642,18 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         else if (Script_Lines.at(iLine).simplified().startsWith("$ "))
         {
             //search variable in da list
-            if ( (false == Script_Lines.at(i).contains('(')) || (false == Script_Lines.at(i).contains(')')) ) //not func
+            if ( (false == Script_Lines.at(iLine).contains('(')) || (false == Script_Lines.at(iLine).contains(')')) ) //not func
             {
                 bool bFound = false;
                 for (int j=0;j<Script_Variables.size();j++)
                 {
-                    if (Script_Lines.at(i).simplified().mid(2).startsWith(Script_Variables.at(j)))
+                    if (Script_Lines.at(iLine).simplified().mid(2).startsWith(Script_Variables.at(j)))
                     {
                         bFound = true;
                         script_outfile_eng.write(QString("SET VAR%1 = ").arg(j).toLatin1());
                         script_outfile_rus.write(QString("SET VAR%1 = ").arg(j).toLatin1());
                         //parse equation
-                        QByteArray b2 = Script_Lines.at(i).simplified();
+                        QByteArray b2 = Script_Lines.at(iLine).simplified();
                         b2 = b2.mid(b2.indexOf("=")+2);
                         if (b2.contains("+"))
                         {
@@ -731,7 +731,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                     ui->textEdit->append(QString("Script ERROR: unknown variable %1 at line %2").arg(QString::fromLatin1(Script_Lines.at(iLine).simplified())).arg(iLine));
             }
         }
-        else if (Script_Menus_Starts.contains(i))
+        else if (Script_Menus_Starts.contains(iLine))
         {
             //menu start moving, going to the end, parse later
             //TODO: do somethin with menus
@@ -748,16 +748,16 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             //choise starts
             //TODO: do something here
         }
-        else if (Script_Lines.at(i).simplified().startsWith("\""))
+        else if (Script_Lines.at(iLine).simplified().startsWith("\""))
         {
             //narrator text
-            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=255 ").append("\r");
+            QByteArray b_rus = Script_Lines.at(iLine).simplified().prepend("TEXT ACTOR=255 ").append("\r");
             script_outfile_rus.write(b_rus);
             QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=255 ").append("\r");
             script_outfile_eng.write(b_eng);
             script_outfile_eng.write("\r");
             if (false == Script_Lines_Eng[iActiveLines].startsWith("\""))
-                ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+                ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(iLine).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
             {
@@ -765,15 +765,15 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ui->textEdit->append(QString("Script: ERROR, dummy english line"));
             }
         }
-        else if (Script_Lines.at(i).simplified().startsWith("th \""))
+        else if (Script_Lines.at(iLine).simplified().startsWith("th \""))
         {
             //protagonist thoughts text
-            QByteArray b_rus = Script_Lines.at(i).simplified().prepend("TEXT ACTOR=254 ").append("\r");
+            QByteArray b_rus = Script_Lines.at(iLine).simplified().prepend("TEXT ACTOR=254 ").append("\r");
             script_outfile_rus.write(b_rus);
             QByteArray b_eng =Script_Lines_Eng[iActiveLines].simplified().prepend("TEXT ACTOR=254 ").append("\r");
             script_outfile_eng.write(b_eng);
             if (false == Script_Lines_Eng[iActiveLines].startsWith("th"))
-                ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
+                ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(iLine).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
             {
@@ -789,9 +789,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 if (Script_Actors_Aliases[k].compare(first_word)==0)
                     iActorID = k;
             }
-            if (i >27194)
-                volatile int v=5;
-            QByteArray b_rus = Script_Lines.at(i).simplified();
+            //if (iLine >27194)
+            //    volatile int v=5;
+            QByteArray b_rus = Script_Lines.at(iLine).simplified();
             b_rus = b_rus.mid(b_rus.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_rus.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
             QByteArray b_eng = Script_Lines_Eng[iActiveLines].simplified();
