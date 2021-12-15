@@ -215,7 +215,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     QProcess process;
     QStringList proc_args;
     QImage img;
-    process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
+    //process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
+    process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
 
     //next step - processing every image in the list
     int iTotalTiles = 0;
@@ -725,7 +726,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ui->textEdit->append(QString("Script: ERROR, active (narrator) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
+            {
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
+                ui->textEdit->append(QString("Script: ERROR, dummy english line"));
+            }
         }
         else if (Script_Lines.at(i).simplified().startsWith("th \""))
         {
@@ -738,11 +742,21 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ui->textEdit->append(QString("Script: ERROR, active (th) line mismatch, script %1 english %2").arg(i).arg(iActiveLines));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
+            {
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
+                ui->textEdit->append(QString("Script: ERROR, dummy english line"));
+            }
         }
         else if (Script_Actors_Aliases.contains(first_word))
         {
-            int iActorID = Script_Actors_Aliases.indexOf(first_word);
+            int iActorID = -1;
+            for (int k=0;k<Script_Actors_Aliases.size();k++)
+            {
+                if (Script_Actors_Aliases[k].compare(first_word)==0)
+                    iActorID = k;
+            }
+            if (i >27194)
+                volatile int v=5;
             QByteArray b_rus = Script_Lines.at(i).simplified();
             b_rus = b_rus.mid(b_rus.indexOf(' ')+1).prepend(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1()).append("\r");
             script_outfile_rus.write(QString("TEXT ACTOR=%1 ").arg(iActorID).toLatin1());
@@ -753,7 +767,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 ui->textEdit->append(QString("Script: ERROR, active (%3) line mismatch, script %1 english %2").arg(i).arg(iActiveLines).arg(QString::fromLatin1(first_word)));
             iActiveLines++;
             while (Script_Lines_Eng.size() <= iActiveLines)
+            {
                 Script_Lines_Eng.append("ERROR: DUMMY LINE\r");
+                ui->textEdit->append(QString("Script: ERROR, dummy english line"));
+            }
         }
         else
         {
