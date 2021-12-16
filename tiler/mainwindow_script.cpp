@@ -123,6 +123,9 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
     QList<int> Script_Menus_Starts;//lines to skip while processing later
     QList<int> Script_Menus_Lines;//lines to skip while processing later
+    QList<int> Script_Menus_Ends;//lines to skip while processing later
+    QList<int> Script_Menus_Ends_Position_Processed_Rus;
+    QList<int> Script_Menus_Ends_Position_Processed_Eng;
     QList<Menu_Choise> Script_Menus_Choises;
     QList<Menu> Script_Menus;
     Menu_Choise _mc;
@@ -184,6 +187,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             Script_Menus[Script_Menus.size()-1].end_line_processed_ru = -1;//unknown for now
             //closing last choise
             Script_Menus_Choises[Script_Menus_Choises.size()-1].end_line = i-1;
+            Script_Menus_Ends.append(i-1);
         }
     }
     ui->textEdit->append(QString("Script: detected %1 menus, %2 choises, %3 lines total").arg(Script_Menus.size()).arg(Script_Menus_Choises.size()).arg(Script_Menus_Lines.size()));
@@ -239,8 +243,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     QProcess process;
     QStringList proc_args;
     QImage img;
-    //process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
-    process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
+    process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
+    //process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
 
     //next step - processing every image in the list
     int iTotalTiles = 0;
@@ -488,6 +492,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     QFile script_outfile_eng("SCRIPT_ENG.TXT");
     int iCurrentRecipe;
     int iActiveLines = 0;
+    int iChoiseID = -1;
+
     script_outfile_rus.open(QIODevice::WriteOnly|QIODevice::Truncate);
     script_outfile_eng.open(QIODevice::WriteOnly|QIODevice::Truncate);
     for (int iLine=0;iLine<Script_Lines.size();iLine++)
@@ -734,23 +740,63 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         }
         else if (Script_Menus_Starts.contains(iLine))
         {
-            //menu start moving, going to the end, parse later
-            //TODO: do somethin with menus
+            //menu start, updating menu struct
+            Script_Menus[Script_Menus_Starts.indexOf(iLine)].start_line_processed_en = script_outfile_eng.size();
+            Script_Menus[Script_Menus_Starts.indexOf(iLine)].start_line_processed_ru = script_outfile_rus.size();
             _me = Script_Menus.at(Script_Menus_Starts.indexOf(iLine));
 
             for (int j=0;j<_me.choise_id_list.size();j++)
             {
                 int id = _me.choise_id_list.at(j);
-                //script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
-                //script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
                 script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
                 script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
             }
         }
         else if (Script_Menus_Lines.contains(iLine))
         {
-            //choise starts
-            //TODO: do something here
+#error here - last choise could be from previous menu
+            //closing last choise
+            if (iChoiseID>=0)
+            {
+                Script_Menus_Choises[iChoiseID].end_line_processed_en = script_outfile_eng.size();
+                Script_Menus_Choises[iChoiseID].end_line_processed_ru = script_outfile_rus.size();
+                //inject "jump to the end of menu", these adds to the end of normal (non-menu) label jumps
+                _mc = Script_Menus_Choises.at(iChoiseID);
+                int id = _mc.parent_menu_id;
+                id = id + Script_Labels.size();
+                script_outfile_eng.write(QString("JUMP %1 \r").arg(id).toLatin1());
+                script_outfile_rus.write(QString("JUMP %1 \r").arg(id).toLatin1());
+            }
+            //choise starts, updating choise structs
+            //let's find active menu and choise
+            for (int j=0;j<Script_Menus.size();j++)
+            {
+                for (int k=0;k<Script_Menus.at(j).choise_id_list.size();k++)
+                {
+                    if (Script_Menus_Choises.at(k).start_line == iLine)
+                    {
+                        //found'em
+                        _me = Script_Menus.at(j);
+                        _mc = Script_Menus_Choises.at(k);
+                        iChoiseID = k;
+                    }
+                }
+            }
+            //now update structs
+            Script_Menus_Choises[iChoiseID].start_line_processed_en = script_outfile_eng.size();
+            Script_Menus_Choises[iChoiseID].start_line_processed_ru = script_outfile_rus.size();
+
+        }
+        else if (Script_Menus_Ends.contains(iLine))
+        {
+            //menu end, updating menu struct
+            Script_Menus[Script_Menus_Ends.indexOf(iLine)].end_line_processed_en = script_outfile_eng.size();
+            Script_Menus[Script_Menus_Ends.indexOf(iLine)].end_line_processed_ru = script_outfile_rus.size();
+            //closing last choise ids
+            Script_Menus_Choises[iChoiseID].end_line_processed_en = script_outfile_eng.size();
+            Script_Menus_Choises[iChoiseID].end_line_processed_ru = script_outfile_rus.size();
+            Script_Menus_Ends_Position_Processed_Rus.append(script_outfile_rus.size());
+            Script_Menus_Ends_Position_Processed_Eng.append(script_outfile_eng.size());
         }
         else if (Script_Lines.at(iLine).simplified().startsWith("\""))
         {
@@ -838,13 +884,63 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         script_outfile_labels.write(QByteArray(1,c[1]));
         script_outfile_labels.write(QByteArray(1,c[0]));
     }
+    for (int i=0;i<Script_Menus_Ends_Position_Processed_Rus.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Menus_Ends_Position_Processed_Rus.at(i);
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
     script_outfile_labels.close();
+
     script_outfile_labels.setFileName("SCRIPT_ENG.LBL");
     script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
     for (int i=0;i<Script_Labels_Position_Processed_Eng.size();i++)
     {
         int tmp[2];
         tmp[0] = Script_Labels_Position_Processed_Eng.at(i);
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
+    for (int i=0;i<Script_Menus_Ends_Position_Processed_Eng.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Menus_Ends_Position_Processed_Eng.at(i);
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
+    script_outfile_labels.close();
+
+    //now menus
+    script_outfile_labels.setFileName("SCRIPT_RUS.MNU");
+    script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    for (int i=0;i<Script_Menus_Choises.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Menus_Choises.at(i).start_line_processed_ru;
+        uint8_t * c = (uint8_t *)tmp;
+        script_outfile_labels.write(QByteArray(1,c[3]));
+        script_outfile_labels.write(QByteArray(1,c[2]));
+        script_outfile_labels.write(QByteArray(1,c[1]));
+        script_outfile_labels.write(QByteArray(1,c[0]));
+    }
+    script_outfile_labels.close();
+
+    script_outfile_labels.setFileName("SCRIPT_ENG.MNU");
+    script_outfile_labels.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    for (int i=0;i<Script_Menus_Choises.size();i++)
+    {
+        int tmp[2];
+        tmp[0] = Script_Menus_Choises.at(i).start_line_processed_en;
         uint8_t * c = (uint8_t *)tmp;
         script_outfile_labels.write(QByteArray(1,c[3]));
         script_outfile_labels.write(QByteArray(1,c[2]));
