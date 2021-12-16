@@ -154,6 +154,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                      _mc.end_line_processed_ru = -1;//unknown for now
                      _mc.value = Script_Lines.at(i).simplified();
                      Script_Menus_Choises.append(_mc);
+                     Script_Menus.last().choise_id_list.append(Script_Menus_Choises.size()-1);
                      if (Script_Menus_Choises.size() > 1)
                      {
                          //if there was a previous choise, closing its end
@@ -735,13 +736,16 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         {
             //menu start moving, going to the end, parse later
             //TODO: do somethin with menus
+            _me = Script_Menus.at(Script_Menus_Starts.indexOf(iLine));
 
-                for (int j=0;j<_me.choise_id_list.size();j++)
-                {
-                    int id = _me.choise_id_list.at(j);
-                    script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
-                    script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
-                }
+            for (int j=0;j<_me.choise_id_list.size();j++)
+            {
+                int id = _me.choise_id_list.at(j);
+                //script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+                //script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(Script_Menus_Choises.at(id).start_line).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+                script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+                script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
+            }
         }
         else if (Script_Menus_Lines.contains(iLine))
         {
