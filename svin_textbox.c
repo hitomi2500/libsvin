@@ -203,9 +203,6 @@ _svin_textbox_clear()
     //-------------- setup character pattern names ------------------
     //setting up textbox placeholder for nbg2, 5x40 chars = 640x80
 
-    //filling entire textbox range with transparent color 0
-    //memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
-
     int * _pointer32 = (int *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
     for (unsigned int i = 0; i < (_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE) / sizeof(int); i+=4)
     {
@@ -214,6 +211,13 @@ _svin_textbox_clear()
         _pointer32[i+2] = 0x000F000F;
         _pointer32[i+3] = 0x000F000F;
     }
+}
+
+void 
+_svin_textbox_disable()
+{
+    //filling entire textbox range with transparent color 0
+    memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
 }
 
 void
@@ -232,7 +236,7 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
 
         buffer = malloc(32 * 2048);
 
-        //memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0x0F,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
+        _svin_textbox_clear();
 
         // Rendering speaker name first, 1st line, shifted 1 quad to the right
 

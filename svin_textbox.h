@@ -37,6 +37,8 @@ void _svin_textbox_print(const char * speaker, const char * text, const char * f
 
 void _svin_textbox_clear();
 
+void _svin_textbox_disable();
+
 void _svin_textbox_init_palette();
 
 #endif
