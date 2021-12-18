@@ -493,6 +493,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
     int iCurrentRecipe;
     int iActiveLines = 0;
     int iChoiseID = -1;
+    int iLastChoiseID = -1;
 
     script_outfile_rus.open(QIODevice::WriteOnly|QIODevice::Truncate);
     script_outfile_eng.open(QIODevice::WriteOnly|QIODevice::Truncate);
@@ -754,38 +755,43 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         }
         else if (Script_Menus_Lines.contains(iLine))
         {
-#error here - last choise could be from previous menu
-            //closing last choise
-            if (iChoiseID>=0)
-            {
-                Script_Menus_Choises[iChoiseID].end_line_processed_en = script_outfile_eng.size();
-                Script_Menus_Choises[iChoiseID].end_line_processed_ru = script_outfile_rus.size();
-                //inject "jump to the end of menu", these adds to the end of normal (non-menu) label jumps
-                _mc = Script_Menus_Choises.at(iChoiseID);
-                int id = _mc.parent_menu_id;
-                id = id + Script_Labels.size();
-                script_outfile_eng.write(QString("JUMP %1 \r").arg(id).toLatin1());
-                script_outfile_rus.write(QString("JUMP %1 \r").arg(id).toLatin1());
-            }
             //choise starts, updating choise structs
             //let's find active menu and choise
             for (int j=0;j<Script_Menus.size();j++)
             {
                 for (int k=0;k<Script_Menus.at(j).choise_id_list.size();k++)
                 {
-                    if (Script_Menus_Choises.at(k).start_line == iLine)
+                    if (Script_Menus_Choises.at(Script_Menus.at(j).choise_id_list.at(k)).start_line == iLine)
                     {
                         //found'em
                         _me = Script_Menus.at(j);
                         _mc = Script_Menus_Choises.at(k);
-                        iChoiseID = k;
+                        iChoiseID = Script_Menus.at(j).choise_id_list.at(k);
                     }
                 }
             }
+            //closing last choise
+            if (iLastChoiseID>=0)
+            {
+                //if the same menu
+                if (Script_Menus_Choises[iLastChoiseID].parent_menu_id == Script_Menus_Choises[iChoiseID].parent_menu_id)
+                {
+                    Script_Menus_Choises[iLastChoiseID].end_line_processed_en = script_outfile_eng.size();
+                    Script_Menus_Choises[iLastChoiseID].end_line_processed_ru = script_outfile_rus.size();
+                    //inject "jump to the end of menu", these adds to the end of normal (non-menu) label jumps
+                    _mc = Script_Menus_Choises.at(iLastChoiseID);
+                    int id = _mc.parent_menu_id;
+                    id = id + Script_Labels.size();
+                    script_outfile_eng.write(QString("JUMP %1 \r").arg(id).toLatin1());
+                    script_outfile_rus.write(QString("JUMP %1 \r").arg(id).toLatin1());
+                }
+            }
+
             //now update structs
             Script_Menus_Choises[iChoiseID].start_line_processed_en = script_outfile_eng.size();
             Script_Menus_Choises[iChoiseID].start_line_processed_ru = script_outfile_rus.size();
 
+            iLastChoiseID = iChoiseID;
         }
         else if (Script_Menus_Ends.contains(iLine))
         {
@@ -793,8 +799,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             Script_Menus[Script_Menus_Ends.indexOf(iLine)].end_line_processed_en = script_outfile_eng.size();
             Script_Menus[Script_Menus_Ends.indexOf(iLine)].end_line_processed_ru = script_outfile_rus.size();
             //closing last choise ids
-            Script_Menus_Choises[iChoiseID].end_line_processed_en = script_outfile_eng.size();
-            Script_Menus_Choises[iChoiseID].end_line_processed_ru = script_outfile_rus.size();
+            Script_Menus_Choises[iLastChoiseID].end_line_processed_en = script_outfile_eng.size();
+            Script_Menus_Choises[iLastChoiseID].end_line_processed_ru = script_outfile_rus.size();
             Script_Menus_Ends_Position_Processed_Rus.append(script_outfile_rus.size());
             Script_Menus_Ends_Position_Processed_Eng.append(script_outfile_eng.size());
         }
