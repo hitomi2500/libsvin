@@ -66,6 +66,7 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
 
     QList<QByteArray> Script_Sprite_Recipes;
     QList<int> Script_Sprite_Recipes_Position;
+    QList<int> Script_Sprite_Recipes_Valid;
     for (int i=0;i<Script_Lines.size();i++)
     {
         if (Script_Lines.at(i).simplified().startsWith("show"))
@@ -76,8 +77,12 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 b2 = b2.left(b2.indexOf(" with")); //remove appearance effect for now
             if (b2.contains("at"))
                 b2 = b2.left(b2.indexOf(" at")); //remove location
-            Script_Sprite_Recipes.append(b2);
-            Script_Sprite_Recipes_Position.append((i));
+            if (b2.size() > 0)
+            {
+                Script_Sprite_Recipes.append(b2);
+                Script_Sprite_Recipes_Position.append((i));
+                Script_Sprite_Recipes_Valid.append(0);
+            }
         }
     }
     ui->textEdit->append(QString("Script: detected %1 sprite recipes").arg(Script_Sprite_Recipes.size()));
@@ -207,34 +212,44 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         //find exact match for our recipe
         QByteArray search = Script_Sprite_Recipes.at(i);
         search.append(" =");
-        QByteArray b = Recipes_data.mid(Recipes_data.indexOf(search));
-        b = b.left(b.indexOf("image ")-1);//cut until next recipe
-        //cutout night and evening conditions for now
-        if (b.contains("ConditionSwitch"))
+        if (Recipes_data.contains(search))
         {
-            b = b.mid(b.indexOf("True"));
+            QByteArray b = Recipes_data.mid(Recipes_data.indexOf(search));
+            b = b.left(b.indexOf("image ")-1);//cut until next recipe
+            //cutout night and evening conditions for now
+            if (b.contains("ConditionSwitch"))
+            {
+                b = b.mid(b.indexOf("True"));
+            }
+            int iBigPalette = 1; //only 1st image goes with big palette
+            int iShiftedPalette = 0;
+            //mark recipe as valid
+            Script_Sprite_Recipes_Valid[i] = 1;
+            while (b.contains("\""))
+            {
+                b = b.mid(b.indexOf("\"")+1);
+                QByteArray b2 = b.left(b.indexOf("\""));
+                //checking if the image alreaddy exists in the list
+                if (ImagePaths.contains(b2))
+                {
+                    //do not add anoter copy, just link it
+                }
+                else
+                {
+                    //new file, append it
+                    ImagePaths.append(b2);
+                }
+                ImageLinks.append({i,ImagePaths.indexOf(b2),iBigPalette,iShiftedPalette});
+                if (iBigPalette == 0)
+                    iShiftedPalette = 1;
+                iBigPalette = 0;
+                b = b.mid(b.indexOf("\"")+1);
+            }
         }
-        int iBigPalette = 1; //only 1st image goes with big palette
-        int iShiftedPalette = 0;
-        while (b.contains("\""))
+        else
         {
-            b = b.mid(b.indexOf("\"")+1);
-            QByteArray b2 = b.left(b.indexOf("\""));
-            //checking if the image alreaddy exists in the list
-            if (ImagePaths.contains(b2))
-            {
-                //do not add anoter copy, just link it
-            }
-            else
-            {
-                //new file, append it
-                ImagePaths.append(b2);
-            }
-            ImageLinks.append({i,ImagePaths.indexOf(b2),iBigPalette,iShiftedPalette});
-            if (iBigPalette == 0)
-                iShiftedPalette = 1;
-            iBigPalette = 0;
-            b = b.mid(b.indexOf("\"")+1);
+            //recipe is not in the recipes list, keep it set it as invalid
+            Script_Sprite_Recipes_Valid[i] = 0;
         }
     }
     ui->textEdit->append(QString("Script: found %1 image files").arg(ImagePaths.size()));
@@ -518,16 +533,17 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         {
             //this is a recipe, searching the exact recipe number
             iCurrentRecipe = -1;
+            QByteArray b = Script_Lines.at(iLine).simplified();
             int iPosition = 1;
-            if (Script_Lines.at(iLine).simplified().contains("at left"))
+            if (b.contains("at left"))
                 iPosition = 0;
-            else if (Script_Lines.at(iLine).simplified().contains("at right"))
+            else if (b.contains("at right"))
                 iPosition = 2;
             for (int rec =0; rec < Script_Sprite_Recipes.size(); rec++)
             {
-                if (Script_Lines.at(iLine).simplified().contains(Script_Sprite_Recipes.at(rec)))
+                if (b.contains(Script_Sprite_Recipes.at(rec)))
                 {
-                    if (Script_Lines.at(iLine).simplified().contains(" far"))
+                    if (b.contains(" far"))
                     {
                         if (Script_Sprite_Recipes.at(rec).contains(" far"))
                             iCurrentRecipe = rec; //for far only far should match
@@ -538,70 +554,82 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             }
             if (iCurrentRecipe != -1)
             {
+                QByteArray bb = Script_Sprite_Recipes[iCurrentRecipe];
                 //valid recipe? write its contents into output file, searching thru entire list
-                //but first let's issue "clear" instruction
-                bool bFound = false;
-                for (int f=0;((f<ImageLinks.size())&&(bFound==false));f++)
+                if (Script_Sprite_Recipes_Valid[iCurrentRecipe] == 1)
                 {
-                    //we found a match. add image.
-                    if (ImageLinks.at(f).recipe == iCurrentRecipe)
+                    //but first let's issue "clear" instruction
+                    bool bFound = false;
+                    for (int f=0;((f<ImageLinks.size())&&(bFound==false));f++)
                     {
-                        bFound = true;
-                        script_outfile_eng.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
-                        script_outfile_eng.write("\r");
-                        script_outfile_rus.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
-                        script_outfile_rus.write("\r");
-                    }
-                }
-
-                //now all non-zero layer because... you know, they should go first
-                for (int f=0;f<ImageLinks.size();f++)
-                {
-                    //we found a match. add image.
-                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 0))
-                    {
-                        QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
-                        _tiled_filename.chop(3);
-                        _tiled_filename.append("tim");
-                        int iLayer = 1;
-                        int iPalette = 1;
-                        if (ImageLinks.at(f).shifted_palette == 0)
+                        //we found a match. add image.
+                        if (ImageLinks.at(f).recipe == iCurrentRecipe)
                         {
-                            iPalette++;
+                            bFound = true;
+                            script_outfile_eng.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
+                            script_outfile_eng.write("\r");
+                            script_outfile_rus.write(QString("CLEAR POSITION %1").arg(iPosition).toLatin1());
+                            script_outfile_rus.write("\r");
                         }
-                        //if (iPosition == 1)
-                        //    iLayer++;
-                        script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
-                        script_outfile_eng.write("\r");
-                        script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
-                        script_outfile_rus.write("\r");
                     }
-                }
 
-                //now all zero layer
-                for (int f=0;f<ImageLinks.size();f++)
-                {
-                    //we found a match. add image.
-                    if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 1))
+                    //now all non-zero layer because... you know, they should go first
+                    for (int f=0;f<ImageLinks.size();f++)
                     {
-                        QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
-                        _tiled_filename.chop(3);
-                        _tiled_filename.append("tim");
-                        int iLayer = 0;
-                        //if (iPosition == 1)
-                        //    iLayer++;
-                        script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
-                        script_outfile_eng.write("\r");
-                        script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
-                        script_outfile_rus.write("\r");
+                        //we found a match. add image.
+                        if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 0))
+                        {
+                            QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
+                            _tiled_filename.chop(3);
+                            _tiled_filename.append("tim");
+                            int iLayer = 1;
+                            int iPalette = 1;
+                            if (ImageLinks.at(f).shifted_palette == 0)
+                            {
+                                iPalette++;
+                            }
+                            //if (iPosition == 1)
+                            //    iLayer++;
+                            script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
+                            script_outfile_eng.write("\r");
+                            script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE %3 FILE %4").arg(iLayer).arg(iPosition).arg(iPalette).arg(_tiled_filename).toLatin1());
+                            script_outfile_rus.write("\r");
+                        }
                     }
-                }
 
-                bFound = true;
-                script_outfile_eng.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
-                script_outfile_eng.write("\r");
-                script_outfile_rus.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
-                script_outfile_rus.write("\r");
+                    //now all zero layer
+                    for (int f=0;f<ImageLinks.size();f++)
+                    {
+                        //we found a match. add image.
+                        if ((ImageLinks.at(f).recipe == iCurrentRecipe)&&(ImageLinks.at(f).big_palette == 1))
+                        {
+                            QString _tiled_filename = QString(ImagePaths[ImageLinks.at(f).image]);
+                            _tiled_filename.chop(3);
+                            _tiled_filename.append("tim");
+                            int iLayer = 0;
+                            //if (iPosition == 1)
+                            //    iLayer++;
+                            script_outfile_eng.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                            script_outfile_eng.write("\r");
+                            script_outfile_rus.write(QString("SPRITE LAYER %1 POSITION %2 PALETTE 0 FILE %3").arg(iLayer).arg(iPosition).arg(_tiled_filename).toLatin1());
+                            script_outfile_rus.write("\r");
+                        }
+                    }
+
+                    bFound = true;
+                    script_outfile_eng.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
+                    script_outfile_eng.write("\r");
+                    script_outfile_rus.write(QString("ENABLE POSITION %1").arg(iPosition).toLatin1());
+                    script_outfile_rus.write("\r");
+                }
+                else
+                {
+                    //valid recipe, but not in the list, adding it as commen
+                    script_outfile_eng.write(QString("REM UNINDEXED RECIPE %1").arg(QString::fromLatin1(Script_Lines.at(iLine).simplified())).toLatin1());
+                    script_outfile_eng.write("\r");
+                    script_outfile_rus.write(QString("REM UNINDEXED RECIPE %1").arg(QString::fromLatin1(Script_Lines.at(iLine).simplified())).toLatin1());
+                    script_outfile_rus.write("\r");
+                }
             }
         }
         else if (Script_Lines.at(iLine).simplified().startsWith("scene bg"))

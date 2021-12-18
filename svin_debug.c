@@ -27,7 +27,7 @@ static volatile bool _sci_done = false;
 
 void _svin_debug_init(void)
 {
-
+/*
         SCI_BUFFER_SEND = malloc(TEST_PATTERN_LENGTH);
         SCI_BUFFER_RECV = malloc(TEST_PATTERN_LENGTH);
         
@@ -86,11 +86,12 @@ void _svin_debug_init(void)
         //apply config to DMA channels
         cpu_dmac_channel_config_set(&cfg0);
         cpu_dmac_channel_config_set(&cfg1);
+        */
 }
 
-void _svin_debug_send_buf(uint8_t * buf)
+void _svin_debug_send_buf(uint8_t * buf __unused)
 {
-
+/*
         cpu_sci_cfg_t cfg_sci __unused = {
                 .mode = CPU_SCI_MODE_SYNC,
                 .ihr_rxi = _sci_handler,
@@ -119,10 +120,10 @@ void _svin_debug_send_buf(uint8_t * buf)
         
         //wait for DMA
         while (!_dma_done) ;
- 
+ */
 }
 
-static void
+static void __unused
 _dmac_handler(void *work __unused)
 {
         _dma_done = true;

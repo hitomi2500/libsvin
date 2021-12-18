@@ -175,6 +175,7 @@ void _svin_init()
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
     vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
+    //vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG1,0x80);
 
     //setup nbg2
     format.scroll_screen = VDP2_SCRN_NBG2;
@@ -333,7 +334,7 @@ void _svin_init()
     cmdt_system_clip_coords->cmd_xc = _SVIN_SCREEN_WIDTH - 1;
     cmdt_system_clip_coords->cmd_yc = _SVIN_SCREEN_HEIGHT - 1;
 
-    vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
+    vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0);
     vdp1_sync();
 
     //-------------- setup pattern names -------------------

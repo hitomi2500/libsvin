@@ -1,7 +1,7 @@
 #ifndef _SVIN_H_
 #define _SVIN_H_
 
-#define ROM_MODE
+//#define ROM_MODE
 
 #include <yaul.h>
 #include <svin_textbox.h>
