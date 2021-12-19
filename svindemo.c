@@ -19,6 +19,8 @@ main(void)
         
         _svin_init();
 
+        _svin_textbox_disable(); //filling textbox tiles with invisible data
+
         /*uint8_t * tmp;
         tmp = (uint8_t *)0x22000000;
         char str[1024];

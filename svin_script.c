@@ -65,11 +65,11 @@ _svin_run_script(char * filename)
             }
             switch (iActor)
             {
-                case 0: 
+                case 255: 
                     strcpy(tmp_buffer2,"<narrative>");
                     iActorColor = 7;
                     break;
-                case 1: 
+                case 254: 
                     strcpy(tmp_buffer2,"<think>");
                     iActorColor = 7;
                     break;
