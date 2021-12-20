@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "svin.h"
+#include "svin_text.h"
 #include "svin_textbox.h"
 
 #include <mcufont.h>
@@ -11,71 +12,6 @@
 #define UNUSED(x) (void)(x)
 
 uint8_t *buffer;
-//static const char default_text[] = "The quick brown fox jumps over the lazy dog. ";
-
-/* Callback to write to a memory buffer. */
-static void pixel_callback(int16_t x, int16_t y, uint8_t count, uint8_t alpha,
-                           void *state)
-{
-    state_t *s = (state_t*)state;
-    uint32_t pos;
-    int16_t value;
-    
-    if (y < 0 || y >= s->height) return;
-    if (x < 0 || x + count >= s->width) return;
-    
-    while (count--)
-    {
-        pos = (uint32_t)s->width * y + x;
-        value = s->buffer[pos];
-        value -= alpha;
-        if (value < 0) value = 0;
-        s->buffer[pos] = value;
-        
-        x++;
-    }
-}
-
-/* Callback to render characters. */
-static uint8_t character_callback(int16_t x, int16_t y, mf_char character,
-                                  void *state)
-{
-    state_t *s = (state_t*)state;
-    return mf_render_character(s->font, x, y, character, pixel_callback, state);
-}
-
-/* Callback to render lines. */
-static bool line_callback(const char *line, uint16_t count, void *state)
-{
-    state_t *s = (state_t*)state;
-    
-    if (s->options->justify)
-    {
-        mf_render_justified(s->font, s->options->anchor, s->y,
-                            s->width - s->options->margin * 2,
-                            line, count, character_callback, state);
-    }
-    else
-    {
-        mf_render_aligned(s->font, s->options->anchor, s->y,
-                          s->options->alignment, line, count,
-                          character_callback, state);
-    }
-    s->y += s->font->line_height;
-    return true;
-}
-
-/* Callback to just count the lines.
- * Used to decide the image height */
-static bool count_lines(const char *line, uint16_t count, void *state)
-{
-        UNUSED(line);
-        UNUSED(count);
-        int *linecount = (int*)state;
-        (*linecount)++;
-        return true;
-}
-
 
 void 
 _svin_textbox_init()
@@ -107,94 +43,10 @@ _svin_textbox_init()
         }
     }
 
-    //-------------- setup palette 7 specifically for text  -------------------
-
-    _svin_textbox_init_palette(); //disable textbox by default, will be enabled when required
-
     _svin_set_cycle_patterns_nbg();
 
-}
-
-void 
-_svin_textbox_init_palette()
-{
-    //filling pallete with valid colors to enable text layer
-   //setup default palettes
-    uint8_t temp_pal[3 * 256];
-
-    //pallete 7 is special. it's 16 gradients from solid colors to "backgroung frame" color  
-    //reverse grayscale
-    int iBaseR,iBaseG,iBaseB;
-    int iStepR,iStepG,iStepB;
-    for (int iColor=0; iColor<16; iColor++)
-    {
-        iBaseR = 0x7F; iBaseG = 0x7F; iBaseB = 0x7F; 
-        switch(iColor)
-        {
-            case 0: //quasi-black
-                iStepR = -8; iStepG = -8; iStepB = -8;
-                break;
-            case 1: //red
-                iStepR = 8; iStepG = -7; iStepB = -7;
-                break;
-            case 2: //green
-                iStepR = -7; iStepG = 8; iStepB = -7;
-                break;
-            case 3: //blue
-                iStepR = -7; iStepG = -7; iStepB = 8;
-                break;
-            case 4: //cyan
-                iStepR =-7; iStepG = 8; iStepB = 8;
-                break;
-            case 5: //magenta
-                iStepR = 8; iStepG = -7; iStepB = 8;
-                break;
-            case 6: //yellow
-                iStepR = 8; iStepG = 8; iStepB = -7;
-                break;
-            case 7: //white
-                iStepR = 8; iStepG = 8; iStepB = 8;
-                break;
-            case 8: //orange
-                iStepR = 6; iStepG = 0; iStepB = -6;
-                break;
-            case 9: //olive
-                iStepR = 0; iStepG = 4; iStepB = -4;
-                break;
-            case 10: //brown
-                iStepR = 2; iStepG = 0; iStepB = -7;
-                break;
-            case 11: //lightblue
-                iStepR = 0; iStepG = 4; iStepB = 8;
-                break;
-            case 12: //meaty
-                iStepR = 6; iStepG = 0; iStepB = 0;
-                break;
-            case 13: //khaki
-                iStepR = -7; iStepG = -2; iStepB = 0;
-                break;
-            case 14: //grey
-                iStepR = -2; iStepG = -2; iStepB = -2;
-                break;
-            case 15: //coffee
-                iStepR = 6; iStepG = 4; iStepB = -2;
-                break;
-        }
-
-        for (int i = 15; i >= 0; i--)
-        {
-            temp_pal[iColor*48 + i * 3] = iBaseR;     
-            temp_pal[iColor*48 + i * 3 + 1] = iBaseG; 
-            temp_pal[iColor*48 + i * 3 + 2] = iBaseB; 
-            iBaseR += iStepR;
-            iBaseG += iStepG;
-            iBaseB += iStepB;
-        }
-    }
-
-    _svin_set_palette(7, temp_pal);
-
     _svin_textbox_clear();
+
 }
 
 void 
@@ -202,6 +54,8 @@ _svin_textbox_clear()
 {
     //-------------- setup character pattern names ------------------
     //setting up textbox placeholder for nbg2, 5x40 chars = 640x80
+
+    _svin_set_cycle_patterns_cpu();
 
     int * _pointer32 = (int *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
     for (unsigned int i = 0; i < (_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE) / sizeof(int); i+=4)
@@ -211,28 +65,25 @@ _svin_textbox_clear()
         _pointer32[i+2] = 0x000F000F;
         _pointer32[i+3] = 0x000F000F;
     }
+
+    _svin_set_cycle_patterns_nbg();
 }
 
 void 
 _svin_textbox_disable()
 {
+    _svin_set_cycle_patterns_cpu();
     //filling entire textbox range with transparent color 0
     memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
+    _svin_set_cycle_patterns_nbg();
 }
 
 void
 _svin_textbox_print(const char * speaker, const char * text, const char * fontname, int speaker_color, int text_color)
 {
-        int height;
-        const struct mf_font_s *font;
-        options_t options;
-        state_t state = {};
+        int height=0;
         uint8_t _buf;
         uint8_t * _p;
-
-        //fill background sprites with zeros
-        vdp1_vram_partitions_t vdp1_vram_partitions;
-        vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
         buffer = malloc(32 * 2048);
 
@@ -240,48 +91,20 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
 
         // Rendering speaker name first, 1st line, shifted 1 quad to the right
 
-        //first fill state
-        memset(&options, 0, sizeof(options_t));
-        options.fontname = "Lato_Black12";
-        options.text = speaker;
-        options.filename = NULL;
-        options.width = 640;
-        options.margin = 5;
-        options.scale = 1;
-        options.alignment = MF_ALIGN_LEFT;
-        options.anchor = options.margin;
+        _svin_set_cycle_patterns_cpu();
 
-        font = mf_find_font(options.fontname);
-
-        assert(font != NULL);
-        
-        //Count the number of lines that we need. 
-        height = 0;
-        mf_wordwrap(font, options.width - 2 * options.margin, options.text, count_lines, &height);
-        height *= font->height;
-        height += 4;
-
-        // Setup the image buffer
-        state.options = &options;
-        state.width = options.width;
-        state.height = height;
-        state.buffer = buffer;
-        state.y = 2;
-        state.font = font;
-
-        // Initialize image to white
-        memset(state.buffer, 255, options.width * height);
-
-        if ((height > 0)&&(strlen(speaker)>0))
+        if (strlen(speaker)>0)
         {
                 // Render the speaker name 
-                mf_wordwrap(font, options.width - 2 * options.margin, options.text, line_callback, &state);
+                height = _svin_text_render(buffer,640,speaker,fontname);
+
+                //assert (height <= 16);
 
                 //copy speaker name
                 _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
                 for (int cellX = 0; cellX < 80; cellX++)
                 {
-                        for (int cellY = 0; cellY < 2; cellY++)
+                        for (int cellY = 0; cellY < (height/8); cellY++)
                         {
                                 for (int x=0;x<8;x++)
                                 {
@@ -302,67 +125,39 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
                 }
         }
 
-
+        //char eee[256];
+        //sprintf(eee,"%i",height);
         // Now rendering the actual text from cellY = 1
+        height = _svin_text_render(buffer,640,text,fontname);
+        //height = _svin_text_render(buffer,640,eee,fontname);
 
-        //first fill state
-        memset(&options, 0, sizeof(options_t));
-        options.fontname = fontname;
-        options.text = text;
-        options.filename = NULL;
-        options.width = 640;
-        options.margin = 5;
-        options.scale = 1;
-        options.alignment = MF_ALIGN_LEFT;
-        options.anchor = options.margin;
-
-        font = mf_find_font(options.fontname);
-
-        assert(font != NULL);
-        
-        //Count the number of lines that we need. 
-        height = 0;
-        mf_wordwrap(font, options.width - 2 * options.margin, options.text, count_lines, &height);
-        height *= font->height;
-        height += 4;
-
-        // Setup the image buffer
-        state.options = &options;
-        state.width = options.width;
-        state.height = height;
-        state.buffer = buffer;
-        state.y = 2;
-        state.font = font;
-
-        // Initialize image to white
-        memset(state.buffer, 255, options.width * 80);//height); 
-
-        // Render the text
-        mf_wordwrap(font, options.width - 2 * options.margin, options.text, line_callback, &state);
+        //assert (height <= 64);
 
         _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
         for (int cellX = 0; cellX < 80; cellX++)
         {
-                for (int cellY = 2; cellY < 10; cellY++)
+                for (int cellY = 2; cellY < 2 + (height/8); cellY++)
                 {
                         for (int x=0;x<8;x++)
                         {
                                 for (int y=0;y<8;y++)
                                 {
-                                        _buf = buffer[((cellY-1)*8+y)*640+cellX*8+x];
+                                        //_buf = buffer[((cellY-1)*8+y)*640+cellX*8+x];
+                                        _buf = buffer[((cellY-2)*8+y)*640+cellX*8+x];
                                         if (_buf!=0xFF) 
                                         {
                                                 _buf = text_color*16 + _buf/16;
                                                 if (0==_buf)
-                                                        _buf = 1;//0 is a reserved coloer, using close value
+                                                        _buf = 1;//0 is a reserved color, using close value
                                                 _p[(cellY*80+cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
                                         }
 
                                 }
                         }
                 }
-
         }
+
+        _svin_set_cycle_patterns_nbg();
 
         free(buffer);
 }

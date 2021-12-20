@@ -486,7 +486,9 @@ void _svin_init()
     }
     _svin_set_palette(6, temp_pal);  
 
+    _svin_text_init();
     _svin_textbox_init();
+
     _svin_sprite_init();
 
     //setting cycle patterns for nbg access

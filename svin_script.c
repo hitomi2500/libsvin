@@ -106,7 +106,7 @@ _svin_run_script(char * filename)
                 k++;
             }
             tmp_buffer[k] = 0;
-            _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black12",iActorColor,iActorColor);
+            _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black12",iActorColor,iActorColor);//Lato_Black12
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
