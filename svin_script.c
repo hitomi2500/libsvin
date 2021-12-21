@@ -230,6 +230,39 @@ _svin_run_script(char * filename)
             //end of script
             bFinished = true;
         }
+        else if (strncmp(script_buffer,"MENU ",5)==0)
+        {
+            #error here: todo populate
+            //populate menu
+            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
+            if (i>2048) i=2048;
+            if (i<4) i=4;
+            j = (int)strstr(script_buffer,"POSITION ") - (int)script_buffer;
+            j+=9;
+            iPosition=atoi(&script_buffer[j]);
+            if (iPosition<0) iPosition = 0;
+            if (iPosition>2) iPosition = 2;
+            _svin_sprite_clear(iPosition);
+            sprintf(&pDebug[iStringNumber*32],"CLEAR %i at line %i",iPosition,iStringNumber);
+           
+            //remove command from buffer
+            for (j=i+1;j<4096;j++)
+                script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= (i+1);
+        }
+        else if (strncmp(script_buffer,"MENURUN",7)==0)
+        {
+            sprintf(&pDebug[iStringNumber*32],"MENURUN at line %i",iStringNumber);
+            //activate menu
+            _svin_menu_activate();
+            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
+            if (i>2048) i=2048;
+            if (i<4) i=4;           
+            //remove command from buffer
+            for (j=i+1;j<4096;j++)
+                script_buffer[j-i-1] = script_buffer[j];
+            iDataInBuffer -= (i+1);
+        }
         else
         {
             sprintf(&pDebug[iStringNumber*32],"UNKNOWN at line %i",iStringNumber);

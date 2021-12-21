@@ -11,17 +11,16 @@
 #include <mcufont.h>
 
 typedef struct {
-    uint8_t *line;
+    char *line;
     uint32_t jump;
     uint8_t id;
-} _svin_menu_type;
-
+} _svin_menu_item_type;
 
 void _svin_menu_init(); //prepare menu
 
-void _svin_menu_populate(int index, const char * text, const char * fontname);
+void _svin_menu_populate(int jump, const char * text);
 
-void _svin_menu_activate();
+int _svin_menu_activate();
 
 void _svin_menu_clear();
 
