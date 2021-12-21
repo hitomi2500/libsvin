@@ -177,7 +177,7 @@ _svin_text_render(uint8_t * buffer, int width, const char * text, const char * f
         options.text = text;
         options.filename = NULL;
         options.width = width;
-        options.margin = 5;
+        options.margin = 0;
         options.scale = 1;
         options.alignment = MF_ALIGN_LEFT;
         options.anchor = options.margin;
@@ -190,15 +190,15 @@ _svin_text_render(uint8_t * buffer, int width, const char * text, const char * f
         height = 0;
         mf_wordwrap(font, options.width - 2 * options.margin, options.text, count_lines, &height);
         height *= font->height;
-        height += 4;
-        height = (((height-1)/8)+1)*8;
+        //height += 4;
+        //height = (((height-1)/8)+1)*8;
 
         // Setup the image buffer
         state.options = &options;
         state.width = options.width;
         state.height = height;
         state.buffer = buffer;
-        state.y = 2;
+        state.y = 0;
         state.font = font;
 
         // Initialize image to white

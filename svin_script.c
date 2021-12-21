@@ -23,6 +23,7 @@ _svin_run_script(char * filename)
     int iLayer;
     int iPosition;
     int iPalette;
+    bool bItalics = false;
     //char *sprite_filename;
 
     //first let's find script FAD, browsing root folder
@@ -63,15 +64,17 @@ _svin_run_script(char * filename)
                 iActor += script_buffer[j]-'0';
                 j++;
             }
+            bItalics = false;
             switch (iActor)
             {
                 case 255: 
-                    strcpy(tmp_buffer2,"<narrative>");
+                    strcpy(tmp_buffer2,"");//narrative, no actor name
                     iActorColor = 7;
                     break;
                 case 254: 
-                    strcpy(tmp_buffer2,"<think>");
+                    strcpy(tmp_buffer2,""); //thinking, using italics font
                     iActorColor = 7;
+                    bItalics = true;
                     break;
                 case 2: 
                     strcpy(tmp_buffer2,"<me>");
@@ -106,7 +109,10 @@ _svin_run_script(char * filename)
                 k++;
             }
             tmp_buffer[k] = 0;
-            _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black12",iActorColor,iActorColor);//Lato_Black12
+            if (true == bItalics)
+                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_BlackItalic12",iActorColor,iActorColor);
+            else
+                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black12",iActorColor,iActorColor);
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];

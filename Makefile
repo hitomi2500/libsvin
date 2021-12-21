@@ -18,6 +18,7 @@ SH_SRCS:= \
 	svin_cd_access.c \
 	svin_background.c \
 	svin_tapestry.c \
+	svin_text.c \
 	svin_textbox.c \
 	svin_filelist.c \
 	svin_sprite.c \

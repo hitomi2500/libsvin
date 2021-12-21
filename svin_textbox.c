@@ -84,6 +84,7 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
         int height=0;
         uint8_t _buf;
         uint8_t * _p;
+        int16_t _x,_y;
 
         buffer = malloc(32 * 2048);
 
@@ -96,27 +97,35 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
         if (strlen(speaker)>0)
         {
                 // Render the speaker name 
-                height = _svin_text_render(buffer,640,speaker,fontname);
+                height = _svin_text_render(buffer,256,speaker,fontname);
 
-                //assert (height <= 16);
+                //assert (height == 16);
 
                 //copy speaker name
                 _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
                 for (int cellX = 0; cellX < 80; cellX++)
                 {
-                        for (int cellY = 0; cellY < (height/8); cellY++)
+                        for (int cellY = 0; cellY < ((height-1)/8)+1; cellY++)
                         {
                                 for (int x=0;x<8;x++)
                                 {
                                         for (int y=0;y<8;y++)
                                         {
-                                                _buf = buffer[((cellY)*8+y+4)*640+cellX*8+x];
-                                                if (_buf!=0xFF) 
+                                                _y = (cellY)*8+y;//+4;
+                                                if (_y < height)
                                                 {
-                                                        _buf = speaker_color*16 + _buf/16;
-                                                        if (0==_buf)
-                                                                _buf = 1;//0 is a transparency color, using close value
-                                                        _p[(cellY * 80 + cellX+1)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                        _x = cellX*8+x-8;
+                                                        if ( (_x >= 0) && (_x < 256) )
+                                                        {
+                                                                _buf = buffer[_y*256+_x];
+                                                                if (_buf!=0xFF) 
+                                                                {
+                                                                        _buf = speaker_color*16 + _buf/16;
+                                                                        if (0==_buf)
+                                                                                _buf = 1;//0 is a transparency color, using close value
+                                                                        _p[(cellY * 80 + cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                                }
+                                                        }
                                                 }
 
                                         }
@@ -125,33 +134,40 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
                 }
         }
 
-        //char eee[256];
-        //sprintf(eee,"%i",height);
-        // Now rendering the actual text from cellY = 1
-        height = _svin_text_render(buffer,640,text,fontname);
-        //height = _svin_text_render(buffer,640,eee,fontname);
+        UNUSED(text);
+        UNUSED(text_color);
 
-        //assert (height <= 64);
+        // Now rendering the actual text from cellY = 2
+        height = _svin_text_render(buffer,630,text,fontname);
+
+        assert (height <= 64);
 
         _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
         for (int cellX = 0; cellX < 80; cellX++)
         {
-                for (int cellY = 2; cellY < 2 + (height/8); cellY++)
+                for (int cellY = 2; cellY < 2 + ((height-1)/8)+1; cellY++)
                 {
                         for (int x=0;x<8;x++)
                         {
                                 for (int y=0;y<8;y++)
                                 {
-                                        //_buf = buffer[((cellY-1)*8+y)*640+cellX*8+x];
-                                        _buf = buffer[((cellY-2)*8+y)*640+cellX*8+x];
-                                        if (_buf!=0xFF) 
+                                        _y = (cellY-2)*8+y;//+4;
+                                        if (_y < height)
                                         {
-                                                _buf = text_color*16 + _buf/16;
-                                                if (0==_buf)
-                                                        _buf = 1;//0 is a reserved color, using close value
-                                                _p[(cellY*80+cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                //_buf = buffer[((cellY-2)*8+y)*640+cellX*8+x];
+                                                _x = cellX*8+x - 5;
+                                                if ( (_x >= 0) && (_x < 630) )
+                                                {
+                                                        _buf = buffer[_y*630+_x];
+                                                        if (_buf!=0xFF) 
+                                                        {
+                                                                _buf = text_color*16 + _buf/16;
+                                                                if (0==_buf)
+                                                                _buf = 1;//0 is a reserved color, using close value
+                                                                _p[(cellY*80+cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                        }
+                                                }
                                         }
-
                                 }
                         }
                 }
