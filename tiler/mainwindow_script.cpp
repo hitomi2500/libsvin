@@ -780,6 +780,8 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
                 script_outfile_eng.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
                 script_outfile_rus.write(QString("MENU JUMP=%1 %2\r").arg(id).arg(QString::fromLatin1(Script_Menus_Choises.at(id).value)).toLatin1());
             }
+            script_outfile_eng.write(QString("MENURUN \r").toLatin1());
+            script_outfile_rus.write(QString("MENURUN \r").toLatin1());
         }
         else if (Script_Menus_Lines.contains(iLine))
         {

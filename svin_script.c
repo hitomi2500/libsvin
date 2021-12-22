@@ -23,6 +23,7 @@ _svin_run_script(char * filename)
     int iLayer;
     int iPosition;
     int iPalette;
+    int iJump;
     bool bItalics = false;
     //char *sprite_filename;
 
@@ -232,18 +233,36 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"MENU ",5)==0)
         {
-            #error here: todo populate
             //populate menu
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
             if (i<4) i=4;
-            j = (int)strstr(script_buffer,"POSITION ") - (int)script_buffer;
-            j+=9;
-            iPosition=atoi(&script_buffer[j]);
-            if (iPosition<0) iPosition = 0;
-            if (iPosition>2) iPosition = 2;
-            _svin_sprite_clear(iPosition);
-            sprintf(&pDebug[iStringNumber*32],"CLEAR %i at line %i",iPosition,iStringNumber);
+
+            //getting jump pointer
+            j=4;
+            while (strncmp(&(script_buffer[j]),"JUMP=",5)!=0)
+                j++;
+            j+=5;
+            iJump=0;
+            while (script_buffer[j]!=' ')
+            {
+                iJump *= 10;
+                iJump += script_buffer[j]-'0';
+                j++;
+            }
+            //moving on to text
+            while (script_buffer[j]!='"')
+                j++;
+            j++; //skipping colon
+            k=0; 
+            while (script_buffer[j]!='"')
+            {
+                tmp_buffer[k] = script_buffer[j];
+                j++;
+                k++;
+            }
+            tmp_buffer[k] = 0;
+            _svin_menu_populate(iJump,tmp_buffer);
            
             //remove command from buffer
             for (j=i+1;j<4096;j++)

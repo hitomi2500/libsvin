@@ -4,6 +4,7 @@
 //#define ROM_MODE
 
 #include <yaul.h>
+#include <svin_menu.h>
 #include <svin_text.h>
 #include <svin_textbox.h>
 #include <svin_script.h>

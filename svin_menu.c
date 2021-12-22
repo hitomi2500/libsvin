@@ -14,34 +14,11 @@
 _svin_menu_item_type _svin_menu_items[10];
 uint8_t _svin_menu_items_count;
 
+uint8_t *buffer;
+
 void 
 _svin_menu_init()
 {
-    int *_pointer32;
-
-    _svin_set_cycle_patterns_cpu();
-
-    //-------------- setup pattern names -------------------
-    _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
-
-    //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
-    int index = 0;
-    int iOffset;
-    for (int y = 25; y < 45; y++)
-    {
-        //plane 0 only
-        iOffset = y * 64;
-        for (int x = 24; x < 64; x++)
-        {
-            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
-            index++;
-        }
-    }
-
-    _svin_set_cycle_patterns_nbg();
-
-    _svin_menu_clear();
-
     _svin_menu_items_count = 0; //starting unpopulated
 }
 
@@ -81,8 +58,108 @@ _svin_menu_populate(int jump, const char * text)
         _svin_menu_items_count++;
 }
 
+void 
+_svin_menu_depopulate()
+{
+        for (int i =0; i<_svin_menu_items_count; i++)
+        {
+            free(_svin_menu_items[_svin_menu_items_count].line);
+        }
+        _svin_menu_items_count = 0;
+}
+
 int 
 _svin_menu_activate()
 {
-        return 0;
+    //render text on up to 10 40x2 stripes of text 
+    int *_pointer32;
+
+    assert(_svin_menu_items_count>0);
+    assert(_svin_menu_items_count<11);
+
+    _svin_set_cycle_patterns_cpu();
+
+    //-------------- setup pattern names -------------------
+    _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
+
+    //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
+    int index = 0;
+    int iOffset;
+    int iStartCell = 35-_svin_menu_items_count/2;
+    for (int y = iStartCell; y < iStartCell + _svin_menu_items_count; y++)
+    {
+        //plane 0 only
+        iOffset = y * 64;
+        for (int x = 24; x < 64; x++)
+        {
+            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
+            index++;
+        }
+    }
+
+    _svin_set_cycle_patterns_nbg();
+
+    _svin_menu_clear();
+
+    int height;
+
+    _svin_set_cycle_patterns_cpu();
+
+    buffer = malloc(8 * 2048);
+    int16_t _x,_y;
+    uint8_t * _p;
+    uint8_t _buf;
+
+    //draw menu lines
+    for (int iLine = 0; iLine < _svin_menu_items_count; iLine++)
+    {
+        if (strlen(_svin_menu_items[_svin_menu_items_count].line)>0)
+        {
+                // Render the speaker name 
+                height = _svin_text_render(buffer,320,_svin_menu_items[_svin_menu_items_count].line,"Lato_Black12");
+
+                //copy menu line
+                _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
+                for (int cellX = 0; cellX < 40; cellX++)
+                {
+                        for (int cellY = iLine*2; cellY < iLine*2 + 2; cellY++)
+                        {
+                                for (int x=0;x<8;x++)
+                                {
+                                        for (int y=0;y<8;y++)
+                                        {
+                                                _y = (cellY)*8+y;
+                                                if (_y < height)
+                                                {
+                                                        _x = cellX*8+x-8;
+                                                        if ( (_x >= 0) && (_x < 320) )
+                                                        {
+                                                                _buf = buffer[_y*320+_x];
+                                                                if (_buf!=0xFF) 
+                                                                {
+                                                                        //_buf = speaker_color*16 + _buf/16;
+                                                                        _buf = _buf/16;
+                                                                        if (0==_buf)
+                                                                                _buf = 1;//0 is a transparency color, using close value
+                                                                        _p[(cellY * 80 + cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                                }
+                                                        }
+                                                }
+
+                                        }
+                                }
+                        }
+                }
+        }
+    }
+
+    free (buffer);
+
+    _svin_set_cycle_patterns_nbg();
+
+    while(1);
+
+    return 0;//should return jump here
+ 
+
 }
