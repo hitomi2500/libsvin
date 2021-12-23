@@ -239,7 +239,7 @@ _svin_run_script(char * filename)
             if (i<4) i=4;
 
             //getting jump pointer
-            j=4;
+            j=5;
             while (strncmp(&(script_buffer[j]),"JUMP=",5)!=0)
                 j++;
             j+=5;
@@ -272,6 +272,8 @@ _svin_run_script(char * filename)
         else if (strncmp(script_buffer,"MENURUN",7)==0)
         {
             sprintf(&pDebug[iStringNumber*32],"MENURUN at line %i",iStringNumber);
+            //disable textbox
+            _svin_textbox_disable();
             //activate menu
             _svin_menu_activate();
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;

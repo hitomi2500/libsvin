@@ -496,6 +496,8 @@ void _svin_init()
 
     _svin_debug_init();
 
+    _svin_menu_init();
+
     //-------------- init end -------------------  
     //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX * 4);
     _svin_init_done = 1;
@@ -567,15 +569,19 @@ void _svin_vblank_out_handler(void *work __unused)
     smpc_peripheral_intback_issue();
 }
 
-void _svin_wait_for_key_press_and_release()
+int _svin_wait_for_key_press_and_release()
 {
     bool bPressed = false;
+    int iCode = 0;
     while (false == bPressed)
     {
         smpc_peripheral_process();
         smpc_peripheral_digital_port(1, &_digital);
         if (_digital.pressed.raw != 0)
+        {
             bPressed = true;
+            iCode = _digital.pressed.raw;
+        }
     }
     _svin_delay(15);//debounce
     while (true == bPressed)
@@ -585,4 +591,5 @@ void _svin_wait_for_key_press_and_release()
         if (_digital.pressed.raw == 0)
             bPressed = false;
     }
+    return iCode;
 }

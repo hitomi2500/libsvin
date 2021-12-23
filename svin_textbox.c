@@ -73,8 +73,24 @@ void
 _svin_textbox_disable()
 {
     _svin_set_cycle_patterns_cpu();
-    //filling entire textbox range with transparent color 0
-    memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
+    //filling entire textbox names range with transparent tile name
+    int iOffset;
+    int32_t * _pointer32 = (int32_t*)_SVIN_NBG2_PNDR_START;
+    for (int y = 44; y < 54; y++)
+    {
+        //plane 0 first
+        iOffset = y * 64;
+        for (int x = 4; x < 64; x++)
+        {
+            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        }
+        //now plane 1
+        iOffset = 64 * 64 + y * 64;
+        for (int x = 0; x < 20; x++)
+        {
+            _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+        }
+    }
     _svin_set_cycle_patterns_nbg();
 }
 

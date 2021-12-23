@@ -140,7 +140,7 @@ _svin_text_init_palette()
                 iStepR = -7; iStepG = -2; iStepB = 0;
                 break;
             case 14: //grey
-                iStepR = -2; iStepG = -2; iStepB = -2;
+                iStepR = 2; iStepG = 2; iStepB = 2;
                 break;
             case 15: //coffee
                 iStepR = 6; iStepG = 4; iStepB = -2;

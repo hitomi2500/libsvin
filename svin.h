@@ -135,7 +135,7 @@
 
 void _svin_init();
 void _svin_delay(int milliseconds);
-void _svin_wait_for_key_press_and_release();
+int _svin_wait_for_key_press_and_release();
 
 void _svin_set_cycle_patterns_cpu();
 void _svin_set_cycle_patterns_nbg();

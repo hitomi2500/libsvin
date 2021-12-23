@@ -15,11 +15,16 @@ _svin_menu_item_type _svin_menu_items[10];
 uint8_t _svin_menu_items_count;
 
 uint8_t *buffer;
+uint16_t MenuLinks[1024];
 
 void 
 _svin_menu_init()
 {
-    _svin_menu_items_count = 0; //starting unpopulated
+        int i;
+        _svin_menu_items_count = 0; //starting unpopulated
+        fad_t _menulinks_fad;
+        assert(true == _svin_filelist_search("SCRIPT_ENG.MNU",&_menulinks_fad,&i));
+        _svin_cd_block_sector_read(_menulinks_fad, (uint8_t*)MenuLinks);
 }
 
 void 
@@ -71,95 +76,141 @@ _svin_menu_depopulate()
 int 
 _svin_menu_activate()
 {
-    //render text on up to 10 40x2 stripes of text 
-    int *_pointer32;
+        //render text on up to 10 40x2 stripes of text 
+        int *_pointer32;
 
-    assert(_svin_menu_items_count>0);
-    assert(_svin_menu_items_count<11);
+        assert(_svin_menu_items_count>0);
+        assert(_svin_menu_items_count<11);
 
-    _svin_set_cycle_patterns_cpu();
+        int8_t SelectorPosition = 0;
 
-    //-------------- setup pattern names -------------------
-    _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
+        _svin_set_cycle_patterns_cpu();
 
-    //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
-    int index = 0;
-    int iOffset;
-    int iStartCell = 35-_svin_menu_items_count/2;
-    for (int y = iStartCell; y < iStartCell + _svin_menu_items_count; y++)
-    {
-        //plane 0 only
-        iOffset = y * 64;
-        for (int x = 24; x < 64; x++)
+        //-------------- setup pattern names -------------------
+        _pointer32 = (int *)_SVIN_NBG2_PNDR_START;
+
+        //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
+        int index = 0;
+        int iOffset;
+        int iStartCell = 28-_svin_menu_items_count;
+        for (int y = iStartCell; y < iStartCell + _svin_menu_items_count*2; y++)
         {
-            _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
-            index++;
-        }
-    }
-
-    _svin_set_cycle_patterns_nbg();
-
-    _svin_menu_clear();
-
-    int height;
-
-    _svin_set_cycle_patterns_cpu();
-
-    buffer = malloc(8 * 2048);
-    int16_t _x,_y;
-    uint8_t * _p;
-    uint8_t _buf;
-
-    //draw menu lines
-    for (int iLine = 0; iLine < _svin_menu_items_count; iLine++)
-    {
-        if (strlen(_svin_menu_items[_svin_menu_items_count].line)>0)
-        {
-                // Render the speaker name 
-                height = _svin_text_render(buffer,320,_svin_menu_items[_svin_menu_items_count].line,"Lato_Black12");
-
-                //copy menu line
-                _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
-                for (int cellX = 0; cellX < 40; cellX++)
+                //plane 0 only
+                iOffset = y * 64;
+                for (int x = 24; x < 64; x++)
                 {
-                        for (int cellY = iLine*2; cellY < iLine*2 + 2; cellY++)
+                _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
+                index++;
+                }
+        }
+
+        _svin_set_cycle_patterns_nbg();
+
+        _svin_menu_clear();
+
+        int height;
+
+        buffer = malloc(8 * 2048);
+        int16_t _x,_y;
+        uint8_t * _p;
+        uint8_t _buf;
+        //char dummy[16];
+
+        int iKeycode;
+        
+
+        //menu loop here
+        bool bChosen = false;
+        while (false == bChosen)
+
+        {
+
+                //draw menu lines
+                _svin_set_cycle_patterns_cpu();
+        
+                for (int iLine = 0; iLine < _svin_menu_items_count; iLine++)
+                {
+                        if (strlen(_svin_menu_items[iLine].line)>0)
                         {
-                                for (int x=0;x<8;x++)
+                                // Render the speaker name 
+                                //sprintf(dummy,"%i",_svin_menu_items[iLine].jump);
+                                height = _svin_text_render(buffer,320,_svin_menu_items[iLine].line,"Lato_Black12");
+                                
+                                //copy menu line
+                                _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
+                                for (int cellX = 0; cellX < 40; cellX++)
                                 {
-                                        for (int y=0;y<8;y++)
+                                        for (int cellY = 0; cellY < 2; cellY++)
                                         {
-                                                _y = (cellY)*8+y;
-                                                if (_y < height)
+                                                for (int x=0;x<8;x++)
                                                 {
-                                                        _x = cellX*8+x-8;
-                                                        if ( (_x >= 0) && (_x < 320) )
+                                                        for (int y=0;y<8;y++)
                                                         {
-                                                                _buf = buffer[_y*320+_x];
-                                                                if (_buf!=0xFF) 
+                                                                _y = (cellY)*8+y+2;
+                                                                if ( (_y >= 0) && (_y < height) )
                                                                 {
-                                                                        //_buf = speaker_color*16 + _buf/16;
-                                                                        _buf = _buf/16;
-                                                                        if (0==_buf)
-                                                                                _buf = 1;//0 is a transparency color, using close value
-                                                                        _p[(cellY * 80 + cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                                        _x = cellX*8+x-8;
+                                                                        if ( (_x >= 0) && (_x < 320) )
+                                                                        {
+                                                                                _buf = buffer[_y*320+_x];
+                                                                                if (_buf!=0xFF) 
+                                                                                {
+                                                                                        if (SelectorPosition == iLine)
+                                                                                                _buf = 7*16 + _buf/16;
+                                                                                        else
+                                                                                                _buf = 14*16 + _buf/16;
+                                                                                        if (0==_buf)
+                                                                                                _buf = 1;//0 is a transparency color, using close value
+                                                                                        _p[((cellY+iLine*2) * 40 + cellX)*_SVIN_CHARACTER_BYTES + y*8 + x] = _buf;
+                                                                                }
+                                                                        }
                                                                 }
+
                                                         }
                                                 }
-
                                         }
                                 }
                         }
                 }
+                
+                _svin_set_cycle_patterns_nbg();
+
+                //menu drawn, check keyboard
+                
+                //wait for keypress
+                iKeycode = _svin_wait_for_key_press_and_release();
+
+                if (PERIPHERAL_DIGITAL_UP & iKeycode)
+                        SelectorPosition--;
+                else if  (PERIPHERAL_ANALOG_UP & iKeycode)
+                        SelectorPosition--;
+                else if (PERIPHERAL_DIGITAL_DOWN & iKeycode)
+                        SelectorPosition++;
+                else if  (PERIPHERAL_ANALOG_DOWN & iKeycode)
+                        SelectorPosition++;
+                else if (PERIPHERAL_DIGITAL_A & iKeycode)
+                        bChosen = true;
+                else if  (PERIPHERAL_ANALOG_A & iKeycode)
+                        bChosen = true;
+                else if (PERIPHERAL_DIGITAL_C & iKeycode)
+                        bChosen = true;
+                else if  (PERIPHERAL_ANALOG_C & iKeycode)
+                        bChosen = true;
+
+                if (SelectorPosition<0)
+                        SelectorPosition = _svin_menu_items_count-1;
+
+                if (SelectorPosition>=_svin_menu_items_count)
+                        SelectorPosition =0;
+
+
         }
-    }
 
-    free (buffer);
+        free (buffer);
 
-    _svin_set_cycle_patterns_nbg();
+        int iJump = _svin_menu_items[SelectorPosition].jump;
 
-    while(1);
+        _svin_menu_depopulate();
 
-    return 0;//should return jump here
- 
-
+        return MenuLinks[iJump];//it's an index from .MNU array, should get it here
 }
