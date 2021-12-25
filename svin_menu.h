@@ -24,8 +24,6 @@ int _svin_menu_activate();
 
 void _svin_menu_clear();
 
-void _svin_menu_disable();
-
 void _svin_menu_init_palette();
 
 #endif

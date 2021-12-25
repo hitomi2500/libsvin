@@ -9,14 +9,15 @@
 #include <mcufont.h>
 #define UNUSED(x) (void)(x)
 
+uint32_t JumpLinks[512];
+
 void 
-_svin_run_script(char * filename)
+_svin_script_run(char * filename)
 {
     char * script_buffer;
     char * tmp_buffer;
     char * tmp_buffer2;
     bool bFinished = false;
-    char * pDebug = (char*)0x20280000;
     int i,j,k;
     int iActor;
     int iActorColor;
@@ -24,13 +25,20 @@ _svin_run_script(char * filename)
     int iPosition;
     int iPalette;
     int iJump;
+    int iJumpAddress;
     bool bItalics = false;
-    //char *sprite_filename;
+    
+    //reading links
+    fad_t _jumplinks_fad;
+    assert(true == _svin_filelist_search("SCRIPT_ENG.LBL",&_jumplinks_fad,&i));
+    _svin_cd_block_sector_read(_jumplinks_fad, (uint8_t*)JumpLinks);
 
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
     fad_t _script_fad;
+    fad_t _base_fad;
     assert(true == _svin_filelist_search(filename,&_script_fad,&i));
+    _base_fad = _script_fad;
 
     script_buffer = malloc(4096);
     tmp_buffer = malloc(2048);
@@ -40,15 +48,16 @@ _svin_run_script(char * filename)
     int iDataInBuffer=2048;
     //starting parse cycle 
     bFinished = false;
-    int iStringNumber = 0;
+
+    char * pDebug = (char*)0x20280000;
+    int iDebugStringNumber = 0;
     strcpy(pDebug,"start 1");
+    
     _svin_textbox_clear();
     while (false == bFinished)
     {
-        iStringNumber++;
         if (strncmp(script_buffer,"TEXT ",5)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"TEXT at line %i",iStringNumber);
             //print text on panel
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
@@ -113,7 +122,11 @@ _svin_run_script(char * filename)
             if (true == bItalics)
                 _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_BlackItalic12",iActorColor,iActorColor);
             else
-                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black12",iActorColor,iActorColor);
+                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black16",iActorColor,iActorColor);
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"TEXT fad %i",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -123,7 +136,6 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"BG ",3)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"BG at line %i",iStringNumber);
             //temporary measures - removing all sprites when changing BG
             for (i=0;i<3;i++)
                 _svin_sprite_clear(i);
@@ -135,6 +147,10 @@ _svin_run_script(char * filename)
                 tmp_buffer[j-3] = script_buffer[j];
             tmp_buffer[i-3]=0;
             _svin_background_update(tmp_buffer);
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"BG fad %i",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -142,11 +158,14 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"REM ",4)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"REM at line %i",iStringNumber);
             //comment
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
             if (i<4) i=4;
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"REM fad %i",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -177,11 +196,12 @@ _svin_run_script(char * filename)
             j+=5;
             memcpy(tmp_buffer,&(script_buffer[j]),i-j);
             tmp_buffer[i-j]=0;
-            //_svin_sprite_draw(tmp_buffer,0,0);
-            sprintf(&pDebug[iStringNumber*32],"SPRITE pos%ilayer%ipal%iline%i",iPosition,iLayer,iPalette,iStringNumber);
-            //memcpy(&pDebug[iStringNumber*32],tmp_buffer,32); //copy sprite name for debug
             _svin_sprite_draw(tmp_buffer,iLayer,iPosition,iPalette);
-            
+
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"SPpos%ilay%ipal%i",iPosition,iLayer,iPalette);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -199,8 +219,11 @@ _svin_run_script(char * filename)
             if (iPosition<0) iPosition = 0;
             if (iPosition>2) iPosition = 2;
             _svin_sprite_clear(iPosition);
-            sprintf(&pDebug[iStringNumber*32],"CLEAR %i at line %i",iPosition,iStringNumber);
            
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"CLEAR fad %i",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -218,8 +241,11 @@ _svin_run_script(char * filename)
             if (iPosition<0) iPosition = 0;
             if (iPosition>2) iPosition = 2;
             _svin_set_cycle_patterns_nbg();//position ignored
-            sprintf(&pDebug[iStringNumber*32],"ENABLE %i at line %i",iPosition,iStringNumber);
-           
+
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"ENBfad%ipos%i",_script_fad-_base_fad,iPosition);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -227,9 +253,12 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"END",3)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"END at line %i",iStringNumber);
             //end of script
             bFinished = true;
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"END fad %i",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
         }
         else if (strncmp(script_buffer,"MENU ",5)==0)
         {
@@ -264,6 +293,10 @@ _svin_run_script(char * filename)
             tmp_buffer[k] = 0;
             _svin_menu_populate(iJump,tmp_buffer);
            
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"MNUfad%ijmp%i",_script_fad-_base_fad,iJump);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];
@@ -271,25 +304,63 @@ _svin_run_script(char * filename)
         }
         else if (strncmp(script_buffer,"MENURUN",7)==0)
         {
-            sprintf(&pDebug[iStringNumber*32],"MENURUN at line %i",iStringNumber);
             //disable textbox
             _svin_textbox_disable();
             //activate menu
-            _svin_menu_activate();
-            i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
-            if (i>2048) i=2048;
-            if (i<4) i=4;           
-            //remove command from buffer
-            for (j=i+1;j<4096;j++)
-                script_buffer[j-i-1] = script_buffer[j];
-            iDataInBuffer -= (i+1);
+            iJumpAddress = _svin_menu_activate();
+            //re-init textbox
+            _svin_textbox_init();
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"MRfd%iad%i",_script_fad-_base_fad,iJumpAddress);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
+            //jump means we go away to a different position, so we don't care about buffer anymore
+            _script_fad = _base_fad + iJumpAddress/2048;
+            iDataInBuffer = 0;
+            //reading only one sector, second one will be readed at the end of cycle
+            _svin_cd_block_sector_read(_script_fad, (uint8_t*)tmp_buffer2);
+            _script_fad++;
+            for (j=iJumpAddress%2048;j<2048;j++)
+            {
+                script_buffer[j-iJumpAddress%2048] = tmp_buffer2[j];
+                iDataInBuffer++;
+            }           
+        }
+        else if (strncmp(script_buffer,"JUMP ",5)==0)
+        {
+            //jump
+            j = 4;
+            while (script_buffer[j] == ' ')
+                j++;
+            iJump=atoi(&script_buffer[j]);
+            assert (iJump >= 0);
+            assert (iJump < 512);
+            //jump means we go away to a different position, so we don't care about buffer anymore
+            iJumpAddress = JumpLinks[iJump];
+            _script_fad = _base_fad + iJumpAddress/2048;
+            iDataInBuffer = 0;
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"JPfd%iad%i",_script_fad-_base_fad,iJumpAddress);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
+            //reading only one sector, second one will be readed at the end of cycle
+            _svin_cd_block_sector_read(_script_fad, (uint8_t*)tmp_buffer2);
+            _script_fad++;
+            for (j=iJumpAddress%2048;j<2048;j++)
+            {
+                script_buffer[j-iJumpAddress%2048] = tmp_buffer2[j];
+                iDataInBuffer++;
+            }           
         }
         else
         {
-            sprintf(&pDebug[iStringNumber*32],"UNKNOWN at line %i",iStringNumber);
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;
             if (i<4) i=4;
+            //write debug
+            sprintf(&pDebug[iDebugStringNumber*32],"UNKN fad %i ",_script_fad-_base_fad);
+            for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];
+            iDebugStringNumber++;
             //remove command from buffer
             for (j=i+1;j<4096;j++)
                 script_buffer[j-i-1] = script_buffer[j];

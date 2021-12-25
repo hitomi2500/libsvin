@@ -8,6 +8,6 @@
 
 #include "svin.h"
 
-void _svin_run_script(char * filename);
+void _svin_script_run(char * filename);
 
 #endif

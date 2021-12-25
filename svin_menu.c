@@ -15,7 +15,7 @@ _svin_menu_item_type _svin_menu_items[10];
 uint8_t _svin_menu_items_count;
 
 uint8_t *buffer;
-uint16_t MenuLinks[1024];
+uint32_t MenuLinks[512];
 
 void 
 _svin_menu_init()
@@ -45,13 +45,6 @@ _svin_menu_clear()
 }
 
 void 
-_svin_menu_disable()
-{
-    //filling entire textbox range with transparent color 0
-    memset((void*)_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR,0,_SVIN_NBG2_CHPNDR_TEXTBOX_SIZE);
-}
-
-void 
 _svin_menu_populate(int jump, const char * text)
 {
         //just fill internal structures, do not draw anything yet
@@ -68,7 +61,7 @@ _svin_menu_depopulate()
 {
         for (int i =0; i<_svin_menu_items_count; i++)
         {
-            free(_svin_menu_items[_svin_menu_items_count].line);
+            free(_svin_menu_items[i].line);
         }
         _svin_menu_items_count = 0;
 }
@@ -210,7 +203,22 @@ _svin_menu_activate()
 
         int iJump = _svin_menu_items[SelectorPosition].jump;
 
+        //clear NBG2 names
+        //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
+        for (int y = iStartCell; y < iStartCell + _svin_menu_items_count*2; y++)
+        {
+                //plane 0 only
+                iOffset = y * 64;
+                for (int x = 24; x < 64; x++)
+                {
+                _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                }
+        }
+
         _svin_menu_depopulate();
+
+        assert (iJump >= 0);
+        assert (iJump < 512);
 
         return MenuLinks[iJump];//it's an index from .MNU array, should get it here
 }

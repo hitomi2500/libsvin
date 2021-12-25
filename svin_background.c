@@ -85,7 +85,14 @@ void _svin_background_update(char *filename)
     //searching for fad
     fad_t _bg_fad;
     int iSize;
-    assert(true == _svin_filelist_search(filename,&_bg_fad,&iSize));
+    //assert(true == _svin_filelist_search(filename,&_bg_fad,&iSize));
+    if (false == _svin_filelist_search(filename,&_bg_fad,&iSize))
+    {
+        char * pDebug = (char*)0x20280000;
+        strcpy(pDebug,filename);
+        assert(0);
+    }
+
     
     //checking if found file is the exact size we expect
     assert(iSize == (704*448 + 2048*2));

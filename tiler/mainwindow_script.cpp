@@ -635,6 +635,19 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
         else if (Script_Lines.at(iLine).simplified().startsWith("scene bg"))
         {
             QByteArray _tmp = Script_Lines.at(iLine).simplified();
+            if (_tmp.endsWith(":"))
+            {
+                _tmp = _tmp.left(_tmp.length()-1);
+                //bg with bump effect, ignoring for now
+                /*int iTab = Script_Lines.at(iLine).indexOf("scene");
+                int iTab2=iTab+1;
+                while (iTab2!=iTab)
+                {
+                    iLine++;
+                    QByteArray _tmp2 = Script_Lines.at(iLine).simplified();
+                    iTab2 = Script_Lines.at(iLine).indexOf(_tmp2);
+                }*/
+            }
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             script_outfile_eng.write(_tmp.prepend("BG images/bg/").append(".bg"));
@@ -652,6 +665,19 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             script_outfile_rus.write(QString("CLEAR POSITION 1 \r").toLatin1());
             script_outfile_rus.write(QString("CLEAR POSITION 2 \r").toLatin1());
             QByteArray _tmp = Script_Lines.at(iLine).simplified();
+            if (_tmp.endsWith(":"))
+            {
+                _tmp = _tmp.left(_tmp.length()-1);
+                //bg with bump effect, ignoring for now
+                /*int iTab = Script_Lines.at(iLine).indexOf("scene");
+                int iTab2=iTab+1;
+                while (iTab2!=iTab)
+                {
+                    iLine++;
+                    QByteArray _tmp2 = Script_Lines.at(iLine).simplified();
+                    iTab2 = Script_Lines.at(iLine).indexOf(_tmp2);
+                }*/
+            }
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             script_outfile_eng.write(_tmp.prepend("BG images/cg/").append(".bg"));

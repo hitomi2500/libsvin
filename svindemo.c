@@ -45,7 +45,7 @@ main(void)
         _svin_delay(1000);
         _svin_background_fade_to_black();
 
-        _svin_run_script("SCRIPT_ENG.TXT");
+        _svin_script_run("SCRIPT_ENG.TXT");
 
         while(1);
 
