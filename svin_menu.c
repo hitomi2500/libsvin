@@ -18,12 +18,12 @@ uint8_t *buffer;
 uint32_t MenuLinks[512];
 
 void 
-_svin_menu_init()
+_svin_menu_init(char * filename)
 {
         int i;
         _svin_menu_items_count = 0; //starting unpopulated
         fad_t _menulinks_fad;
-        assert(true == _svin_filelist_search("SCRIPT_ENG.MNU",&_menulinks_fad,&i));
+        assert(true == _svin_filelist_search(filename,&_menulinks_fad,&i));
         _svin_cd_block_sector_read(_menulinks_fad, (uint8_t*)MenuLinks);
 }
 

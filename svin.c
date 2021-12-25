@@ -496,7 +496,7 @@ void _svin_init()
 
     _svin_debug_init();
 
-    _svin_menu_init();
+    //_svin_menu_init();  //not now, because it requires filelist
 
     //-------------- init end -------------------  
     //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX * 4);

@@ -80,6 +80,64 @@ void _svin_background_set(char * filename)
     free(buffer);
 }
 
+void _svin_background_set_no_filelist(char * filename)
+{
+    //searching for fad
+    iso9660_filelist_t _filelist;
+    iso9660_filelist_entry_t _filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
+    _filelist.entries = _filelist_entries;
+    fad_t _bg_fad=0;
+    int iSize=0;
+    //can't use a filelist-based search here, using "normal" 8.3 search
+#ifdef ROM_MODE
+    iso9660_rom_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+#else
+    iso9660_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+#endif
+
+    for (uint32_t i=0;i<_filelist.entries_count;i++)
+    {
+        if (strcmp(_filelist.entries[i].name,filename) == 0)
+        {
+            _bg_fad = _filelist.entries[i].starting_fad;
+            iSize = _filelist.entries[i].size;
+        }
+    }
+
+    assert(_bg_fad > 150);
+    
+    //checking if found file is the exact size we expect
+    assert(iSize == (704*448 + 2048*2));
+
+    //allocate memory for 77 sectors
+    uint8_t *buffer = malloc(77 * 2048);
+    assert((int)(buffer) > 0);
+    //allocate memory for cram
+    uint8_t *palette = malloc(2048);
+    assert((int)(palette) > 0);
+
+    //set zero palette to hide loading
+    _svin_clear_palette(0);
+
+    vdp1_vram_partitions_t vdp1_vram_partitions;
+    vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+    //reading first half of the background
+    _svin_cd_block_sectors_read(_bg_fad + 1, buffer, 2048 * 77);
+    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
+
+    //reading second half of the background
+    _svin_cd_block_sectors_read(_bg_fad + 1 + 77, buffer, 2048 * 77);
+    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
+
+    //read palette
+    _svin_cd_block_sector_read(_bg_fad + 1 + 154, palette);
+    _svin_set_palette(0, palette);
+
+    free(palette);
+    free(buffer);
+}
+
 void _svin_background_update(char *filename)
 {
     //searching for fad
