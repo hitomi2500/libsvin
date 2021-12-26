@@ -58,7 +58,7 @@ void
 _svin_sprite_clear(int iPosition)
 {
     int * p32[3];
-    int x,y;
+    //int x,y;
 	int i;
     //clear the previous image
     _svin_set_cycle_patterns_cpu();
@@ -67,7 +67,7 @@ _svin_sprite_clear(int iPosition)
     p32[1] = (int*)_SVIN_NBG1_PNDR_START;
     p32[2] = (int*)_SVIN_NBG2_PNDR_START;
 	
-	//searching for all sprites in the specified position
+	/*//searching for all sprites in the specified position
 	for (i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
 	{
 		if ( (_svin_sprite_cache_sprites[i].status == SVIN_SPRITE_CACHE_SHOWN) && (_svin_sprite_cache_sprites[i].position == iPosition) )
@@ -87,9 +87,9 @@ _svin_sprite_clear(int iPosition)
 				}
 			}
 		}
-	}
+	}*/
 		
-	/*
+	
     switch (iPosition)
     {
         case 0:
@@ -147,7 +147,7 @@ _svin_sprite_clear(int iPosition)
                         p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
-    }*/
+    }
     _svin_set_cycle_patterns_nbg();
 }
 
@@ -207,24 +207,24 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     assert (iPaletteIndex < 7);
 	
 	int x_start=0,x_end=0;
-    switch (iPosition)
-    {
-        case 0:
-            x_start = 0;
-            break;
-        case 1:
-            x_start = _SVIN_SPRITE_TILES_WIDTH - (iSizeX/2);
-            break;
-        case 2:
-            x_start = _SVIN_SPRITE_TILES_WIDTH*2 - iSizeX;
-            break;
-    }
 	
 	//searching for sprite in the cache
-	for (i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
+	/*for (i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
 	{
 		if ( (_svin_sprite_cache_sprites[i].status != SVIN_SPRITE_CACHE_UNUSED) && (0==strcmp(_svin_sprite_cache_sprites[i].filename,filename)) )
 		{
+            switch (iPosition)
+            {
+                case 0:
+                    x_start = 0;
+                    break;
+                case 1:
+                    x_start = _SVIN_SPRITE_TILES_WIDTH - (_svin_sprite_cache_sprites[i].size_x/2);
+                    break;
+                case 2:
+                    x_start = _SVIN_SPRITE_TILES_WIDTH*2 - _svin_sprite_cache_sprites[i].size_x;
+                    break;
+            }
 			x_end = x_start + _svin_sprite_cache_sprites[i].size_x;
 			//found sprite for this filename in VRAM, not loading anything, just using existing VRAM data
 			//sprites in VRAM are sorted by address, even if fragmented, using this feature.
@@ -299,7 +299,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 				}
 			}
 		}
-	}
+	}*/
 
     //first let's find sprite FAD
     fad_t _sprite_fad;
@@ -321,6 +321,19 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 
     assert (iSizeY == _SVIN_SPRITE_TILES_HEIGTH);
     //assert (iSizeX <= _SVIN_SPRITE_TILES_WIDTH);
+
+                switch (iPosition)
+            {
+                case 0:
+                    x_start = 0;
+                    break;
+                case 1:
+                    x_start = _SVIN_SPRITE_TILES_WIDTH - (iSizeX/2);
+                    break;
+                case 2:
+                    x_start = _SVIN_SPRITE_TILES_WIDTH*2 -iSizeX;
+                    break;
+            }
 
     //calculating tiles number
     int iTilesNumber = 0;
