@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2012-2021 Israel Jacquez
- * See LICENSE for details.
- *
- * Nikita Sokolov <hitomi2500@mail.ru>
- * Israel Jacquez <mrkotfw@gmail.com>
- */
-
-
 #include <yaul.h>
 
 #include <stdio.h>

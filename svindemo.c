@@ -8,6 +8,7 @@
 #define MENU_ENTRY_COUNT 16
 
 extern uint32_t JumpLinks[512];
+extern uint32_t MenuLinks[512];
 
 
 extern vdp1_cmdt_list_t *_svin_cmdt_list;
@@ -38,7 +39,7 @@ main(void)
 
         _svin_menu_populate(0,"English");
         _svin_menu_populate(1,"Русский");
-        if (0 == _svin_menu_activate())
+        if (MenuLinks[0] == (uint32_t)_svin_menu_activate())
         {
                 //english chosen
                 _svin_script_run("SCRIPT_ENG.TXT");

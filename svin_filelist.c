@@ -6,6 +6,7 @@
 
 int _svin_filelist_size;
 char *_svin_filelist_long_filename;
+char *_svin_filelist;
 
 bool
 _svin_filelist_search_lfn(iso9660_filelist_entry_t entry, char * raw_buffer, int parent_raw_buffer_len, bool bFolder)
@@ -47,8 +48,8 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
     char * raw_buffer;
     int raw_size;
 
-    fad_t * _rec_pfad = (fad_t*)(_SVIN_FILELIST_ADDRESS+256*_svin_filelist_size);
-    char * _rec_p8 = (char*)(_SVIN_FILELIST_ADDRESS+256*_svin_filelist_size+8);
+    fad_t * _rec_pfad = (fad_t*)(_svin_filelist+256*_svin_filelist_size);
+    char * _rec_p8 = (char*)(_svin_filelist+256*_svin_filelist_size+8);
     
     if (ISO9660_ENTRY_TYPE_FILE == entry.type) {
         _rec_pfad[0] = entry.starting_fad;
@@ -123,7 +124,8 @@ _svin_filelist_fill()
     uint32_t i;
     iso9660_pvd_t * pvd = malloc(sizeof(iso9660_pvd_t));
     iso9660_dirent_t *dirent_root;
-    //uint8_t *tmp;//[2048];
+
+	_svin_filelist = (char *)_svin_alloc_lwram(0x40000,0x20200000);
 
     _svin_filelist_size = 0;
 
@@ -168,11 +170,11 @@ _svin_filelist_fill()
 bool 
 _svin_filelist_search(char * filename, fad_t * fad, int * size)
 {
-    fad_t * pfad = (fad_t *)(_SVIN_FILELIST_ADDRESS);
+    fad_t * pfad = (fad_t *)(_svin_filelist);
     //doing a simple linear search for now
     for (int i=0;i<_svin_filelist_size;i++)
     {
-        if (strcmp(filename,(char*)(_SVIN_FILELIST_ADDRESS+i*256+8)) == 0)
+        if (strcmp(filename,(char*)(_svin_filelist+i*256+8)) == 0)
         {
             fad[0] = pfad[i*64];
             size[0] = pfad[i*64+1];

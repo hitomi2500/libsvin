@@ -4,16 +4,17 @@
 //#define ROM_MODE
 
 #include <yaul.h>
-#include <svin_menu.h>
-#include <svin_text.h>
-#include <svin_textbox.h>
-#include <svin_script.h>
-#include <svin_filelist.h>
-#include <svin_sprite.h>
-#include <svin_background.h>
-#include <svin_tapestry.h>
-#include <svin_cd_access.h>
-#include <svin_debug.h>
+#include "svin_menu.h"
+#include "svin_text.h"
+#include "svin_textbox.h"
+#include "svin_script.h"
+#include "svin_filelist.h"
+#include "svin_sprite.h"
+#include "svin_background.h"
+#include "svin_tapestry.h"
+#include "svin_cd_access.h"
+#include "svin_debug.h"
+#include "svin_alloc.h"
 
 #define _SVIN_SCREEN_WIDTH    704
 #define _SVIN_SCREEN_HEIGHT   448
@@ -84,14 +85,14 @@
 //  0x00020000 - 0x00037FFF NBG0 character pattern name data (up to 1536 8x8 tiles) = 0x18000
 //  0x00038000 - 0x0003FFFF NBG1 character pattern name data (up to 256 8x8 tiles) = 0x8000
 // Bank 2
-//  0x00040000 - 0x00047FFF NBG1 character pattern name data (up to 512 8x8 tiles) = 0x8000
-//  0x00048000 - 0x0004EFFF NBG1 rendered font data for dialog box 640x80 (40x5*16x16) = 0x????
-//  0x0004F000 - 0x0004FFFF NBG1 character pattern name data specials
+//  0x00040000 - 0x0004EFFF NBG1 character pattern name data (up to 960 8x8 tiles) = 0xF000
+//  0x0004F000 - 0x0004FFFF NBG1 character pattern name data specials (up to 64 8x8 tiles) = 0x1000
 //  0x00050000 - 0x00057FFF NBG0 pattern name data 128x64*4 = 0x8000
 //  0x00058000 - 0x0005FFFF NBG1 pattern name data 128x64*4 = 0x8000
 // Bank 3
 //  0x00060000 - 0x00067FFF NBG2 pattern name data 128x64*4 = 0x8000
-//  0x00068000 - 0x0007FFFF NBG2 character pattern name data (up to 1536 8x8 tiles) = 0x18000
+//  0x00068000 - 0x0007EFFF NBG2 character pattern name data (up to 1472 8x8 tiles) = 0x17000
+//  0x0007F000 - 0x0007FFFF NBG2 character pattern name data specials (up to 64 8x8 tiles) = 0x1000
 
 #define _SVIN_NBG0_CHPNDR_START (VDP2_VRAM_ADDR(0,0x8000))
 #define _SVIN_NBG0_CHPNDR_SIZE (0x2F000)

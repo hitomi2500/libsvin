@@ -146,7 +146,7 @@ void _svin_background_update(char *filename)
     //assert(true == _svin_filelist_search(filename,&_bg_fad,&iSize));
     if (false == _svin_filelist_search(filename,&_bg_fad,&iSize))
     {
-        char * pDebug = (char*)0x20280000;
+        char * pDebug = (char *)_svin_alloc_lwram(0x800,0x202FF800);
         strcpy(pDebug,filename);
         assert(0);
     }

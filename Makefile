@@ -25,6 +25,7 @@ SH_SRCS:= \
 	svin_sprite.c \
 	svin_script.c \
 	svin_debug.c \
+	svin_alloc.c \
 	svin.c
 	
 SH_LIBRARIES:= tga

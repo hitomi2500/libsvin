@@ -49,7 +49,7 @@ _svin_script_run(char * filename)
     //starting parse cycle 
     bFinished = false;
 
-    char * pDebug = (char*)0x20280000;
+    char * pDebug = (char *)_svin_alloc_lwram(0x40000,0x20240000);
     int iDebugStringNumber = 0;
     strcpy(pDebug,"start 1");
     
@@ -120,9 +120,9 @@ _svin_script_run(char * filename)
             }
             tmp_buffer[k] = 0;
             if (true == bItalics)
-                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_BlackItalic12",iActorColor,iActorColor);
+                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_BlackItalic15",iActorColor,iActorColor);
             else
-                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black16",iActorColor,iActorColor);
+                _svin_textbox_print(tmp_buffer2,tmp_buffer,"Lato_Black15",iActorColor,iActorColor);
             //write debug
             sprintf(&pDebug[iDebugStringNumber*32],"TEXT fad %i",_script_fad-_base_fad);
             for (int k=0;k<16;k++) pDebug[iDebugStringNumber*32+16+k] = script_buffer[k];

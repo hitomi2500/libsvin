@@ -9,11 +9,30 @@
 #include "svin.h"
 
 typedef struct {
-    const char *filename;
-    bool valid;
-} _svin_sprite_t;
+    const char filename[252];
+	uint8_t position;
+    uint8_t status;
+    uint16_t size_x;
+    uint16_t size_y;
+} _svin_sprite_cache_entry_t;
 
-#define SVIN_SPRITE_CACHE_SIZE 256
+//there are 3 tables in VDP2 sprite cache
+//
+//first table includes VDP2 tiles data for sprites (NBG0 and NBG1), 
+//  size is (0x18000+0x18000+0x8000+0x10000)/64 = 4608 entries, reserving 8192 bytes, 1 byte/tile
+#define SVIN_SPRITE_CACHE_TILES_SIZE 4608
+//
+//second table include VDP2 tiles names for sprites (NBG0 and NBG1), 
+//  size is (0x8000+0x8000)/32 = 2048 entries, reserving 2048 bytes, 1 byte/tile
+#define SVIN_SPRITE_CACHE_NAMES_SIZE 2048
+//
+//third table include all sprites the tiles correspond to with IDs and names
+#define SVIN_SPRITE_CACHE_SPRITES_SIZE 64
+
+//statuses fro sprites
+#define SVIN_SPRITE_CACHE_UNUSED 0
+#define SVIN_SPRITE_CACHE_LOADED 1
+#define SVIN_SPRITE_CACHE_SHOWN 2
 
 void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
