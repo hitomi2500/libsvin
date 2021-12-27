@@ -26,8 +26,8 @@ typedef struct {
 #define SVIN_SPRITE_CACHE_TILES_SIZE 4608
 //
 //second table include VDP2 tiles names for sprites (NBG0 and NBG1), 
-//  size is (0x8000+0x8000)/32 = 2048 entries, reserving 2048 bytes, 1 byte/tile
-#define SVIN_SPRITE_CACHE_NAMES_SIZE 2048
+//  size is (0x8000+0x8000)/4 = 16384 entries, reserving 2048 bytes, 1 byte/tile
+#define SVIN_SPRITE_CACHE_NAMES_SIZE 16384
 //
 //third table include all sprites the tiles correspond to with IDs and names
 #define SVIN_SPRITE_CACHE_SPRITES_SIZE 64

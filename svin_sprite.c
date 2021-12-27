@@ -479,14 +479,14 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                             if (x<64)
                             {
                                 p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                //_svin_sprite_cache_names[y*64+x] = iCurrentCacheEntry;
-                                //_svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
+                                _svin_sprite_cache_names[y*64+x] = iCurrentCacheEntry;
+                                _svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
                             }
                             else
                             {
                                 p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                //_svin_sprite_cache_names[(y+64)*64+x-64] = iCurrentCacheEntry;
-                                //_svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
+                                _svin_sprite_cache_names[(y+64)*64+x-64] = iCurrentCacheEntry;
+                                _svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
                             }
                             break;
                         case 1:
@@ -495,14 +495,14 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                                 if (x<64)
                                 {
                                     p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                    //_svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+y*64+x] = iCurrentCacheEntry;
-                                    //_svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+y*64+x] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
                                 }
                                 else
                                 {
                                     p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                    //_svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+(y+64)*64+x-64] = iCurrentCacheEntry;
-                                    //_svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+(y+64)*64+x-64] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_tiles[iOffset/2 + iFound] = iCurrentCacheEntry;
                                 }
                             }
                             break;
