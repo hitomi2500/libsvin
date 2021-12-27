@@ -14,6 +14,8 @@ typedef struct {
     uint8_t status;
     uint16_t size_x;
     uint16_t size_y;
+    char usage[384];
+    uint8_t palette[512];
 } _svin_sprite_cache_entry_t;
 
 //there are 3 tables in VDP2 sprite cache
