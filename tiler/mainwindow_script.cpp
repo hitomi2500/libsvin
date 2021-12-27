@@ -650,6 +650,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             }
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            //removing additional markers
+            if (_tmp.contains(' '))
+                _tmp = _tmp.left(_tmp.indexOf(' '));
+            //now save
             script_outfile_eng.write(_tmp.prepend("BG images/bg/").append(".bg"));
             script_outfile_eng.write("\r");
             script_outfile_rus.write(_tmp.prepend("BG images/bg/").append(".bg"));
@@ -680,6 +684,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             }
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
             _tmp = _tmp.mid(_tmp.indexOf(' ')+1);
+            //removing additional markers
+            if (_tmp.contains(' '))
+                _tmp = _tmp.left(_tmp.indexOf(' '));
+            //now save
             script_outfile_eng.write(_tmp.prepend("BG images/cg/").append(".bg"));
             script_outfile_eng.write("\r");
             script_outfile_rus.write(_tmp.prepend("BG images/cg/").append(".bg"));
