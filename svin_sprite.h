@@ -9,13 +9,14 @@
 #include "svin.h"
 
 typedef struct {
-    const char filename[252];
+    char filename[252];
 	uint8_t position;
     uint8_t status;
+    uint8_t age;
     uint16_t size_x;
     uint16_t size_y;
     char usage[384];
-    uint8_t palette[512];
+    uint8_t palette[768];
 } _svin_sprite_cache_entry_t;
 
 //there are 3 tables in VDP2 sprite cache

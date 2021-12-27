@@ -6,3 +6,6 @@
 /build
 /*.i
 /*.s
+/.vscode/*.json
+/svindemo.cue
+/svindemo.iso
