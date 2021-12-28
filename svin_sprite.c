@@ -58,8 +58,8 @@ void
 _svin_sprite_clear(int iPosition)
 {
     int * p32[3];
-    int x,y;
-	//int i;
+    //int x,y;
+	int i;
     //clear the previous image
     _svin_set_cycle_patterns_cpu();
 
@@ -67,7 +67,7 @@ _svin_sprite_clear(int iPosition)
     p32[1] = (int*)_SVIN_NBG1_PNDR_START;
     p32[2] = (int*)_SVIN_NBG2_PNDR_START;
 	
-	/*//searching for all sprites in the specified position
+	//searching for all sprites in the specified position
 	for (i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
 	{
 		if ( (_svin_sprite_cache_sprites[i].status == SVIN_SPRITE_CACHE_SHOWN) && (_svin_sprite_cache_sprites[i].position == iPosition) )
@@ -87,9 +87,9 @@ _svin_sprite_clear(int iPosition)
 				}
 			}
 		}
-	}*/
+	}
 		
-    switch (iPosition)
+    /*switch (iPosition)
     {
         case 0:
             //for left 
@@ -146,7 +146,7 @@ _svin_sprite_clear(int iPosition)
                         p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
             break;
-    }
+    }*/
     _svin_set_cycle_patterns_nbg();
 }
 
@@ -423,7 +423,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
         _svin_sprite_cache_sprites[iCurrentCacheEntry].size_y = iSizeY;
 
         //now pack usage data from big buffer
-        /*for (i=0;i<384;i++)
+        for (i=0;i<384;i++)
         {
             _svin_sprite_cache_sprites[iCurrentCacheEntry].usage[i] = 0;
             for (int j=0; j<8; j++)
@@ -431,7 +431,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                 if (big_buffer[i*8+j+2] != 0)
                     _svin_sprite_cache_sprites[iCurrentCacheEntry].usage[i] |= 1<<j;
             }
-        }*/
+        }
       
             
         //fill data
