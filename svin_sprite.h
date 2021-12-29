@@ -10,6 +10,7 @@
 
 typedef struct {
     char filename[252];
+    uint8_t layer;
 	uint8_t position;
     uint8_t status;
     uint8_t age;
@@ -22,12 +23,15 @@ typedef struct {
 //there are 3 tables in VDP2 sprite cache
 //
 //first table includes VDP2 tiles data for sprites (NBG0 and NBG1), 
-//  size is (0x18000+0x18000+0x8000+0x10000)/64 = 4608 entries, reserving 8192 bytes, 1 byte/tile
-#define SVIN_SPRITE_CACHE_TILES_SIZE 8192
+//  size for NBG0 is (0x18000+0x17000)/64 = 3008, not 3072 entries, 1 byte/tile
+//  size for NBG1 is (0x8000+0xF000)/64 = 1472, not 1536 entries, reserving 8192 bytes, 1 byte/tile
+#define SVIN_SPRITE_CACHE_TILES_NBG0_SIZE 3008
+#define SVIN_SPRITE_CACHE_TILES_NBG1_SIZE 1472
 //
 //second table include VDP2 tiles names for sprites (NBG0 and NBG1), 
-//  size is (0x8000+0x8000)/4 = 16384 entries, reserving 2048 bytes, 1 byte/tile
-#define SVIN_SPRITE_CACHE_NAMES_SIZE 16384
+//  size is (0x8000)/4 = 8192 entries, 1 byte/tile
+#define SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE 8192
+#define SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE 8192
 //
 //third table include all sprites the tiles correspond to with IDs and names
 #define SVIN_SPRITE_CACHE_SPRITES_SIZE 64
@@ -40,5 +44,6 @@ typedef struct {
 void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
 void _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette);
+void _svin_sprite_cache_purge_oldest(int iLayer);
 
 #endif

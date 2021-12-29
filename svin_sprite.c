@@ -12,41 +12,46 @@
 #define _SVIN_SPRITE_TILES_WIDTH 44
 #define _SVIN_SPRITE_TILES_HEIGTH 56
 
-int iLastIndex[3];
+//int iLastIndex[3];
 
-char * _svin_sprite_NBG0_usage;
-char * _svin_sprite_NBG1_usage;
-char * _svin_sprite_NBG2_usage;
-char * _svin_sprite_cache_tiles;
-char * _svin_sprite_cache_names;
+char * _svin_sprite_cache_NBG0_tiles;
+char * _svin_sprite_cache_NBG1_tiles;
+char * _svin_sprite_cache_NBG0_names;
+char * _svin_sprite_cache_NBG1_names;
+int _svin_sprite_cache_NBG0_tiles_free;
+int _svin_sprite_cache_NBG1_tiles_free;
 _svin_sprite_cache_entry_t * _svin_sprite_cache_sprites;
-int iNBG0_Free_Tiles;
-int iNBG1_Free_Tiles;
 
 void 
 _svin_sprite_init()
 {
-    _svin_sprite_NBG0_usage = malloc(_SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
+    /*_svin_sprite_NBG0_usage = malloc(_SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
     memset(_svin_sprite_NBG0_usage,0,_SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
     _svin_sprite_NBG1_usage = malloc(_SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
     memset(_svin_sprite_NBG1_usage,0,_SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
     _svin_sprite_NBG2_usage = malloc(_SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
-    memset(_svin_sprite_NBG2_usage,0,_SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);
-    iLastIndex[0] = 0;
-    iLastIndex[1] = 0;
-    iLastIndex[2] = 0;
-	iNBG0_Free_Tiles = 3072;
-	iNBG1_Free_Tiles = 1536;
+    memset(_svin_sprite_NBG2_usage,0,_SVIN_NBG2_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES);*/
+    //iLastIndex[0] = 0;
+    //iLastIndex[1] = 0;
+    //iLastIndex[2] = 0;
+	_svin_sprite_cache_NBG0_tiles_free = SVIN_SPRITE_CACHE_TILES_NBG0_SIZE;
+	_svin_sprite_cache_NBG1_tiles_free = SVIN_SPRITE_CACHE_TILES_NBG1_SIZE;
 	//allocate cache tiles
-    _svin_sprite_cache_tiles = malloc(SVIN_SPRITE_CACHE_TILES_SIZE);
+    _svin_sprite_cache_NBG0_tiles = malloc(4096);//SVIN_SPRITE_CACHE_TILES_NBG0_SIZE);
+    _svin_sprite_cache_NBG1_tiles = malloc(2048);//SVIN_SPRITE_CACHE_TILES_NBG1_SIZE);
 	//mark all tiles as unused (-1 id)
-	for (int i=0;i<SVIN_SPRITE_CACHE_TILES_SIZE;i++)
-		_svin_sprite_cache_tiles[i] = -1;
+	for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG0_SIZE;i++)
+		_svin_sprite_cache_NBG0_tiles[i] = -1;
+	for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG1_SIZE;i++)
+		_svin_sprite_cache_NBG1_tiles[i] = -1;
 	//allocate cache names
-    _svin_sprite_cache_names = malloc(SVIN_SPRITE_CACHE_NAMES_SIZE);
+    _svin_sprite_cache_NBG0_names = malloc(SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE);
+    _svin_sprite_cache_NBG1_names = malloc(SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE);
 	//mark all names as unused (-1 id)
-	for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_SIZE;i++)
-		_svin_sprite_cache_names[i] = -1;
+	for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE;i++)
+		_svin_sprite_cache_NBG0_names[i] = -1;
+	for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE;i++)
+		_svin_sprite_cache_NBG1_names[i] = -1;
 	//allocate sprite cache
     _svin_sprite_cache_sprites = _svin_alloc_lwram(sizeof(_svin_sprite_cache_entry_t)*SVIN_SPRITE_CACHE_SPRITES_SIZE,0x20280000);
 	//mark all sprites as unused
@@ -73,81 +78,92 @@ _svin_sprite_clear(int iPosition)
 		if ( (_svin_sprite_cache_sprites[i].status == SVIN_SPRITE_CACHE_SHOWN) && (_svin_sprite_cache_sprites[i].position == iPosition) )
 		{
 			//found shown sprite at current position, clearing it from names, but leaving in tiles and in sprites
-			for (int j=0; j < SVIN_SPRITE_CACHE_NAMES_SIZE; j++)
-			{
-				if (_svin_sprite_cache_names[j] == i)
-				{
-					//found a match in names, clearing it
-					_svin_sprite_cache_names[j] = -1; //i.e. unused
-					//now clean the actual tables values in VDP2
-					if (j < SVIN_SPRITE_CACHE_NAMES_SIZE/2)
-						p32[0][j] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX;
-					else
-						p32[1][j-SVIN_SPRITE_CACHE_NAMES_SIZE/2] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX;
-				}
-			}
+            if (_svin_sprite_cache_sprites[i].layer == 0)
+            {
+                //clearing at NBG0
+                for (int j=0; j < SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE; j++)
+                {
+                    if (_svin_sprite_cache_NBG0_names[j] == i)
+                    {
+                        //found a match in names, clearing it
+                        _svin_sprite_cache_NBG0_names[j] = -1; //i.e. unused
+                        //now clean the actual tables values in VDP2
+                        p32[0][j] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX;
+                    }
+                }
+            }
+            else
+            {
+                //clearing at NBG1
+                for (int j=0; j < SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE; j++)
+                {
+                    if (_svin_sprite_cache_NBG1_names[j] == i)
+                    {
+                        //found a match in names, clearing it
+                        _svin_sprite_cache_NBG1_names[j] = -1; //i.e. unused
+                        //now clean the actual tables values in VDP2
+                        p32[0][j] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX;
+                    }
+                }                
+            }
 		}
 	}
 		
-    /*switch (iPosition)
-    {
-        case 0:
-            //for left 
-            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=0;x<_SVIN_SPRITE_TILES_WIDTH;x++)
-                {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    //not killing textbox, lines 44 thru 53
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                }
-            break;
-        case 1:
-            //for mid 
-            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=_SVIN_SPRITE_TILES_WIDTH/2;x<64;x++)
-                {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    //not killing textbox, lines 44 thru 53
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                }
-            break;
-            for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=0;x<(_SVIN_SPRITE_TILES_WIDTH*3/4) - 64;x++)
-                {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    //not killing textbox, lines 44 thru 53
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                }
-            break;
-        case 2:
-            //for right 
-            for (y=0;y<_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=_SVIN_SPRITE_TILES_WIDTH;x<64;x++)
-                {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    //not killing textbox, lines 44 thru 53
-                    if ((y<44) || (y>53))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                }
-            for (y=64;y<64+_SVIN_SPRITE_TILES_HEIGTH;y++)
-                for (x=0;x<_SVIN_SPRITE_TILES_WIDTH*2-64;x++)
-                {
-                    p32[0][y*64+x] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    p32[1][y*64+x] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                    //not killing textbox, lines 44 thru 53
-                    if ((y<44+64) || (y>53+64))
-                        p32[2][y*64+x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
-                }
-            break;
-    }*/
     _svin_set_cycle_patterns_nbg();
+}
+
+void 
+_svin_sprite_cache_purge_oldest(int iLayer)
+{
+    int iOldestEntryIndex = -1;
+    int iOldestEntryAge = -1;
+    //deleting the oldest inactive cache entry, only LOADED, don't touch UNUSED (already purged) and SHOWN (currently used, can't delete)
+    for (int i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
+	{
+		if ( ( _svin_sprite_cache_sprites[i].status == SVIN_SPRITE_CACHE_LOADED ) && (_svin_sprite_cache_sprites[i].layer == iLayer) )
+		{
+            if (_svin_sprite_cache_sprites[i].age > iOldestEntryAge)
+            {
+                iOldestEntryAge = _svin_sprite_cache_sprites[i].age;
+                iOldestEntryIndex = i;
+            }
+        }
+    }
+    //if didn't find anything, everything's probably unused, going out
+    if (-1 == iOldestEntryIndex)
+        return;
+    //now purge all cache tables for the entry
+    for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG0_SIZE;i++)
+    {
+        if (_svin_sprite_cache_NBG0_tiles[i] == iOldestEntryIndex)
+        {
+            _svin_sprite_cache_NBG0_tiles[i] = -1;
+            _svin_sprite_cache_NBG0_tiles_free++;
+        }
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG1_SIZE;i++)
+    {
+        if (_svin_sprite_cache_NBG1_tiles[i] == iOldestEntryIndex)
+        {
+            _svin_sprite_cache_NBG1_tiles[i] = -1;
+            _svin_sprite_cache_NBG1_tiles_free++;
+        }
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE;i++)
+    {
+        if (_svin_sprite_cache_NBG0_names[i] == iOldestEntryIndex)
+        {
+            _svin_sprite_cache_NBG0_names[i] = -1;
+        }
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE;i++)
+    {
+        if (_svin_sprite_cache_NBG1_names[i] == iOldestEntryIndex)
+        {
+            _svin_sprite_cache_NBG1_names[i] = -1;
+        }
+    }
+    _svin_sprite_cache_sprites[iOldestEntryIndex].status = SVIN_SPRITE_CACHE_UNUSED;
 }
 
 void 
@@ -156,33 +172,34 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
     uint8_t * big_buffer;
     int i,x,y;
     int iPointer;
-    char * pGlobalUsage[3];
-    int iFree;
-    char c;
+    //int iFree;
+    //char c;
     int * p32;
     bool bFound;
     int iFound;
     int iSize, iSize_Fixed;
     int iOffset;
-    int iTilesNumberForLayer;
+    int iTilesCacheSize;
     uint8_t iSizeX,iSizeY;
+    char * _svin_sprite_cache_tiles;
+    char * _svin_sprite_cache_names;
 	
 	switch(iLayer)
     {
         case 0:
-            iTilesNumberForLayer = _SVIN_NBG0_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES;
+            iTilesCacheSize = SVIN_SPRITE_CACHE_TILES_NBG0_SIZE;
+            _svin_sprite_cache_tiles = _svin_sprite_cache_NBG0_tiles;
+            _svin_sprite_cache_names = _svin_sprite_cache_NBG0_names;
             break;
         case 1:
-            iTilesNumberForLayer = _SVIN_NBG1_CHPNDR_SIZE/_SVIN_CHARACTER_BYTES;
-            break;
-        case 2:
-            assert(0);
+            iTilesCacheSize = SVIN_SPRITE_CACHE_TILES_NBG1_SIZE;
+            _svin_sprite_cache_tiles = _svin_sprite_cache_NBG1_tiles;
+            _svin_sprite_cache_names = _svin_sprite_cache_NBG1_names;
             break;
         default:
-            iTilesNumberForLayer = 0;
+            assert(0);
+            break;
     }
-	
-	assert (iTilesNumberForLayer > 0);
 	
 	//using palettes 1 thru 6
     int iPaletteIndex=1;
@@ -193,7 +210,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             iPaletteIndex = 1+iLayer;
             break;
         case 1:
-            //mid, only layers NBG1 and NBG2
+            //mid, only layers NBG0 and NBG1
             iPaletteIndex = 3+iLayer;
             break;
         case 2:
@@ -209,8 +226,6 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 	
 	//searching for sprite in the cache
     bool bFoundInCache = false;
-    //not loading from cache for now because it's buggy
-
     int iCurrentTile=0;
     uint8_t small_buffer[4096];
 	for (int iCacheIndex=0;iCacheIndex<SVIN_SPRITE_CACHE_SPRITES_SIZE;iCacheIndex++)
@@ -220,7 +235,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             bFoundInCache = true;
 			//found sprite for this filename in VRAM, not loading anything, just using existing VRAM data
 			//sprites in VRAM are sorted by address, even if fragmented, using this feature.
-            
+            //also, layer never changes for each sprite, so ignoring sprite layer property
             //get position first
             switch (iPosition)
             {
@@ -261,14 +276,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                         //searching for next tile in tiles cache
                         while (_svin_sprite_cache_tiles[iCurrentTile] != iCacheIndex)
                             iCurrentTile++;
-                        assert (iCurrentTile < SVIN_SPRITE_CACHE_TILES_SIZE);
-                        /*int iCurrLayer;
-                        if (iCurrentTile < SVIN_SPRITE_CACHE_TILES_SIZE/2)
-                            iCurrLayer = 0;
-                        else
-                            iCurrLayer = 1;*/
-                        //selecting pointer
-                        //switch (iCurrLayer)
+                        assert (iCurrentTile < iTilesCacheSize);
                         switch (iLayer)
                         {
                             case 0:
@@ -300,12 +308,12 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 								if (x<64)
                                 {
 									p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iCurrentTile*2); //palette 0, transparency on
-                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+y*64+x] = iCacheIndex;
+                                    _svin_sprite_cache_names[y*64+x] = iCacheIndex;
                                 }
 								else
                                 {
 									p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iCurrentTile*2); //palette 0, transparency on
-                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+(y+64)*64+x-64] = iCacheIndex;
+                                    _svin_sprite_cache_names[(y+64)*64+x-64] = iCacheIndex;
                                 }
 								break;
 						}
@@ -340,10 +348,6 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 
         big_buffer = malloc(iSize_Fixed);
 
-        pGlobalUsage[0] = _svin_sprite_NBG0_usage;
-        pGlobalUsage[1] = _svin_sprite_NBG1_usage;
-        pGlobalUsage[2] = _svin_sprite_NBG2_usage;
-
         //reading whole file at once
         _svin_cd_block_sectors_read(_sprite_fad, big_buffer, iSize_Fixed);
 
@@ -375,14 +379,32 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                 iTilesNumber++;
         }
 
-        int iLastIndex_to_free = iLastIndex[iLayer];
+        //int iLastIndex_to_free = iLastIndex[iLayer];
 
-        iFree = 0;
+        //preparing free space in tiles
+        switch(iLayer)
+        {
+            case 0:
+                
+                while (iTilesNumber > _svin_sprite_cache_NBG0_tiles_free)
+                {
+                    _svin_sprite_cache_purge_oldest(iLayer);
+                }
+                break;
+            case 1:
+                while (iTilesNumber > _svin_sprite_cache_NBG1_tiles_free)
+                {
+                    _svin_sprite_cache_purge_oldest(iLayer);
+                }
+                break;
+        }
+ 
+        /*iFree = 0;
         while (iFree < iTilesNumber)
         {
             iLastIndex_to_free++;
             if (iLastIndex_to_free > 255) iLastIndex_to_free = 1;
-            for (i=0;i<iTilesNumberForLayer;i++)
+            for (i=0;i<iTilesCacheSize;i++)
             {
                 c = pGlobalUsage[iLayer][i];
                 if (c==iLastIndex_to_free){
@@ -391,23 +413,22 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             }
             //recalculate free
             iFree = 0;
-            for (i=0;i<iTilesNumberForLayer;i++)
+            for (i=0;i<iTilesCacheSize;i++)
             {
                 c = pGlobalUsage[iLayer][i];
                 if (c==0){
                     iFree++;
                 }
             }
-
-        }
+        }*/
 
         iPointer = iSizeX*iSizeY+2; //position within buffer
 
         //VRAM available, fill it
         //choose next fill index
-        iLastIndex[iLayer]++;
+        /*iLastIndex[iLayer]++;
         if (iLastIndex[iLayer] > 255)
-            iLastIndex[iLayer] = 1;
+            iLastIndex[iLayer] = 1;*/
 
         //now prepare new cache entry
         int iCurrentCacheEntry = -1;
@@ -420,6 +441,15 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
         //if not found, selecting from the oldest
         if (iCurrentCacheEntry == -1)
         {
+            //if we're out of cache entries, we should purge something and repeat
+            _svin_sprite_cache_purge_oldest(iLayer);
+            for (i=0; i<SVIN_SPRITE_CACHE_SPRITES_SIZE; i++)
+            {
+                //if there is unallocated cache, use it
+                if (_svin_sprite_cache_sprites[i].status == SVIN_SPRITE_CACHE_UNUSED)
+                    iCurrentCacheEntry = i;
+            }
+            /*
             iCurrentCacheEntry = 0;
             for (i=0; i<SVIN_SPRITE_CACHE_SPRITES_SIZE; i++)
             {
@@ -432,7 +462,14 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             {
                 _svin_sprite_cache_sprites[i].age = _svin_sprite_cache_sprites[i].age + 1;
             } 
+            */
         }
+
+        //found some entry, use it, increase age for everyone else
+        for (i=0; i<SVIN_SPRITE_CACHE_SPRITES_SIZE; i++)
+        {
+            _svin_sprite_cache_sprites[i].age = _svin_sprite_cache_sprites[i].age + 1;
+        } 
 
         //prepare cache entry
         strcpy(_svin_sprite_cache_sprites[iCurrentCacheEntry].filename,filename);
@@ -441,6 +478,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
         _svin_sprite_cache_sprites[iCurrentCacheEntry].age = 0;
         _svin_sprite_cache_sprites[iCurrentCacheEntry].size_x = iSizeX;
         _svin_sprite_cache_sprites[iCurrentCacheEntry].size_y = iSizeY;
+        _svin_sprite_cache_sprites[iCurrentCacheEntry].layer = iLayer;
 
         //now pack usage data from big buffer
         for (i=0;i<384;i++)
@@ -471,12 +509,12 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                 {
                     //searching first free tile data slot
                     bFound = false;    
-                    for (i=0;(i<iTilesNumberForLayer)&&(bFound == false);i++)
+                    for (i=0;(i<iTilesCacheSize)&&(bFound == false);i++)
                     {
-                        if (0 == pGlobalUsage[iLayer][i]) {
+                        if (-1 == _svin_sprite_cache_tiles[i]) {
                             bFound = true;
                             iFound = i;
-                            pGlobalUsage[iLayer][i] = iLastIndex[iLayer];
+                            _svin_sprite_cache_tiles[i] = iCurrentCacheEntry;
                         }
                     }
                     //copying tile data
@@ -500,14 +538,14 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                             {
                                 p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
                                 _svin_sprite_cache_names[y*64+x] = iCurrentCacheEntry;
-                                assert (iFound < SVIN_SPRITE_CACHE_TILES_SIZE/2);
+                                assert (iFound < SVIN_SPRITE_CACHE_TILES_NBG0_SIZE);
                                 _svin_sprite_cache_tiles[iFound] = iCurrentCacheEntry;
                             }
                             else
                             {
                                 p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
                                 _svin_sprite_cache_names[(y+64)*64+x-64] = iCurrentCacheEntry;
-                                assert (iFound < SVIN_SPRITE_CACHE_TILES_SIZE/2);
+                                assert (iFound < SVIN_SPRITE_CACHE_TILES_NBG0_SIZE);
                                 _svin_sprite_cache_tiles[iFound] = iCurrentCacheEntry;
                             }
                             break;
@@ -517,16 +555,16 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                                 if (x<64)
                                 {
                                     p32[y*64+x] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+y*64+x] = iCurrentCacheEntry;
-                                    assert (iFound < SVIN_SPRITE_CACHE_TILES_SIZE/2);
-                                    _svin_sprite_cache_tiles[SVIN_SPRITE_CACHE_TILES_SIZE/2 + iFound] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_names[y*64+x] = iCurrentCacheEntry;
+                                    assert (iFound < SVIN_SPRITE_CACHE_TILES_NBG1_SIZE);
+                                    _svin_sprite_cache_tiles[iFound] = iCurrentCacheEntry;
                                 }
                                 else
                                 {
                                     p32[(y+64)*64+x-64] = 0x00000000 | 0x100000*(iPaletteIndex) | (iOffset + iFound*2); //palette 0, transparency on
-                                    _svin_sprite_cache_names[SVIN_SPRITE_CACHE_NAMES_SIZE/2+(y+64)*64+x-64] = iCurrentCacheEntry;
-                                    assert (iFound < SVIN_SPRITE_CACHE_TILES_SIZE/2);
-                                    _svin_sprite_cache_tiles[SVIN_SPRITE_CACHE_TILES_SIZE/2 + iFound] = iCurrentCacheEntry;
+                                    _svin_sprite_cache_names[(y+64)*64+x-64] = iCurrentCacheEntry;
+                                    assert (iFound < SVIN_SPRITE_CACHE_TILES_NBG1_SIZE);
+                                    _svin_sprite_cache_tiles[iFound] = iCurrentCacheEntry;
                                 }
                             }
                             break;
