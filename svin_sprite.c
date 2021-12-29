@@ -62,16 +62,12 @@ _svin_sprite_init()
 void 
 _svin_sprite_clear(int iPosition)
 {
-    int * p32[3];
+    int * p32;
     //int x,y;
 	int i;
     //clear the previous image
     _svin_set_cycle_patterns_cpu();
 
-    p32[0] = (int*)_SVIN_NBG0_PNDR_START;
-    p32[1] = (int*)_SVIN_NBG1_PNDR_START;
-    p32[2] = (int*)_SVIN_NBG2_PNDR_START;
-	
 	//searching for all sprites in the specified position
 	for (i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
 	{
@@ -81,6 +77,7 @@ _svin_sprite_clear(int iPosition)
             if (_svin_sprite_cache_sprites[i].layer == 0)
             {
                 //clearing at NBG0
+                p32 = (int*)_SVIN_NBG0_PNDR_START;
                 for (int j=0; j < SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE; j++)
                 {
                     if (_svin_sprite_cache_NBG0_names[j] == i)
@@ -88,13 +85,14 @@ _svin_sprite_clear(int iPosition)
                         //found a match in names, clearing it
                         _svin_sprite_cache_NBG0_names[j] = -1; //i.e. unused
                         //now clean the actual tables values in VDP2
-                        p32[0][j] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX;
+                        p32[j] = 0x10000000 + _SVIN_NBG0_CHPNDR_SPECIALS_INDEX;
                     }
                 }
             }
             else
             {
                 //clearing at NBG1
+                p32 = (int*)_SVIN_NBG1_PNDR_START;
                 for (int j=0; j < SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE; j++)
                 {
                     if (_svin_sprite_cache_NBG1_names[j] == i)
@@ -102,7 +100,7 @@ _svin_sprite_clear(int iPosition)
                         //found a match in names, clearing it
                         _svin_sprite_cache_NBG1_names[j] = -1; //i.e. unused
                         //now clean the actual tables values in VDP2
-                        p32[0][j] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX;
+                        p32[j] = 0x10000000 + _SVIN_NBG1_CHPNDR_SPECIALS_INDEX;
                     }
                 }                
             }
@@ -326,13 +324,13 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
             switch (iPalette)
             {
                 case 0:
-                    _svin_set_palette(iPaletteIndex,_svin_sprite_cache_sprites[i].palette);
+                    _svin_set_palette(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
                     break;
                 case 1:
-                    _svin_set_palette_half_hi(iPaletteIndex,_svin_sprite_cache_sprites[i].palette);
+                    _svin_set_palette_half_hi(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
                     break;
                 case 2:
-                    _svin_set_palette_half_lo(iPaletteIndex,_svin_sprite_cache_sprites[i].palette);
+                    _svin_set_palette_half_lo(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
                     break;
             }
 		}
