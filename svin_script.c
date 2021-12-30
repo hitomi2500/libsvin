@@ -56,6 +56,14 @@ _svin_script_run(char * filename)
     _svin_textbox_clear();
     while (false == bFinished)
     {
+        if (script_buffer[0] == 0x0D)
+        {
+            //stupid miss
+            //remove byte from buffer
+            for (j=1;j<4096;j++)
+                script_buffer[j-1] = script_buffer[j];
+            iDataInBuffer -= 1;
+        }
         if (strncmp(script_buffer,"TEXT ",5)==0)
         {
             //print text on panel
@@ -86,7 +94,7 @@ _svin_script_run(char * filename)
                     iActorColor = 7;
                     bItalics = true;
                     break;
-                case 2: 
+                /*case 2: 
                     strcpy(tmp_buffer2,"<me>");
                     iActorColor = 7;
                     break;
@@ -101,10 +109,10 @@ _svin_script_run(char * filename)
                 case 5: 
                     strcpy(tmp_buffer2,"Алиса");
                     iActorColor = 2;
-                    break;
+                    break;*/
                 default:
-                    strcpy(tmp_buffer2,"<it's a bug>");
-                    iActorColor = 7;
+                    sprintf(tmp_buffer2,"<actor%i>",iActor);
+                    iActorColor = iActor%14;
                     break;
             }
             //moving on to text
@@ -139,6 +147,9 @@ _svin_script_run(char * filename)
             //temporary measures - removing all sprites when changing BG
             for (i=0;i<3;i++)
                 _svin_sprite_clear(i);
+            //temporary measures - purging sprites cache when changing BG
+            _svin_sprite_cache_purge_all();
+
             //set bg
             i = (int)strchr(script_buffer,'\r') - (int)script_buffer;
             if (i>2048) i=2048;

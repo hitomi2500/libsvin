@@ -45,5 +45,6 @@ void _svin_sprite_init();
 void _svin_sprite_clear(int iPosition);
 void _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette);
 void _svin_sprite_cache_purge_oldest(int iLayer);
+void _svin_sprite_cache_purge_all();
 
 #endif
