@@ -56,6 +56,14 @@ _svin_script_run(char * filename)
     _svin_textbox_clear();
     while (false == bFinished)
     {
+        if (script_buffer[0] == 0x0D)
+        {
+            //stupid miss
+            //remove byte from buffer
+            for (j=1;j<4096;j++)
+                script_buffer[j-1] = script_buffer[j];
+            iDataInBuffer -= 1;
+        }
         if (strncmp(script_buffer,"TEXT ",5)==0)
         {
             //print text on panel

@@ -35,6 +35,12 @@ main(void)
 
         //_svin_background_set("images/bg/yaul_logo.bg");
         //_svin_delay(1000);
+
+        _svin_textbox_init();
+        _svin_textbox_print("","Press a key to countinue","Lato_BlackItalic15",7,7);
+        _svin_wait_for_key_press_and_release();
+        _svin_textbox_disable();
+
         _svin_background_fade_to_black();
 
         _svin_menu_populate(0,"English");
