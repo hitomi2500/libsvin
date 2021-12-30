@@ -42,6 +42,7 @@ main(void)
         if (MenuLinks[0] == (uint32_t)_svin_menu_activate())
         {
                 //english chosen
+                _svin_textbox_init();
                 _svin_script_run("SCRIPT_ENG.TXT");
         }
         else
@@ -54,6 +55,7 @@ main(void)
                 fad_t _jumplinks_fad;
                 assert(true == _svin_filelist_search("SCRIPT_RUS.LBL",&_jumplinks_fad,&i));
                 _svin_cd_block_sector_read(_jumplinks_fad, (uint8_t*)JumpLinks);
+                _svin_textbox_init();
                 _svin_script_run("SCRIPT_RUS.TXT");
         }
 

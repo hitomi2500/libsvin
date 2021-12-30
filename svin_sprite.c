@@ -165,6 +165,33 @@ _svin_sprite_cache_purge_oldest(int iLayer)
 }
 
 void 
+_svin_sprite_cache_purge_all()
+{
+    //now purge all cache tables
+    for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG0_SIZE;i++)
+    {
+        _svin_sprite_cache_NBG0_tiles[i] = -1;
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_TILES_NBG1_SIZE;i++)
+    {
+        _svin_sprite_cache_NBG1_tiles[i] = -1;
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG0_SIZE;i++)
+    {
+        _svin_sprite_cache_NBG0_names[i] = -1;
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_NAMES_NBG1_SIZE;i++)
+    {
+        _svin_sprite_cache_NBG1_names[i] = -1;
+    }
+    for (int i=0;i<SVIN_SPRITE_CACHE_SPRITES_SIZE;i++)
+    {
+        _svin_sprite_cache_sprites[i].status = SVIN_SPRITE_CACHE_UNUSED;
+    }
+}
+
+
+void 
 _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 {
     uint8_t * big_buffer;
