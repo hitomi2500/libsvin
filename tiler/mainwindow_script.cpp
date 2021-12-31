@@ -654,9 +654,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             if (_tmp.contains(' '))
                 _tmp = _tmp.left(_tmp.indexOf(' '));
             //now save
-            script_outfile_eng.write(_tmp.prepend("BG images/bg/").append(".bg"));
+            _tmp.prepend("BG images/bg/").append(".bg");
+            script_outfile_eng.write(_tmp);
             script_outfile_eng.write("\r");
-            script_outfile_rus.write(_tmp.prepend("BG images/bg/").append(".bg"));
+            script_outfile_rus.write(_tmp);
             script_outfile_rus.write("\r");
         }
         else if (Script_Lines.at(iLine).simplified().startsWith("scene cg"))
@@ -688,9 +689,10 @@ void MainWindow::on_pushButton_Process_Sprites_clicked()
             if (_tmp.contains(' '))
                 _tmp = _tmp.left(_tmp.indexOf(' '));
             //now save
-            script_outfile_eng.write(_tmp.prepend("BG images/cg/").append(".bg"));
+            _tmp.prepend("BG images/cg/").append(".bg");
+            script_outfile_eng.write(_tmp);
             script_outfile_eng.write("\r");
-            script_outfile_rus.write(_tmp.prepend("BG images/cg/").append(".bg"));
+            script_outfile_rus.write(_tmp);
             script_outfile_rus.write("\r");
         }
         else if (Script_Lines.at(iLine).simplified().startsWith("jump "))
