@@ -251,6 +251,7 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
 	
 	//searching for sprite in the cache
     bool bFoundInCache = false;
+    bool bCacheError = false;
     int iCurrentTile=0;
     uint8_t small_buffer[4096];
 	for (int iCacheIndex=0;iCacheIndex<SVIN_SPRITE_CACHE_SPRITES_SIZE;iCacheIndex++)
@@ -301,7 +302,15 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                         //searching for next tile in tiles cache
                         while (_svin_sprite_cache_tiles[iCurrentTile] != iCacheIndex)
                             iCurrentTile++;
-                        assert (iCurrentTile < iTilesCacheSize);
+                        if  (iCurrentTile > iTilesCacheSize)
+						{
+							//out of cache, not fixing it now, just purging the cache and loading from cd
+							bCacheError = true;
+							x = x_end;
+							y = _svin_sprite_cache_sprites[iCacheIndex].size_y;
+							iCurrentTile = 0;
+							continue;
+						}
                         switch (iLayer)
                         {
                             case 0:
@@ -361,6 +370,12 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                     break;
             }
 		}
+	}
+	
+	if (true == bCacheError)
+	{
+		_svin_sprite_cache_purge_all();
+		bFoundInCache = false;
 	}
 
     if (false == bFoundInCache)

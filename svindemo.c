@@ -29,7 +29,14 @@ main(void)
 
         _svin_background_set_no_filelist("DISCLMR.BG");
 
-        _svin_filelist_fill(); //move this to init probably
+        bool bCD_Ok = _svin_filelist_fill(); //move this to init probably
+		if (false == bCD_Ok)
+		{
+				_svin_textbox_init();
+				_svin_textbox_print("","This game does not work in Yabause except romulo builds. Get one from https://github.com/razor85/yabause/releases/latest","Lato_Black15",7,7);
+				while (1);
+		}
+		
 
         _svin_menu_init("SCRIPT_ENG.MNU"); //this requires filelist to be loaded first
 
