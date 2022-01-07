@@ -1,2 +1,11 @@
 /build-ss-tiler-Desktop_Qt_5_15_2_MinGW_64_bit-Debug/
 /tiler/ss-tiler.pro.user
+/cd
+/__go
+/__yaul_rebuild.sh
+/build
+/*.i
+/*.s
+/.vscode/*.json
+/svindemo.cue
+/svindemo.iso

@@ -113,7 +113,7 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
 }
 
 //load entire files list into LWRAM
-void 
+bool 
 _svin_filelist_fill()
 {
     iso9660_filelist_t _filelist;
@@ -137,7 +137,8 @@ _svin_filelist_fill()
     root_length = (((root_length-1)/2048)+1)*2048;
     int root_start = isonum_733(dirent_root->extent);
     char * raw_buffer = malloc(root_length);
-    assert (root_start > 0);
+    if (root_start <= 0)
+		return false;
     _svin_cd_block_sectors_read(LBA2FAD(root_start), (uint8_t*)raw_buffer,root_length);
 
     //allocating global  buffer for filename
@@ -151,7 +152,8 @@ _svin_filelist_fill()
     root_dummy_entry.starting_fad = LBA2FAD(root_start);
     root_dummy_entry.size = root_length;
     root_dummy_entry.sector_count = ((root_length-1)/2048 + 1);
-    assert(root_dummy_entry.starting_fad > 150);
+    if (root_dummy_entry.starting_fad <= 150)
+		return false;
 #ifdef ROM_MODE
     iso9660_rom_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
 #else
@@ -164,6 +166,7 @@ _svin_filelist_fill()
     free (raw_buffer);
     free (_svin_filelist_long_filename);
     free (pvd);
+	return true;
 }
 
 //searches the filelist and returns fad (-1 if not found)

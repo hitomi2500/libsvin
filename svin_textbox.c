@@ -156,7 +156,9 @@ _svin_textbox_print(const char * speaker, const char * text, const char * fontna
         // Now rendering the actual text from cellY = 2
         height = _svin_text_render(buffer,630,text,fontname);
 
-        assert (height <= 64);
+        //assert (height <= 64);
+		if (height > 64)
+			height = 64;
 
         _p = (uint8_t *)(_SVIN_NBG2_CHPNDR_TEXTBOX_ADDR);
         for (int cellX = 0; cellX < 80; cellX++)

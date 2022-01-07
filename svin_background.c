@@ -88,6 +88,29 @@ void _svin_background_set_no_filelist(char * filename)
     _filelist.entries = _filelist_entries;
     fad_t _bg_fad=0;
     int iSize=0;
+	
+	//--------------------------------- bad yabause check
+	_filelist.entries_count = 0;
+    _filelist.entries_pooled_count = 0;
+    iso9660_pvd_t * pvd = malloc(sizeof(iso9660_pvd_t));
+    iso9660_dirent_t *dirent_root;
+
+    //reading pvd
+    _svin_cd_block_sector_read(LBA2FAD(16), (uint8_t*)pvd);
+    dirent_root = (iso9660_dirent_t *)((pvd->root_directory_record)); 
+    //getting root size
+    int root_length = isonum_733(dirent_root->data_length);
+    root_length = (((root_length-1)/2048)+1)*2048;
+    int root_start = isonum_733(dirent_root->extent);
+    if (root_start <= 0)
+	{
+		_svin_textbox_init();
+		_svin_textbox_print("","This game does not work in Yabause except romulo builds. Get one from https://github.com/razor85/yabause/releases/latest","Lato_Black15",7,7);
+		while (1);
+	}
+	//--------------------------------- bad yabause check
+	
+	
     //can't use a filelist-based search here, using "normal" 8.3 search
 #ifdef ROM_MODE
     iso9660_rom_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
