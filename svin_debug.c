@@ -114,6 +114,14 @@ void _svin_debug_send_buf(uint8_t * buf __unused)
  */
 }
 
+void 
+_svin_debug_dump_to_lwram(uint8_t * buf, int offset, int size)
+{
+	uint8_t * p = (uint8_t *)0x20200000;
+	for (int i =0; i<size; i++)
+		p[i+offset] = buf[i];
+}
+
 static void __unused
 _dmac_handler(void *work __unused)
 {

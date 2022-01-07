@@ -36,10 +36,9 @@ _svin_cd_block_sector_read(uint32_t fad, uint8_t *output_buffer)
 }
 #endif
 
-int
+/*int
 _svin_cd_block_sector_read_request(uint32_t fad)
 {
-        assert(0);
         const int32_t num_sectors = 1;
 
         assert(fad >= 150);
@@ -58,7 +57,7 @@ _svin_cd_block_sector_read_request(uint32_t fad)
                 return ret;
         }
 
-        /* Start reading */
+        // Start reading 
         if ((ret = cd_block_cmd_disk_play(0, fad, num_sectors)) != 0) {
                 return ret;
         }
@@ -69,12 +68,11 @@ _svin_cd_block_sector_read_request(uint32_t fad)
 int
 _svin_cd_block_sector_read_process(uint8_t *output_buffer)
 {
-        assert(0);
         assert(output_buffer != NULL);
 
         int ret;
 
-        /* If at least one sector has transferred, we copy it */
+        // If at least one sector has transferred, we copy it 
         while ((cd_block_cmd_sector_number_get(0)) == 0) {
         }
 
@@ -89,16 +87,15 @@ _svin_cd_block_sector_read_process(uint8_t *output_buffer)
 int
 _svin_cd_block_sector_read_flush(uint8_t *output_buffer)
 {
-        assert(0);
        assert(output_buffer != NULL);
 
-        /* If at least one sector has transferred, we copy it */
+        // If at least one sector has transferred, we copy it 
         while ((cd_block_cmd_sector_number_get(0)) != 0) {
                 cd_block_transfer_data(0, 0, output_buffer,SECTOR_LENGTH_2048);
         }
 
         return 0;
-}
+}*/
 
 /*----------------------- ROM cd emulation section -----------------------*/
 #ifdef ROM_MODE
