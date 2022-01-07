@@ -37,10 +37,9 @@ main(void)
         _svin_delay(2000);
         _svin_background_fade_to_black();
 
+        
         _svin_tapestry_init();
         _svin_tapestry_load_position("TAPESTRY.PAK",0);
-		
-		while (1);
 
         while (1)
         {
