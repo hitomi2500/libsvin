@@ -69,9 +69,7 @@ _svin_tapestry_init()
     vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
     vdp1_cmdt_jump_assign(&cmdt_buf,16);
     vdp1_sync_cmdt_put(&cmdt_buf,1,_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX);
-    vdp1_sync_render();
     vdp1_sync();
-	vdp1_sync_wait();
 
     //filling first 224 quads
     for (int i=0;i<224;i++)
@@ -107,9 +105,7 @@ _svin_tapestry_init()
     _svin_tapestry_cmdt_list_1->count = 449;
 
     vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 16);
-    vdp1_sync_render();
     vdp1_sync();
-	vdp1_sync_wait();
 	
     //now frame B
     (void)memset(&cmdt_buf, 0x00, sizeof(vdp1_cmdt_t));
@@ -117,9 +113,7 @@ _svin_tapestry_init()
     vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
     vdp1_cmdt_jump_assign(&cmdt_buf,480);
     vdp1_sync_cmdt_put(&cmdt_buf,1,_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX);
-    vdp1_sync_render();
     vdp1_sync();
-	vdp1_sync_wait();
 
     //filling first 224 quads
     for (int i=0;i<224;i++)
@@ -155,9 +149,7 @@ _svin_tapestry_init()
     _svin_tapestry_cmdt_list_2->count = 449;
 
     vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 480); 
-    vdp1_sync_render();
     vdp1_sync();  
-	vdp1_sync_wait();
 }
 
 void 
@@ -191,6 +183,23 @@ _svin_tapestry_load_position(char *filename, int position)
 	//getting palette itself
 	_svin_cd_block_sector_read(_svin_tapestry_pack_fad + palette_fad_offset + 1, tmp_sector);
 	_svin_set_palette(0,tmp_sector);
+}
+
+int 
+_svin_tapestry_get_vsize(char *filename)
+{
+    fad_t _fad;
+    uint8_t tmp_sector[2048];
+
+    //searching for fad
+    int iSize;
+    assert(true == _svin_filelist_search(filename,&_fad,&iSize));
+    assert(_fad > 0);
+
+	//now load first block
+	_svin_cd_block_sector_read(_fad, tmp_sector);
+	uint16_t * p16 = (uint16_t*) tmp_sector;
+    return p16[35];
 }
 
 void 
@@ -232,13 +241,9 @@ _svin_tapestry_move_up()
             _svin_tapestry_cmdt_list_2->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+1056) / 8;
         }
         vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 16); 
-        vdp1_sync_render();
         vdp1_sync(); 
-		vdp1_sync_wait();		
         vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 480); 
-        vdp1_sync_render();
         vdp1_sync();  
-		vdp1_sync_wait();
         _svin_tapestry_framebuffer_start--;
         _svin_tapestry_data_start--;
         if (_svin_tapestry_framebuffer_start < 0)
@@ -285,13 +290,9 @@ _svin_tapestry_move_down()
             _svin_tapestry_cmdt_list_2->cmdts[i+224].cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*framebuffer_pos+1056) / 8;
         }
         vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_1, 16); 
-        vdp1_sync_render();
         vdp1_sync(); 
-		vdp1_sync_wait();		
         vdp1_sync_cmdt_list_put(_svin_tapestry_cmdt_list_2, 480); 
-        vdp1_sync_render();
         vdp1_sync();  
-		vdp1_sync_wait();
         _svin_tapestry_framebuffer_start++;
         _svin_tapestry_data_start++;
         if (_svin_tapestry_framebuffer_start >= 250)

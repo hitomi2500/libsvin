@@ -41,6 +41,8 @@ main(void)
         _svin_tapestry_init();
         _svin_tapestry_load_position("TAPESTRY.PAK",0);
 
+        int iPositionLimit = _svin_tapestry_get_vsize("TAPESTRY.PAK")/2-224;
+
         while (1)
         {
                 smpc_peripheral_process();
@@ -61,15 +63,21 @@ main(void)
                         {
                                 _svin_tapestry_move_down(); 
                                 scroll++;
-                                if (scroll > 448*98)
-                                      autoscroll = -1;        
+                                if (scroll >= iPositionLimit)
+                                {
+                                      autoscroll = -1;       
+                                      scroll = iPositionLimit - 1;
+                                }
                         }
                         else
                         {
                                 _svin_tapestry_move_up(); 
                                 scroll--;
-                                if (scroll == 0)
-                                      autoscroll = 1;        
+                                if (scroll < 0)
+                                {
+                                      autoscroll = 1;  
+                                      scroll = 0;
+                                }      
                         }
                 }
                 else
@@ -78,11 +86,19 @@ main(void)
                         {
                                 _svin_tapestry_move_up(); 
                                 scroll--;
+                                if (scroll < 0)
+                                {
+                                      scroll = 0;
+                                }   
                         }    
                         else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) 
                         {
                                 _svin_tapestry_move_down(); 
                                 scroll++;
+                                if (scroll >= iPositionLimit)
+                                {
+                                      scroll = iPositionLimit - 1;
+                                }
                         }   
                 }
         }
