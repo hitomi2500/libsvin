@@ -394,6 +394,9 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             //open file first
             QByteArray b = list83.at(iImageNumber).toLatin1();
             QByteArray b2 = b;
+            if (b2.contains("safe_artist-colon-"))
+                b2.replace("safe_artist-colon-","-");
+            b2 = b2.left(30);
             b2.append(".bg");
             outfile_bg.setFileName(b2);
             outfile_bg.open(QIODevice::WriteOnly);
