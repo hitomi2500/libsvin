@@ -24,12 +24,16 @@ main(void)
         int scroll = 0;
 
         MEMORY_WRITE(32, SCU(ASR0), 0x23301FF0);
+        //CS0 maximum speed, but no prefetches
+        //MEMORY_WRITE(32, SCU(ASR0), 0x00000000);
+        //setup wasca CS0 space: full ROM
+        //uint16_t * pWascaRegs = (uint16_t *)0x23FFFFF0;
 
         _svin_init();
-		_svin_textbox_disable();
+	_svin_textbox_disable();
 				
-		bool bCD_Ok = _svin_filelist_fill(); //move this to init probably
-		assert (true == bCD_Ok);
+	bool bCD_Ok = _svin_filelist_fill(); //move this to init probably
+	assert (true == bCD_Ok);
 
         //load logo
         _svin_clear_palette(0);
@@ -89,6 +93,7 @@ main(void)
                                 if (scroll < 0)
                                 {
                                       scroll = 0;
+                                      _svin_tapestry_move_down(); 
                                 }   
                         }    
                         else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) 
@@ -98,6 +103,7 @@ main(void)
                                 if (scroll >= iPositionLimit)
                                 {
                                       scroll = iPositionLimit - 1;
+                                      _svin_tapestry_move_up();
                                 }
                         }   
                 }
