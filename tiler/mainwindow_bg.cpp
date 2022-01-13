@@ -413,8 +413,87 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             outfile_bg.write(list83.at(iImageNumber).toLatin1());
             while (outfile_bg.size()<2048)
                 outfile_bg.write(QByteArray(1,'\0'));
-            //now save bg data
-            outfile_bg.write(ba);
+            //compressing prior to saving
+            QByteArray ba_compressed;
+            if (true == ui->checkBox_bg_rle->isChecked())
+            {
+                ba_compressed.append("RLE");
+                //using a very simple RLE. whatever byte appears most in file will serve as a key, store it after RLE token
+                //RLE sequences are 4-byte : KK DD SS SS, KK is key, DD is data, SS is size
+                int cc[256];
+                int max=0;
+                int maxpos=0;
+                for (int i=0; i< 256; i++)
+                {
+                    cc[i] = 0;
+                    for (int j=0; j< ba.size(); j++)
+                        if (ba.at(j) == (char)i)
+                            cc[i]++;
+                    if (max < cc[i])
+                    {
+                        max = cc[i];
+                        maxpos = i;
+                    }
+                }
+                ba_compressed.append(1,maxpos);
+                //maxpos is a token, proceed
+                int ba_pos = 0;
+                bool bRLE_On = false;
+                int iRLE_Size = 0;
+                int iRLE_Data = 0;
+                ba.append(ba.at(ba.size()-1)+1);
+                while (ba_pos < ba.size()-1)
+                {
+                    if (true == bRLE_On)
+                    {
+                        if (ba.at(ba_pos)==ba.at(ba_pos+1))
+                        {
+                            //keep rle running
+                            iRLE_Size++;
+                        }
+                        else
+                        {
+                            //end RLE sequence
+                            ba_compressed.append(1,(char)maxpos);
+                            ba_compressed.append(1,(char)iRLE_Data);
+                            ba_compressed.append(1,(char)(iRLE_Size>>8));
+                            ba_compressed.append(1,(char)(iRLE_Size));
+                            bRLE_On = false;
+                        }
+                    }
+                    else
+                    {
+                            if (ba.at(ba_pos)==ba.at(ba_pos+1))
+                            {
+                                //start rle
+                                iRLE_Size++;
+                                bRLE_On = true;
+                                iRLE_Data = ba.at(ba_pos);
+                                iRLE_Size = 2;
+                            }
+                            else
+                            {
+                                //no RLE, just dump data
+                                if (ba.at(ba_pos) == (char)maxpos)
+                                {
+                                    //if we have a single appearance of token, replace it with a 1-byte short RLE
+                                    ba_compressed.append(1,(char)maxpos);
+                                    ba_compressed.append(1,(char)maxpos);
+                                    ba_compressed.append(1,(char)(0));
+                                    ba_compressed.append(1,(char)(1));
+                                }
+                                else
+                                    ba_compressed.append(ba.at(ba_pos));
+                            }
+                    }
+                    ba_pos++;
+                }
+                while (ba_compressed.size()%2048 !=0)
+                    ba_compressed.append(1,(char)(maxpos+1));
+                outfile_bg.write(ba_compressed);//saving uncompressed
+            }
+            else
+                outfile_bg.write(ba);//saving uncompressed
             //fill last cluster of bg
             while (written%2048 > 0)
             {
