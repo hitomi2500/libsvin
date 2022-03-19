@@ -48,9 +48,6 @@ void _svin_background_set(char * filename)
     int iSize;
     assert(true == _svin_filelist_search(filename,&_bg_fad,&iSize));
     
-    //checking if found file is the exact size we expect
-    //assert(iSize == (704*448 + 2048*2));//could be compressed, skipping
-
     _svin_background_set_by_fad(_bg_fad,iSize);
 }
 
@@ -103,9 +100,6 @@ void _svin_background_set_no_filelist(char * filename)
 
     assert(_bg_fad > 150);
     
-    //checking if found file is the exact size we expect
-    //assert(iSize == (704*448 + 2048*2));//could be compressed, skipping
-
     _svin_background_set_by_fad(_bg_fad,iSize);
 }
 
@@ -141,7 +135,7 @@ _svin_background_set_by_fad(fad_t fad, int size)
         int fad_offset = 3;
         uint16_t rle_size;
         uint8_t rle_data;
-        while (index_out_offset+index_out < 704*448)
+        while (index_out_offset+index_out < _svin_videomode_x_res*_svin_videomode_y_res)
         {
             if (buffer_compressed[index_in] == key)
             {
@@ -201,7 +195,7 @@ _svin_background_set_by_fad(fad_t fad, int size)
         //uncompressed, loading as usual 
 
         //checking if found file is the exact size we expect
-        assert(size == (704*448 + 2048*2));
+        assert(size == (_svin_videomode_x_res*_svin_videomode_y_res + 2048*2));
 
         //reading first half of the background
         _svin_cd_block_sectors_read(fad + 1, buffer, 2048 * 77);
@@ -235,7 +229,7 @@ void _svin_background_update(char *filename)
 
     
     //checking if found file is the exact size we expect
-    assert(iSize == (704*448 + 2048*2));
+    assert(iSize == (_svin_videomode_x_res*_svin_videomode_y_res + 2048*2));
 
     //allocate memory for 154 sectors
     uint8_t *buffer = malloc(154 * 2048);
