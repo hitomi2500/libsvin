@@ -30,7 +30,7 @@ _svin_script_run(char * filename)
     
     //reading links
     fad_t _jumplinks_fad;
-    assert(true == _svin_filelist_search("SCRIPT_ENG.LBL",&_jumplinks_fad,&i));
+    assert(true == _svin_filelist_search(filename,&_jumplinks_fad,&i));
     _svin_cd_block_sector_read(_jumplinks_fad, (uint8_t*)JumpLinks);
 
     //first let's find script FAD, browsing root folder
