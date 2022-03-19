@@ -234,7 +234,35 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y)
     vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
     vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
 
-    vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_HIRESO_B, VDP2_TVMD_VERT_224); //704x448 works
+    vdp2_tvmd_interlace_t interlace = VDP2_TVMD_INTERLACE_SINGLE;
+    if (_svin_videomode_y_res > 256) interlace = VDP2_TVMD_INTERLACE_DOUBLE;
+    vdp2_tvmd_horz_t horz = VDP2_TVMD_HORZ_NORMAL_A;
+    switch (_svin_videomode_x_res)
+    {
+        case 352:
+            horz = VDP2_TVMD_HORZ_NORMAL_B;
+            break;
+        case 640:
+            horz = VDP2_TVMD_HORZ_HIRESO_A;
+            break;
+        case 704:
+            horz = VDP2_TVMD_HORZ_HIRESO_B;
+            break;
+    }
+    vdp2_tvmd_vert_t vert = VDP2_TVMD_VERT_224;
+    switch (_svin_videomode_y_res)
+    {
+        case 240:
+        case 480:
+            vert = VDP2_TVMD_VERT_240;
+            break;
+        case 256:
+        case 512:
+            vert = VDP2_TVMD_VERT_256;
+            break;
+    }
+
+    vdp2_tvmd_display_res_set(interlace, horz, vert); //704x448 works
 
     color_rgb1555_t bs_color;
     bs_color = COLOR_RGB1555(1, 0, 0, 0);
