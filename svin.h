@@ -34,6 +34,7 @@ typedef enum {
 
 extern int _svin_videomode_x_res;
 extern int _svin_videomode_y_res;
+extern bool _svin_videomode_scanlines;
 
 #define _SVIN_CHARACTER_HEIGHT   8
 #define _SVIN_CHARACTER_WIDTH   8
@@ -150,7 +151,7 @@ extern int _svin_videomode_y_res;
 #define _SVIN_VDP1_ORDER_DRAW_END_B_INDEX          12
 #define _SVIN_VDP1_ORDER_COUNT                     13
 
-void _svin_init(_svin_x_resolution_t x_res, _svin_y_resolution_t y_res);
+void _svin_init(_svin_x_resolution_t x_res, _svin_y_resolution_t y_res, bool scanlines);
 void _svin_delay(int milliseconds);
 int _svin_wait_for_key_press_and_release();
 

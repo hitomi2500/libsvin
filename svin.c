@@ -17,6 +17,7 @@ vdp1_cmdt_list_t *_svin_cmdt_list;
 uint8_t _svin_init_done;
 int _svin_videomode_x_res;
 int _svin_videomode_y_res;
+bool _svin_videomode_scanlines;
 
 void _svin_delay(int milliseconds)
 {
@@ -128,10 +129,11 @@ void _svin_set_cycle_patterns_nbg()
     //MEMORY_WRITE(16, VDP2(CCRNA), 0x0C00); //enable cc for NBG1
 }
 
-void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y)
+void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
 {
     int *_pointer32;
     _svin_init_done = 0;
+    _svin_videomode_scanlines = scanlines;
 
     switch (x)
     {
@@ -374,7 +376,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y)
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _svin_videomode_x_res*_svin_videomode_y_res/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 704*448/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_jump_assign(cmdt_sprite, _SVIN_VDP1_ORDER_DRAW_END_A_INDEX);//skipping A2 and A3
@@ -383,7 +385,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y)
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*_svin_videomode_x_res*_svin_videomode_y_res/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*704*448/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     cmdt_sprite->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
@@ -391,7 +393,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y)
     cmdt_sprite->cmd_xa = 352;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = 0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*_svin_videomode_x_res*_svin_videomode_y_res/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*704*448/4 ) / 8;
     vdp1_cmdt_param_color_mode4_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_param_color_bank_set(cmdt_sprite, dummy_bank);
     vdp1_cmdt_jump_assign(cmdt_sprite, _SVIN_VDP1_ORDER_DRAW_END_B_INDEX);//skipping B2 and B3
