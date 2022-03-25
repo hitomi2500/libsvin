@@ -1,5 +1,6 @@
 #include <yaul.h>
 #include <vdp1/vram.h>
+#include <bcl.h>
 #include <svin.h>
 #include <assert.h>
 #include <stdio.h>
@@ -121,74 +122,29 @@ _svin_background_set_by_fad(fad_t fad, int size)
 
     //reading 2nd block to check if compressed
     _svin_cd_block_sector_read(fad + 1, buffer);
-    if ( (buffer[0] == 'R') && (buffer[1] == 'L') && (buffer[2] == 'E') )
+    if ( (buffer[0] == 'L') && (buffer[1] == 'Z') && (buffer[2] == '7') && (buffer[3] == '7') )
     {
         //compressed, decompressing
-        uint8_t key = buffer[3];
-        uint8_t *buffer_compressed = malloc(2 * 2048);
-        //read 1st and 2nd block
-        _svin_cd_block_sectors_read(fad + 1, buffer_compressed,4096);
-        int index_in = 4;
-        int index_in_offset = 0;
-        int index_out = 0;
-        int index_out_offset = 0;
-        int fad_offset = 3;
-        uint16_t rle_size;
-        uint8_t rle_data;
-        while (index_out_offset+index_out < _svin_videomode_x_res*_svin_videomode_y_res)
-        {
-            if (buffer_compressed[index_in] == key)
-            {
-                //RLE sequence
-                rle_size = (buffer_compressed[index_in+2]<<8) | (buffer_compressed[index_in+3]);
-                rle_data = buffer_compressed[index_in+1];
-                for (int i=0;i<rle_size;i++)
-                {
-                    buffer[index_out] = rle_data;
-                    index_out++;
-                }
-                index_in+=4;
-                assert(index_in < 2052);
-            }
-            else
-            {
-                //normal byte
-                buffer[index_out] = buffer_compressed[index_in];
-                index_out++;
-                index_in++;
-            }
-            //checking if we should flush input
-            if (index_in >= 2048)
-            {
-                //move buffer
-                memcpy(buffer_compressed,&(buffer_compressed[2048]),2048);
-                index_in_offset += 2048;
-                index_in -= 2048;
-                _svin_cd_block_sector_read(fad + fad_offset, &(buffer_compressed[2048]) );
-                fad_offset++;
-            }
-            //checking if we should flush output
-            if (index_out > 11*2048)
-            {
-                //dump part
-                memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + index_out_offset), buffer, 11*2048);
-                //move rest
-                for (int i=11*2048;i<index_out;i++)
-                    buffer[i-11*2048] = buffer[i]; 
-                index_out_offset += 11*2048;
-                index_out -= 11*2048;
-            }
-        }
-        //last output flush
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + index_out_offset), buffer, index_out);
+        //getting size
+
+        int * p32 = (int *)buffer;
+        int compressed_size = p32[1];
+        assert(compressed_size > 0);
+        assert(compressed_size < 0x1000000);
+        int compressed_size_sectors = ((compressed_size-1)/2048)+1;
+        //reallocate buffer
+        free(buffer);
+        buffer = malloc(compressed_size_sectors*2048);
+
+        //read compressed data
+        _svin_cd_block_sectors_read(fad + 1, buffer, compressed_size+8);
+
+        //decompress
+        bcl_lz_decompress(&(buffer[8]),vdp1_vram_partitions.texture_base,compressed_size);
 
         //set palette
-        if (index_in == 0) fad_offset--;
-        _svin_cd_block_sector_read(fad + fad_offset - 1, palette);
+        _svin_cd_block_sector_read(fad + compressed_size_sectors + 1, palette);
         _svin_set_palette(0, palette);
-
-        free(buffer_compressed);
-
     }
     else
     {

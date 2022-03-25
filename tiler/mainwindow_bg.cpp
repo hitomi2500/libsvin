@@ -4,6 +4,7 @@
 #include <QtEndian>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "lz.h"
 
 void MainWindow::on_pushButton_Select_BGs_clicked()
 {
@@ -101,7 +102,10 @@ void MainWindow::on_pushButton_process_BGs_clicked()
     int iCurrentSector = (list.size())/32 + 1;
 
     //using imagemagick for image transforms
-    process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
+    if (QFile::exists("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick.ex"))
+        process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
+    else if (QFile::exists("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick.exe"))
+        process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
 
     TileLibrary.clear();
 
@@ -417,7 +421,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QByteArray ba_compressed;
             if (true == ui->checkBox_bg_rle->isChecked())
             {
-                ba_compressed.append("RLE");
+                /*ba_compressed.append("RLE");
                 //using a very simple RLE. whatever byte appears most in file will serve as a key, store it after RLE token
                 //RLE sequences are 4-byte : KK DD SS SS, KK is key, DD is data, SS is size
                 int cc[256];
@@ -487,9 +491,28 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                             }
                     }
                     ba_pos++;
-                }
+                    while (ba_compressed.size()%2048 !=0)
+                        ba_compressed.append(1,(char)(maxpos+1));
+                }*/
+                ba_compressed.append("LZ77");
+
+                uint8_t * _in = (uint8_t *)malloc(ba.size());
+                uint8_t * _out = (uint8_t *)malloc(ba.size());
+                for (int z=0;z<ba.size();z++)
+                    _in[z] = ba[z];
+                int cmpsize = LZ_Compress(_in,_out,ba.size());
+                unsigned char * p8 = (unsigned char *)&cmpsize;
+                ba_compressed.append(p8[3]);
+                ba_compressed.append(p8[2]);
+                ba_compressed.append(p8[1]);
+                ba_compressed.append(p8[0]);
+                for (int z=0;z<cmpsize;z++)
+                    ba_compressed.append(_out[z]);
+                free(_in);
+                free(_out);
+
                 while (ba_compressed.size()%2048 !=0)
-                    ba_compressed.append(1,(char)(maxpos+1));
+                    ba_compressed.append(1,(char)(0));
                 outfile_bg.write(ba_compressed);//saving uncompressed
             }
             else
