@@ -574,6 +574,14 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     _svin_init_done = 1;
 }
 
+void _svin_deinit()
+{
+
+    free(_svin_cmdt_list);
+    _svin_sprite_deinit();
+    _svin_init_done = 0;
+}
+
 //---------------------------------------------- Palette stuff ----------------------------------------------------
 
 void _svin_set_palette(int number, uint8_t *pointer)

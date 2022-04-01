@@ -152,6 +152,7 @@ extern bool _svin_videomode_scanlines;
 #define _SVIN_VDP1_ORDER_COUNT                     13
 
 void _svin_init(_svin_x_resolution_t x_res, _svin_y_resolution_t y_res, bool scanlines);
+void _svin_deinit();
 void _svin_delay(int milliseconds);
 int _svin_wait_for_key_press_and_release();
 
