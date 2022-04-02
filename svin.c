@@ -18,6 +18,7 @@ uint8_t _svin_init_done;
 int _svin_videomode_x_res;
 int _svin_videomode_y_res;
 bool _svin_videomode_scanlines;
+int _svin_frame_count;
 
 void _svin_delay(int milliseconds)
 {
@@ -134,6 +135,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     int *_pointer32;
     _svin_init_done = 0;
     _svin_videomode_scanlines = scanlines;
+    _svin_frame_count = 0;
 
     switch (x)
     {
@@ -289,6 +291,16 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     vdp2_sync();
 
     //-------------- setup VDP1 -------------------
+    if (_svin_videomode_x_res > 512)
+    {
+        MEMORY_WRITE(16, VDP1(TVMR), 0x0009);
+    }
+    else
+    {
+        MEMORY_WRITE(16, VDP1(TVMR), 0x0008);
+    }
+
+
     _svin_cmdt_list = vdp1_cmdt_list_alloc(_SVIN_VDP1_ORDER_COUNT);
 
     static const int16_vec2_t local_coord_ul =
@@ -630,6 +642,8 @@ void _svin_clear_palette(int number)
 
 void _svin_vblank_out_handler(void *work __unused)
 {
+    _svin_frame_count++;
+    
     if (0==_svin_init_done)
         return;
 
@@ -638,7 +652,7 @@ void _svin_vblank_out_handler(void *work __unused)
 
     if (VDP2_TVMD_TV_FIELD_SCAN_ODD == vdp2_tvmd_field_scan_get())
         //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX);
-        p[3]=0x1C;
+        p[3]=0x2C;//1C;
     else
         //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX);
         p[3]=0x04;
@@ -646,6 +660,7 @@ void _svin_vblank_out_handler(void *work __unused)
     //vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
     
     smpc_peripheral_intback_issue();
+
 }
 
 int _svin_wait_for_key_press_and_release()
@@ -671,4 +686,11 @@ int _svin_wait_for_key_press_and_release()
             bPressed = false;
     }
     return iCode;
+}
+
+int _svin_get_keys_state()
+{
+    smpc_peripheral_process();
+    smpc_peripheral_digital_port(1, &_digital);
+    return _digital.pressed.raw;
 }
