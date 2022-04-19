@@ -102,7 +102,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
     int iCurrentSector = (list.size())/32 + 1;
 
     //using imagemagick for image transforms
-    if (QFile::exists("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick.ex"))
+    if (QFile::exists("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick.exe"))
         process.setProgram("C:\\Program Files\\ImageMagick-7.0.11-Q16-HDRI\\magick");
     else if (QFile::exists("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick.exe"))
         process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
