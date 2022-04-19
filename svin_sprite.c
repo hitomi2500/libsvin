@@ -59,6 +59,17 @@ _svin_sprite_init()
 		_svin_sprite_cache_sprites[i].status = SVIN_SPRITE_CACHE_UNUSED;
 }
 
+void
+_svin_sprite_deinit()
+{
+    free(_svin_sprite_cache_NBG0_tiles);
+    free(_svin_sprite_cache_NBG1_tiles);
+    free(_svin_sprite_cache_NBG0_names);
+    free(_svin_sprite_cache_NBG1_names);
+	//allocate sprite cache
+    _svin_free_lwram(0x20280000);
+}
+
 void 
 _svin_sprite_clear(int iPosition)
 {

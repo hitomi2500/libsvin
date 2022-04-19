@@ -142,6 +142,24 @@ _svin_background_set_by_fad(fad_t fad, int size)
         //decompress
         bcl_lz_decompress(&(buffer[8]),vdp1_vram_partitions.texture_base,compressed_size);
 
+        if (_svin_videomode_scanlines)
+        {
+            if (_svin_videomode_y_res > 256)
+            {
+                memset(vdp1_vram_partitions.texture_base+77*2048,0,77*2048);
+            }
+            else
+            {
+                for (int y=0;y<_svin_videomode_y_res;y+=2)
+                {
+                    memset(vdp1_vram_partitions.texture_base+y*352,0,352);
+                    memset(vdp1_vram_partitions.texture_base+y*352+352*224,0,352);
+                    memset(vdp1_vram_partitions.texture_base+y*352+352*224*2,0,352);
+                    memset(vdp1_vram_partitions.texture_base+y*352+352*224*3,0,352);
+                }       
+            }
+        }
+
         //set palette
         _svin_cd_block_sector_read(fad + compressed_size_sectors + 1, palette);
         _svin_set_palette(0, palette);

@@ -34,6 +34,8 @@ typedef enum {
 
 extern int _svin_videomode_x_res;
 extern int _svin_videomode_y_res;
+extern bool _svin_videomode_scanlines;
+extern int _svin_frame_count;
 
 #define _SVIN_CHARACTER_HEIGHT   8
 #define _SVIN_CHARACTER_WIDTH   8
@@ -141,17 +143,27 @@ extern int _svin_videomode_y_res;
 #define _SVIN_VDP1_ORDER_SPRITE_A1_INDEX           3
 #define _SVIN_VDP1_ORDER_SPRITE_A2_INDEX           4
 #define _SVIN_VDP1_ORDER_SPRITE_A3_INDEX           5
-#define _SVIN_VDP1_ORDER_DRAW_END_A_INDEX          6
-#define _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX      7
-#define _SVIN_VDP1_ORDER_SPRITE_B0_INDEX           8
-#define _SVIN_VDP1_ORDER_SPRITE_B1_INDEX           9
-#define _SVIN_VDP1_ORDER_SPRITE_B2_INDEX           10
-#define _SVIN_VDP1_ORDER_SPRITE_B3_INDEX           11
-#define _SVIN_VDP1_ORDER_DRAW_END_B_INDEX          12
-#define _SVIN_VDP1_ORDER_COUNT                     13
+#define _SVIN_VDP1_ORDER_SPRITE_A4_INDEX           6
+#define _SVIN_VDP1_ORDER_SPRITE_A5_INDEX           7
+#define _SVIN_VDP1_ORDER_SPRITE_A6_INDEX           8
+#define _SVIN_VDP1_ORDER_SPRITE_A7_INDEX           9
+#define _SVIN_VDP1_ORDER_DRAW_END_A_INDEX          10
+#define _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX      11
+#define _SVIN_VDP1_ORDER_SPRITE_B0_INDEX           12
+#define _SVIN_VDP1_ORDER_SPRITE_B1_INDEX           13
+#define _SVIN_VDP1_ORDER_SPRITE_B2_INDEX           14
+#define _SVIN_VDP1_ORDER_SPRITE_B3_INDEX           15
+#define _SVIN_VDP1_ORDER_SPRITE_B4_INDEX           16
+#define _SVIN_VDP1_ORDER_SPRITE_B5_INDEX           17
+#define _SVIN_VDP1_ORDER_SPRITE_B6_INDEX           18
+#define _SVIN_VDP1_ORDER_SPRITE_B7_INDEX           19
+#define _SVIN_VDP1_ORDER_DRAW_END_B_INDEX          20
+#define _SVIN_VDP1_ORDER_COUNT                     21
 
-void _svin_init(_svin_x_resolution_t x_res, _svin_y_resolution_t y_res);
+void _svin_init(_svin_x_resolution_t x_res, _svin_y_resolution_t y_res, bool scanlines);
+void _svin_deinit();
 void _svin_delay(int milliseconds);
+int _svin_get_keys_state();
 int _svin_wait_for_key_press_and_release();
 
 void _svin_set_cycle_patterns_cpu();

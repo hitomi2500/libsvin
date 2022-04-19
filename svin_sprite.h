@@ -42,6 +42,7 @@ typedef struct {
 #define SVIN_SPRITE_CACHE_SHOWN 2
 
 void _svin_sprite_init();
+void _svin_sprite_deinit();
 void _svin_sprite_clear(int iPosition);
 void _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette);
 void _svin_sprite_cache_purge_oldest(int iLayer);
