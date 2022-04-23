@@ -12,6 +12,7 @@
 #define UNUSED(x) (void)(x)
 
 uint8_t *buffer;
+int y_shift;
 
 void 
 _svin_textbox_init()
@@ -25,7 +26,11 @@ _svin_textbox_init()
     //writing semi-transparent characters where the dialog box should go, 
     int index = 0;
     int iOffset;
-    for (int y = 44; y < 54; y++)
+    if (_svin_videomode_y_res < 300)
+        y_shift = 20;
+    else
+        y_shift = 44;
+    for (int y = y_shift; y < y_shift+10; y++)
     {
         //plane 0 first
         iOffset = y * 64;
@@ -76,7 +81,7 @@ _svin_textbox_disable()
     //filling entire textbox names range with transparent tile name
     int iOffset;
     int32_t * _pointer32 = (int32_t*)_SVIN_NBG2_PNDR_START;
-    for (int y = 44; y < 54; y++)
+    for (int y = y_shift; y < y_shift+10; y++)
     {
         //plane 0 first
         iOffset = y * 64;
