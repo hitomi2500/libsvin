@@ -153,6 +153,32 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::remove("tmp2.png");
             QFile::copy("tmp1.png", "tmp2.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == 3)  //VDP1 backs lowres
+        {
+            //resize image to at least 352x448 each axis
+            proc_args.clear();
+            proc_args.append(list.at(iImageNumber));
+            proc_args.append("-resize");
+            proc_args.append("352x448^");
+            proc_args.append("tmp1.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
+
+            //cut image down to 704x448
+            proc_args.clear();
+            proc_args.append("tmp1.png");
+            proc_args.append("-gravity");
+            proc_args.append("center");
+            proc_args.append("-extent");
+            proc_args.append("352x448");
+            proc_args.append("-resize");
+            proc_args.append("352x448^");
+            proc_args.append("tmp2.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
+        }
         else //VDP1 tapestry
         {
             //no resize
@@ -188,6 +214,13 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             //backuppy
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp3.png");
+        }
+        else if (ui->comboBox_mode->currentIndex() == 3)
+        {
+            //keep all colors
+            //backuppy
+            QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
+            img.load("tmp2.png");
         }
         else
         {
@@ -295,6 +328,23 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                 }
             }
         }
+        else if (ui->comboBox_mode->currentIndex() == 3) //VDP1 4-sprites mode, lowres 16bpp
+        {
+            ba.resize(352*448*2);
+            ba.fill('\0');
+            //new background mode : 4 VDP1 interlaced sprites
+            QColor c;
+            for (int x = 0; x < 352; x++)
+                for (int y = 0; y < 224; y++)
+                {
+                    c = QColor::fromRgb(img.pixel(x,y*2));
+                    ba[352*224*2*0 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[352*224*2*0 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                    c = QColor::fromRgb(img.pixel(x,y*2+1));
+                    ba[352*224*2*1 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[352*224*2*1 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                }
+        }
         else //tapestry
         {
             // for tapestries we do something completely different
@@ -318,11 +368,14 @@ void MainWindow::on_pushButton_process_BGs_clicked()
         }
 
         ba_pal.clear();
-        for (int j=0;j<img.colorTable().size();j++)
+        if (ui->comboBox_mode->currentIndex() != 3)
         {
-            ba_pal.append(QColor(img.colorTable().at(j)).red());
-            ba_pal.append(QColor(img.colorTable().at(j)).green());
-            ba_pal.append(QColor(img.colorTable().at(j)).blue());
+            for (int j=0;j<img.colorTable().size();j++)
+            {
+                ba_pal.append(QColor(img.colorTable().at(j)).red());
+                ba_pal.append(QColor(img.colorTable().at(j)).green());
+                ba_pal.append(QColor(img.colorTable().at(j)).blue());
+            }
         }
         while (ba_pal.size()<256*3)
             ba_pal.append('\0');
@@ -353,6 +406,10 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             ba_pal[255*3] = ba_pal.at(0*3);
             ba_pal[255*3+1] = ba_pal.at(0*3+1);
             ba_pal[255*3+2] = ba_pal.at(0*3+2);*/
+        }
+        else if (ui->comboBox_mode->currentIndex() == 3)
+        {
+            //for 16 bpp do nothing
         }
         else //tapestry
         {
@@ -421,79 +478,6 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QByteArray ba_compressed;
             if (true == ui->checkBox_bg_rle->isChecked())
             {
-                /*ba_compressed.append("RLE");
-                //using a very simple RLE. whatever byte appears most in file will serve as a key, store it after RLE token
-                //RLE sequences are 4-byte : KK DD SS SS, KK is key, DD is data, SS is size
-                int cc[256];
-                int max=0;
-                int maxpos=0;
-                for (int i=0; i< 256; i++)
-                {
-                    cc[i] = 0;
-                    for (int j=0; j< ba.size(); j++)
-                        if (ba.at(j) == (char)i)
-                            cc[i]++;
-                    if (max < cc[i])
-                    {
-                        max = cc[i];
-                        maxpos = i;
-                    }
-                }
-                ba_compressed.append(1,maxpos);
-                //maxpos is a token, proceed
-                int ba_pos = 0;
-                bool bRLE_On = false;
-                int iRLE_Size = 0;
-                int iRLE_Data = 0;
-                ba.append(ba.at(ba.size()-1)+1);
-                while (ba_pos < ba.size()-1)
-                {
-                    if (true == bRLE_On)
-                    {
-                        if (ba.at(ba_pos)==ba.at(ba_pos+1))
-                        {
-                            //keep rle running
-                            iRLE_Size++;
-                        }
-                        else
-                        {
-                            //end RLE sequence
-                            ba_compressed.append(1,(char)maxpos);
-                            ba_compressed.append(1,(char)iRLE_Data);
-                            ba_compressed.append(1,(char)(iRLE_Size>>8));
-                            ba_compressed.append(1,(char)(iRLE_Size));
-                            bRLE_On = false;
-                        }
-                    }
-                    else
-                    {
-                            if (ba.at(ba_pos)==ba.at(ba_pos+1))
-                            {
-                                //start rle
-                                iRLE_Size++;
-                                bRLE_On = true;
-                                iRLE_Data = ba.at(ba_pos);
-                                iRLE_Size = 2;
-                            }
-                            else
-                            {
-                                //no RLE, just dump data
-                                if (ba.at(ba_pos) == (char)maxpos)
-                                {
-                                    //if we have a single appearance of token, replace it with a 1-byte short RLE
-                                    ba_compressed.append(1,(char)maxpos);
-                                    ba_compressed.append(1,(char)maxpos);
-                                    ba_compressed.append(1,(char)(0));
-                                    ba_compressed.append(1,(char)(1));
-                                }
-                                else
-                                    ba_compressed.append(ba.at(ba_pos));
-                            }
-                    }
-                    ba_pos++;
-                    while (ba_compressed.size()%2048 !=0)
-                        ba_compressed.append(1,(char)(maxpos+1));
-                }*/
                 ba_compressed.append("LZ77");
 
                 uint8_t * _in = (uint8_t *)malloc(ba.size());
@@ -523,7 +507,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                 written++;
                 outfile_bg.write("\0",1);
             }
-            //now save paletteg data
+            //now save palette data
             outfile_bg.write(ba_pal); //write palette
             written = ba_pal.size();
             //fill last cluster
