@@ -38,11 +38,13 @@ void MainWindow::on_pushButton_process_BGs_clicked()
     int iLimit = 127;
     if (ui->comboBox_mode->currentIndex() == 2)
         iLimit = 1; //only a single file in tapestry mode
+    if (ui->comboBox_mode->currentIndex() == 4)
+        iLimit = 1; //only a single file in huge scroll bg mode
     if ((true == ui->checkBox_PackBG->isChecked())&&(list.size() > iLimit))
     {
         QMessageBox msgBox;
         msgBox.setWindowTitle("Oopsie daisy");
-        msgBox.setText("Packs with more than 127 files and tapestries with more than 1 file are not supported!");
+        msgBox.setText("Packs with more than 127 files and tapestries/superbg with more than 1 file are not supported!");
         msgBox.exec();
         return;
     }
@@ -153,6 +155,10 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::remove("tmp2.png");
             QFile::copy("tmp1.png", "tmp2.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == 2) //VDP1 tapestry
+        {
+            //no resize
+        }
         else if (ui->comboBox_mode->currentIndex() == 3)  //VDP1 backs lowres
         {
             //resize image to at least 352x448 each axis
@@ -179,9 +185,11 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             process.open();
             process.waitForFinished();
         }
-        else //VDP1 tapestry
+        else if (ui->comboBox_mode->currentIndex() == 4)  //VDP1 huge x huge
         {
             //no resize
+            QFile::remove("tmp2.png");
+            QFile::copy(list.at(iImageNumber), "tmp2.png");
         }
 
 
@@ -215,6 +223,11 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp3.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == 2)
+        {
+            //tapestry
+            img.load(list.at(iImageNumber));
+        }
         else if (ui->comboBox_mode->currentIndex() == 3)
         {
             //keep all colors
@@ -222,10 +235,20 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp2.png");
         }
-        else
+        else if (ui->comboBox_mode->currentIndex() == 4)
         {
-            //tapestry
-            img.load(list.at(iImageNumber));
+            //generate palette, sprited VDP1 palette is limited to 254 colours
+            proc_args.clear();
+            proc_args.append("tmp2.png");
+            proc_args.append("-colors");
+            proc_args.append("254");
+            proc_args.append("tmp3.png");
+            process.setArguments(proc_args);
+            //process.open();
+            //process.waitForFinished();
+            //backuppy
+            QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
+            img.load("tmp3.png");
         }
 
 
@@ -328,24 +351,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                 }
             }
         }
-        else if (ui->comboBox_mode->currentIndex() == 3) //VDP1 4-sprites mode, lowres 16bpp
-        {
-            ba.resize(352*448*2);
-            ba.fill('\0');
-            //new background mode : 4 VDP1 interlaced sprites
-            QColor c;
-            for (int x = 0; x < 352; x++)
-                for (int y = 0; y < 224; y++)
-                {
-                    c = QColor::fromRgb(img.pixel(x,y*2));
-                    ba[352*224*2*0 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
-                    ba[352*224*2*0 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
-                    c = QColor::fromRgb(img.pixel(x,y*2+1));
-                    ba[352*224*2*1 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
-                    ba[352*224*2*1 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
-                }
-        }
-        else //tapestry
+        else if (ui->comboBox_mode->currentIndex() == 2) //tapestry
         {
             // for tapestries we do something completely different
             // pack every 704x2 quad into 4 quads with size of 352x1
@@ -366,6 +372,40 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                 ba.append(ba_tmp,2048);
             }
         }
+        else if (ui->comboBox_mode->currentIndex() == 3) //VDP1 4-sprites mode, lowres 16bpp
+        {
+            ba.resize(352*448*2);
+            ba.fill('\0');
+            //new background mode : 4 VDP1 interlaced sprites
+            QColor c;
+            for (int x = 0; x < 352; x++)
+                for (int y = 0; y < 224; y++)
+                {
+                    c = QColor::fromRgb(img.pixel(x,y*2));
+                    ba[352*224*2*0 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[352*224*2*0 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                    c = QColor::fromRgb(img.pixel(x,y*2+1));
+                    ba[352*224*2*1 + y*352*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[352*224*2*1 + y*352*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                }
+        }
+        else if (ui->comboBox_mode->currentIndex() == 4) //VDP1 huge x huge mode
+        {
+            int x_cells = img.size().width()/64;
+            int y_cells = img.size().height()/64;
+            ba.resize(x_cells*y_cells*4096);
+            ba.fill('\0');
+            //new background mode : 4 VDP1 interlaced sprites
+            for (int y_cell = 0; y_cell<y_cells; y_cell++)
+                for (int x_cell = 0; x_cell<x_cells; x_cell++)
+                    for (int x = 0; x < 64; x++)
+                        for (int y = 0; y < 32; y++)
+                        {
+                            ba[(y_cell*x_cells + x_cell)*4096 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*64+y*2);
+                            ba[(y_cell*x_cells + x_cell)*4096 + 2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*64+y*2+1);
+                        }
+        }
+
 
         ba_pal.clear();
         if (ui->comboBox_mode->currentIndex() != 3)
@@ -407,11 +447,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             ba_pal[255*3+1] = ba_pal.at(0*3+1);
             ba_pal[255*3+2] = ba_pal.at(0*3+2);*/
         }
-        else if (ui->comboBox_mode->currentIndex() == 3)
-        {
-            //for 16 bpp do nothing
-        }
-        else //tapestry
+        else if (ui->comboBox_mode->currentIndex() == 2) //tapestry
         {
             //for backgrounds 0x00 (transparent) and 0xFE(normal shadow) can't be used
             //imagemagick generates palettes from 0x00 to 0xFD, 0xFE being transparent
@@ -424,6 +460,24 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             ba_pal[255*3+1] = ba_pal.at(0*3+1);
             ba_pal[255*3+2] = ba_pal.at(0*3+2);
         }
+        else if (ui->comboBox_mode->currentIndex() == 3)
+        {
+            //for 16 bpp do nothing
+        }
+        else if (ui->comboBox_mode->currentIndex() == 4)
+        {
+            //for backgrounds 0x00 (transparent) and 0xFE(normal shadow) can't be used
+            //imagemagick generates palettes from 0x00 to 0xFD, 0xFE being transparent
+            //so we only have to move color 0x00 to color 0xFF
+            for (int i=0;i<ba.size();i++)
+                if (ba.at(i) == 0)
+                    ba[i]=-1;
+            //hacking palette, moving color 0x00 to color 0xFF
+            ba_pal[255*3] = ba_pal.at(0*3);
+            ba_pal[255*3+1] = ba_pal.at(0*3+1);
+            ba_pal[255*3+2] = ba_pal.at(0*3+2);
+        }
+
 
 
         if (true == ui->checkBox_PackBG->isChecked())
