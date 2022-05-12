@@ -389,6 +389,8 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     int _svin_videomode_y_res_vdp1_fix = _svin_videomode_y_res;
     if (_svin_videomode_y_res_vdp1_fix <= 256) _svin_videomode_y_res_vdp1_fix *= 2;
     if (_svin_videomode_y_res_vdp1_fix > 510) _svin_videomode_y_res_vdp1_fix=510;
+    int _svin_videomode_x_res_vdp1_fix2 = _svin_videomode_x_res;
+    if (_svin_videomode_x_res_vdp1_fix2 < 512) _svin_videomode_x_res_vdp1_fix2 *= 2;
     int _svin_videomode_y_res_vdp1_fix2 = _svin_videomode_y_res;
     if (_svin_videomode_y_res_vdp1_fix2 <= 256) _svin_videomode_y_res_vdp1_fix2 *= 2;
 
@@ -409,7 +411,9 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     cmdt_sprite->cmd_xa = _svin_videomode_x_res/2;//352;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = _svin_videomode_x_res*16 + _svin_videomode_y_res_vdp1_fix/2;//0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _svin_videomode_x_res*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + _svin_videomode_x_res_vdp1_fix2*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
+    //if (_svin_videomode_x_res < 512)
+      //  cmdt_sprite->cmd_srca += _svin_videomode_x_res*_svin_videomode_y_res_vdp1_fix2/32;
     if (_svin_videomode_x_res < 512)
         vdp1_cmdt_param_color_mode5_set(cmdt_sprite);
     else
@@ -421,7 +425,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     cmdt_sprite->cmd_xa = 0;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = _svin_videomode_x_res*16 + _svin_videomode_y_res_vdp1_fix/2;//0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*_svin_videomode_x_res*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 2*_svin_videomode_x_res_vdp1_fix2*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
     if (_svin_videomode_x_res < 512)
         vdp1_cmdt_param_color_mode5_set(cmdt_sprite);
     else
@@ -432,7 +436,9 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool scanlines)
     cmdt_sprite->cmd_xa = _svin_videomode_x_res/2;//352;
     cmdt_sprite->cmd_ya = 0;
     cmdt_sprite->cmd_size = _svin_videomode_x_res*16 + _svin_videomode_y_res_vdp1_fix/2;//0x2CE0;
-    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*_svin_videomode_x_res*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
+    cmdt_sprite->cmd_srca = ((int)vdp1_vram_partitions.texture_base - VDP1_VRAM(0) + 3*_svin_videomode_x_res_vdp1_fix2*_svin_videomode_y_res_vdp1_fix2/4 ) / 8;
+    //if (_svin_videomode_x_res < 512)
+      //  cmdt_sprite->cmd_srca += _svin_videomode_x_res*_svin_videomode_y_res_vdp1_fix2/32;
     if (_svin_videomode_x_res < 512)
         vdp1_cmdt_param_color_mode5_set(cmdt_sprite);
     else

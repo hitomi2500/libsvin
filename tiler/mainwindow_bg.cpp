@@ -319,8 +319,14 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                     ba[iQuad_Size_X*iQuad_Size_Y*2*0 + y*iQuad_Size_X*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
                     ba[iQuad_Size_X*iQuad_Size_Y*2*0 + y*iQuad_Size_X*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
                     c = QColor::fromRgb(img.pixel(x,y*2+1));
+                    ba[iQuad_Size_X*iQuad_Size_Y*2*2 + y*iQuad_Size_X*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[iQuad_Size_X*iQuad_Size_Y*2*2 + y*iQuad_Size_X*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                    c = QColor::fromRgb(img.pixel(x+iQuad_Size_X,y*2));
                     ba[iQuad_Size_X*iQuad_Size_Y*2*1 + y*iQuad_Size_X*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
                     ba[iQuad_Size_X*iQuad_Size_Y*2*1 + y*iQuad_Size_X*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
+                    c = QColor::fromRgb(img.pixel(x+iQuad_Size_X,y*2+1));
+                    ba[iQuad_Size_X*iQuad_Size_Y*2*3 + y*iQuad_Size_X*2+x*2+1] = ((c.red()>>3)&0x1F) | ((c.green()<<2)&0xE0);
+                    ba[iQuad_Size_X*iQuad_Size_Y*2*3 + y*iQuad_Size_X*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
                 }
         }
         else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS) //VDP1 huge x huge mode
