@@ -23,7 +23,8 @@ _svin_menu_init(char * filename)
         int i;
         _svin_menu_items_count = 0; //starting unpopulated
         fad_t _menulinks_fad;
-        assert(true == _svin_filelist_search(filename,&_menulinks_fad,&i));
+        bool b = _svin_filelist_search(filename,&_menulinks_fad,&i);
+        assert(true == b);
         _svin_cd_block_sector_read(_menulinks_fad, (uint8_t*)MenuLinks);
 }
 

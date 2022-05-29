@@ -7,7 +7,7 @@
 #ifdef ROM_MODE
 #include <string.h>
 
-static uint8_t _sector_buffer[ISO9660_SECTOR_SIZE] __aligned(ISO9660_SECTOR_SIZE); //UGLY!
+static uint8_t _sector_buffer[SECTOR_LENGTH_2048] __aligned(SECTOR_LENGTH_2048); //UGLY!
 
 int
 _svin_cd_block_sectors_read(uint32_t fad, uint8_t *output_buffer, uint32_t length)
@@ -101,7 +101,7 @@ _svin_cd_block_sector_read_flush(uint8_t *output_buffer)
 #ifdef ROM_MODE
 
 static struct {
-        iso9660_pvd_t pvd;
+        cdfs_pvd_t pvd;
 } _state;
 
 static inline uint32_t __always_inline
@@ -111,14 +111,14 @@ _length_sector_round(uint32_t length)
 }
 
 static bool __unused
-_dirent_interleave(const iso9660_dirent_t *dirent)
+_dirent_interleave(const cdfs_dirent_t *dirent)
 {
         return ((isonum_711(dirent->interleave)) != 0x00);
 }
 
 static void
-_filelist_entry_populate(const iso9660_dirent_t *dirent, iso9660_entry_type_t type,
-    iso9660_filelist_entry_t *filelist_entry)
+_filelist_entry_populate(const cdfs_dirent_t *dirent, cdfs_entry_type_t type,
+    cdfs_filelist_entry_t *filelist_entry)
 {
         filelist_entry->type = type;
         filelist_entry->size = isonum_733(dirent->data_length);
@@ -128,7 +128,7 @@ _filelist_entry_populate(const iso9660_dirent_t *dirent, iso9660_entry_type_t ty
         uint8_t name_len;
         name_len = isonum_711(dirent->file_id_len);
 
-        if (type == ISO9660_ENTRY_TYPE_FILE) {
+        if (type == CDFS_ENTRY_TYPE_FILE) {
                 /* Minus the ';1' */
                 name_len -= 2;
 
@@ -143,37 +143,37 @@ _filelist_entry_populate(const iso9660_dirent_t *dirent, iso9660_entry_type_t ty
 }
 
 static void
-_filelist_read_walker(const iso9660_filelist_entry_t *entry, void *args)
+_filelist_read_walker(const cdfs_filelist_entry_t *entry, void *args)
 {
-        iso9660_filelist_t *filelist;
+        cdfs_filelist_t *filelist;
         filelist = args;
 
         if (filelist->entries_count >= filelist->entries_pooled_count) {
                 return;
         }
 
-        iso9660_filelist_entry_t *this_entry;
+        cdfs_filelist_entry_t *this_entry;
         this_entry = &filelist->entries[filelist->entries_count];
 
-        (void)memcpy(this_entry, entry, sizeof(iso9660_filelist_entry_t));
+        (void)memcpy(this_entry, entry, sizeof(cdfs_filelist_entry_t));
 
         filelist->entries_count++;
 }
 
 static void
-_filelist_initialize(iso9660_filelist_t *filelist, int32_t count)
+_filelist_initialize(cdfs_filelist_t *filelist, int32_t count)
 {
         int32_t clamped_count;
         clamped_count = count;
 
         if (clamped_count <= 0) {
-                clamped_count = ISO9660_FILELIST_ENTRIES_COUNT;
-        } else if (clamped_count > ISO9660_FILELIST_ENTRIES_COUNT) {
-                clamped_count = ISO9660_FILELIST_ENTRIES_COUNT;
+                clamped_count = cdfs_FILELIST_ENTRIES_COUNT;
+        } else if (clamped_count > cdfs_FILELIST_ENTRIES_COUNT) {
+                clamped_count = cdfs_FILELIST_ENTRIES_COUNT;
         }
 
         if (filelist->entries == NULL) {
-                filelist->entries = malloc(sizeof(iso9660_filelist_entry_t) * clamped_count);
+                filelist->entries = malloc(sizeof(cdfs_filelist_entry_t) * clamped_count);
         }
 
         assert(filelist->entries != NULL);
@@ -191,9 +191,9 @@ _bread_rom(uint32_t sector, void *ptr)
 }
 
 static void
-_dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
+_dirent_rom_walk(cdfs_filelist_walk_t walker, uint32_t sector, void *args)
 {
-        const iso9660_dirent_t *dirent;
+        const cdfs_dirent_t *dirent;
         dirent = NULL;
 
         int32_t dirent_sectors;
@@ -209,7 +209,7 @@ _dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
 
                 if ((dirent == NULL) ||
                     (dirent_length == 0) ||
-                    ((dirent_offset + dirent_length) >= ISO9660_SECTOR_SIZE)) {
+                    ((dirent_offset + dirent_length) >= SECTOR_LENGTH_2048)) {
                         dirent_sectors--;
 
                         if (dirent_sectors == 0) {
@@ -220,7 +220,7 @@ _dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
 
                         _bread_rom(sector, _sector_buffer);
 
-                        dirent = (const iso9660_dirent_t *)&_sector_buffer[0];
+                        dirent = (const cdfs_dirent_t *)&_sector_buffer[0];
                         dirent_length = isonum_711(dirent->length);
 
                         if (dirent->name[0] == '\0') {
@@ -245,14 +245,14 @@ _dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
                         if (walker != NULL) {
                                 const uint8_t file_flags = isonum_711(dirent->file_flags);
 
-                                iso9660_entry_type_t type;
-                                type = ISO9660_ENTRY_TYPE_FILE;
+                                cdfs_entry_type_t type;
+                                type = CDFS_ENTRY_TYPE_FILE;
 
                                 if ((file_flags & DIRENT_FILE_FLAGS_DIRECTORY) == DIRENT_FILE_FLAGS_DIRECTORY) {
-                                        type = ISO9660_ENTRY_TYPE_DIRECTORY;
+                                        type = CDFS_ENTRY_TYPE_DIRECTORY;
                                 }
 
-                                iso9660_filelist_entry_t filelist_entry;
+                                cdfs_filelist_entry_t filelist_entry;
 
                                 _filelist_entry_populate(dirent, type, &filelist_entry);
 
@@ -263,7 +263,7 @@ _dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
                 if (dirent != NULL) {
                         const uintptr_t p = (uintptr_t)dirent + dirent_length;
 
-                        dirent = (const iso9660_dirent_t *)p;
+                        dirent = (const cdfs_dirent_t *)p;
 
                         dirent_offset += dirent_length;
                 }
@@ -271,9 +271,9 @@ _dirent_rom_walk(iso9660_filelist_walk_t walker, uint32_t sector, void *args)
 }
 
 static void
-_dirent_rom_root_walk(iso9660_filelist_walk_t walker, void *args)
+_dirent_rom_root_walk(cdfs_filelist_walk_t walker, void *args)
 {
-        iso9660_dirent_t dirent_root;
+        cdfs_dirent_t dirent_root;
 
         /* Populate filesystem mount structure */
         /* Copy of directory record */
@@ -286,8 +286,8 @@ _dirent_rom_root_walk(iso9660_filelist_walk_t walker, void *args)
 }
 
 void
-iso9660_rom_filelist_walk(const iso9660_filelist_entry_t *root_entry,
-    iso9660_filelist_walk_t walker, void *args)
+cdfs_rom_filelist_walk(const cdfs_filelist_entry_t *root_entry,
+    cdfs_filelist_walk_t walker, void *args)
 {
         if (root_entry == NULL) {
                 /* Skip IP.BIN (16 sectors) */
@@ -310,8 +310,8 @@ iso9660_rom_filelist_walk(const iso9660_filelist_entry_t *root_entry,
                 assert((strncmp(cd001_str, ISO_STANDARD_ID, cd001_len)) != 0);
 #endif /* DEBUG */
 
-                /* Logical block size must be ISO9660_SECTOR_SIZE bytes */
-                assert(isonum_723(_state.pvd.logical_block_size) == ISO9660_SECTOR_SIZE);
+                /* Logical block size must be SECTOR_LENGTH_2048 bytes */
+                assert(isonum_723(_state.pvd.logical_block_size) == SECTOR_LENGTH_2048);
 
                 _dirent_rom_root_walk(walker, args);
         } else {
@@ -322,12 +322,12 @@ iso9660_rom_filelist_walk(const iso9660_filelist_entry_t *root_entry,
 }
 
 void
-iso9660_rom_filelist_read(const iso9660_filelist_entry_t root_entry,
-    iso9660_filelist_t *filelist, int32_t count)
+cdfs_rom_filelist_read(const cdfs_filelist_entry_t root_entry,
+    cdfs_filelist_t *filelist, int32_t count)
 {
         _filelist_initialize(filelist, count);
 
-        iso9660_rom_filelist_walk(&root_entry, _filelist_read_walker, filelist);
+        cdfs_rom_filelist_walk(&root_entry, _filelist_read_walker, filelist);
 }
 
 #endif

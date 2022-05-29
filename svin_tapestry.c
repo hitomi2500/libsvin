@@ -166,7 +166,8 @@ _svin_tapestry_load_position(char *filename, int position)
 
     //searching for fad
     int iSize;
-    assert(true == _svin_filelist_search(filename,&_svin_tapestry_pack_fad,&iSize));
+    bool b = _svin_filelist_search(filename,&_svin_tapestry_pack_fad,&iSize);
+    assert(true == b);
     assert(_svin_tapestry_pack_fad > 0);
 
     //now that we know the FAD, load 224 blocks from the position start
@@ -193,7 +194,8 @@ _svin_tapestry_get_vsize(char *filename)
 
     //searching for fad
     int iSize;
-    assert(true == _svin_filelist_search(filename,&_fad,&iSize));
+    bool b = _svin_filelist_search(filename,&_fad,&iSize);
+    assert(true == b);
     assert(_fad > 0);
 
 	//now load first block

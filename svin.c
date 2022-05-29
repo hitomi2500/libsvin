@@ -206,7 +206,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 3);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG0, true);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG0);
     vdp2_cram_mode_set(1);
 
     //setup nbg1
@@ -225,7 +225,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG1, true);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG1);
     //vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG1,0x80);
 
     //setup nbg2
@@ -244,7 +244,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     vdp2_scrn_cell_format_set(&format);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
-    vdp2_scrn_display_set(VDP2_SCRN_NBG2, true);
+    vdp2_scrn_display_set(VDP2_SCRN_NBG2);
 
     vdp2_tvmd_interlace_t interlace = VDP2_TVMD_INTERLACE_SINGLE;
     if (_svin_videomode_y_res > 256) 
@@ -281,7 +281,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     color_rgb1555_t bs_color;
     bs_color = COLOR_RGB1555(1, 0, 0, 0);
-    vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
+    vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
 
     vdp2_sprite_priority_set(0, 1);
     vdp2_sprite_priority_set(1, 1);
@@ -623,6 +623,8 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     //setting cycle patterns for nbg access
     _svin_set_cycle_patterns_nbg();
+
+    smpc_peripheral_init();
 
     _svin_debug_init();
 

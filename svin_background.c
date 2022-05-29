@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <kernel/fs/cd/cdfs-internal.h>
 
 vdp1_cmdt_list_t *_svin_cmdt_list;
 extern uint8_t _svin_init_done;
@@ -47,16 +48,16 @@ void _svin_background_set(char * filename)
     //searching for fad
     fad_t _bg_fad;
     int iSize;
-    assert(true == _svin_filelist_search(filename,&_bg_fad,&iSize));
-    
+    bool b = _svin_filelist_search(filename,&_bg_fad,&iSize);
+    assert(true==b);    
     _svin_background_set_by_fad(_bg_fad,iSize);
 }
 
 void _svin_background_set_no_filelist(char * filename)
 {
     //searching for fad
-    iso9660_filelist_t _filelist;
-    iso9660_filelist_entry_t _filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
+    cdfs_filelist_t _filelist;
+    cdfs_filelist_entry_t _filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
     _filelist.entries = _filelist_entries;
     fad_t _bg_fad=0;
     int iSize=0;
@@ -64,12 +65,12 @@ void _svin_background_set_no_filelist(char * filename)
 	//--------------------------------- bad yabause check
 	_filelist.entries_count = 0;
     _filelist.entries_pooled_count = 0;
-    iso9660_pvd_t * pvd = malloc(sizeof(iso9660_pvd_t));
-    iso9660_dirent_t *dirent_root;
+    cdfs_pvd_t * pvd = malloc(sizeof(cdfs_pvd_t));
+    cdfs_dirent_t *dirent_root;
 
     //reading pvd
     _svin_cd_block_sector_read(LBA2FAD(16), (uint8_t*)pvd);
-    dirent_root = (iso9660_dirent_t *)((pvd->root_directory_record)); 
+    dirent_root = (cdfs_dirent_t *)((pvd->root_directory_record)); 
     //getting root size
     int root_length = isonum_733(dirent_root->data_length);
     root_length = (((root_length-1)/2048)+1)*2048;
@@ -85,9 +86,12 @@ void _svin_background_set_no_filelist(char * filename)
 	
     //can't use a filelist-based search here, using "normal" 8.3 search
 #ifdef ROM_MODE
-    iso9660_rom_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+    cdfs_rom_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
 #else
-    iso9660_filelist_root_read(&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+    cdfs_filelist_entry_t * filelist_entries = cdfs_entries_alloc(-1);
+    assert(filelist_entries != NULL);
+    cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+    cdfs_filelist_root_read(&_filelist);
 #endif
 
     for (uint32_t i=0;i<_filelist.entries_count;i++)
@@ -102,6 +106,9 @@ void _svin_background_set_no_filelist(char * filename)
     assert(_bg_fad > 150);
     
     _svin_background_set_by_fad(_bg_fad,iSize);
+
+    //we don't need yaul's filelist entries, because we have our own, freeing them
+    free(filelist_entries);
 }
 
 void 

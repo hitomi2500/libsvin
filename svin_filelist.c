@@ -1,15 +1,15 @@
 #include <yaul.h>
 #include <svin.h>
 #include <stdlib.h>
+#include <kernel/fs/cd/cdfs-internal.h>
 #include "svin_filelist.h"
-#include "iso9660-internal-local.h"
 
 int _svin_filelist_size;
 char *_svin_filelist_long_filename;
 char *_svin_filelist;
 
 bool
-_svin_filelist_search_lfn(iso9660_filelist_entry_t entry, char * raw_buffer, int parent_raw_buffer_len, bool bFolder)
+_svin_filelist_search_lfn(cdfs_filelist_entry_t entry, char * raw_buffer, int parent_raw_buffer_len, bool bFolder)
 {
     char search_buf[16];
     strcpy(search_buf,entry.name);
@@ -36,13 +36,14 @@ _svin_filelist_search_lfn(iso9660_filelist_entry_t entry, char * raw_buffer, int
 }
 
 void 
-_svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir, char * parent_raw_buffer, int parent_raw_buffer_len)
+_svin_filelist_fill_recursive(cdfs_filelist_entry_t entry, char * current_dir, char * parent_raw_buffer, int parent_raw_buffer_len)
 {
-    iso9660_filelist_t _rec_filelist;
-    iso9660_filelist_entry_t _rec_filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
+    cdfs_filelist_t _rec_filelist;
+    cdfs_filelist_entry_t _rec_filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
     _rec_filelist.entries = _rec_filelist_entries;
     _rec_filelist.entries_count = 0;
     _rec_filelist.entries_pooled_count = 0;
+    cdfs_filelist_default_init(&_rec_filelist, _rec_filelist_entries, _SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
     uint32_t _rec_i;
     char dir[260]; //remember that MAX_PATH horror?
     char * raw_buffer;
@@ -51,7 +52,7 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
     fad_t * _rec_pfad = (fad_t*)(_svin_filelist+256*_svin_filelist_size);
     char * _rec_p8 = (char*)(_svin_filelist+256*_svin_filelist_size+8);
     
-    if (ISO9660_ENTRY_TYPE_FILE == entry.type) {
+    if (CDFS_ENTRY_TYPE_FILE == entry.type) {
         _rec_pfad[0] = entry.starting_fad;
         _rec_pfad[1] = entry.size;
         if (strlen(current_dir)>0)
@@ -73,7 +74,7 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
         }    
         _svin_filelist_size++;
     }
-    else if (ISO9660_ENTRY_TYPE_DIRECTORY == entry.type){
+    else if (CDFS_ENTRY_TYPE_DIRECTORY == entry.type){
         //recursively allocating another buffer
         raw_size = entry.size;//8192;//TODO: detect this automatically
         raw_size = (((raw_size-1)/2048)+1)*2048;
@@ -99,9 +100,9 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
             strcat(dir,entry.name); //using short filename if no LFN is available
         }    
         #ifdef ROM_MODE
-            iso9660_rom_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
+            cdfs_rom_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
         #else
-            iso9660_filelist_read(entry,&_rec_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT); 
+            cdfs_filelist_read(&_rec_filelist,entry); 
         #endif
 
         for (_rec_i=0;_rec_i<_rec_filelist.entries_count;_rec_i++)
@@ -116,14 +117,16 @@ _svin_filelist_fill_recursive(iso9660_filelist_entry_t entry, char * current_dir
 bool 
 _svin_filelist_fill()
 {
-    iso9660_filelist_t _filelist;
-    iso9660_filelist_entry_t _filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
+    cdfs_filelist_t _filelist;
+    cdfs_filelist_entry_t _filelist_entries[_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT];
     _filelist.entries = _filelist_entries;
     _filelist.entries_count = 0;
     _filelist.entries_pooled_count = 0;
+    cdfs_filelist_default_init(&_filelist, _filelist_entries, _SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+
     uint32_t i;
-    iso9660_pvd_t * pvd = malloc(sizeof(iso9660_pvd_t));
-    iso9660_dirent_t *dirent_root;
+    cdfs_pvd_t * pvd = malloc(sizeof(cdfs_pvd_t));
+    cdfs_dirent_t *dirent_root;
 
 	_svin_filelist = (char *)_svin_alloc_lwram(0x40000,0x20200000);
 
@@ -131,7 +134,7 @@ _svin_filelist_fill()
 
     //reading pvd
     _svin_cd_block_sector_read(LBA2FAD(16), (uint8_t*)pvd);
-    dirent_root = (iso9660_dirent_t *)((pvd->root_directory_record)); 
+    dirent_root = (cdfs_dirent_t *)((pvd->root_directory_record)); 
     //getting root size
     int root_length = isonum_733(dirent_root->data_length);
     root_length = (((root_length-1)/2048)+1)*2048;
@@ -145,8 +148,8 @@ _svin_filelist_fill()
     _svin_filelist_long_filename = malloc(256);//ought to be enough for everyone
 
     ///cook up a "root entry"
-    iso9660_filelist_entry_t root_dummy_entry;
-    root_dummy_entry.type = ISO9660_ENTRY_TYPE_DIRECTORY;
+    cdfs_filelist_entry_t root_dummy_entry;
+    root_dummy_entry.type = CDFS_ENTRY_TYPE_DIRECTORY;
     for (int i=0;i<12;i++)
         root_dummy_entry.name[i] = '\0';
     root_dummy_entry.starting_fad = LBA2FAD(root_start);
@@ -154,10 +157,11 @@ _svin_filelist_fill()
     root_dummy_entry.sector_count = ((root_length-1)/2048 + 1);
     if (root_dummy_entry.starting_fad <= 150)
 		return false;
+
 #ifdef ROM_MODE
-    iso9660_rom_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+    cdfs_rom_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
 #else
-    iso9660_filelist_read(root_dummy_entry,&_filelist,_SVIN_FILELIST_ENTRIES_PER_DIR_LIMIT);
+    cdfs_filelist_read(&_filelist,root_dummy_entry);
 #endif
 
     for (i=0;i<_filelist.entries_count;i++)

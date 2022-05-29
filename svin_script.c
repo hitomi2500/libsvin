@@ -30,14 +30,16 @@ _svin_script_run(char * filename)
     
     //reading links
     fad_t _jumplinks_fad;
-    assert(true == _svin_filelist_search(filename,&_jumplinks_fad,&i));
+    bool b =  _svin_filelist_search(filename,&_jumplinks_fad,&i);
+    assert(true == b);
     _svin_cd_block_sector_read(_jumplinks_fad, (uint8_t*)JumpLinks);
 
     //first let's find script FAD, browsing root folder
     //-------------- Getting FAD and index for background pack binary -------------------
     fad_t _script_fad;
     fad_t _base_fad;
-    assert(true == _svin_filelist_search(filename,&_script_fad,&i));
+    b = _svin_filelist_search(filename,&_script_fad,&i)
+    assert(true == b);
     _base_fad = _script_fad;
 
     script_buffer = malloc(4096);

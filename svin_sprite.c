@@ -394,7 +394,8 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
         //if not found in cache, loading and saving to cache
         //first let's find sprite FAD
         fad_t _sprite_fad;
-        assert(true == _svin_filelist_search(filename,&_sprite_fad,&iSize));
+        bool b = _svin_filelist_search(filename,&_sprite_fad,&iSize);
+        assert(true == b);
         iSize_Fixed = ((iSize/2048)+1)*2048;
 
         big_buffer = malloc(iSize_Fixed);
