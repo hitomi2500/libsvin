@@ -2,7 +2,7 @@
 #include <vdp1/vram.h>
 #include <tga.h>
 #include <svin.h>
-#include <assert.h>
+//#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 

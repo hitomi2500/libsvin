@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_mode->addItem("8bpp 4-quad VDP1 background");
     ui->comboBox_mode->addItem("8bpp VDP1 tapestry");
     ui->comboBox_mode->addItem("16bpp 4-quad VDP1 background");
-    ui->comboBox_mode->addItem("HUGExHUGE 8bpp 64x64 quads VDP1 megabackground");
+    ui->comboBox_mode->addItem("HUGExHUGE 8bpp 32x32 quads VDP1 megabackground");
     ui->radioButton_x_auto->setChecked(true);
     ui->radioButton_y_auto->setChecked(true);
 }

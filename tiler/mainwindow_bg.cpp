@@ -38,7 +38,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
     int iLimit = 127;
     if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_TAPESTRY)
         iLimit = 1; //only a single file in tapestry mode
-    if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS)
+    if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS)
         iLimit = 1; //only a single file in huge scroll bg mode
     if ((true == ui->checkBox_PackBG->isChecked())&&(list.size() > iLimit))
     {
@@ -189,7 +189,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                 return;
             }
         }
-        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS)  //VDP1 huge x huge
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS)  //VDP1 huge x huge
         {
             //no resize
             QFile::remove("tmp2.png");
@@ -224,7 +224,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp2.png");
         }
-        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS)
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS)
         {
             //generate palette, sprited VDP1 palette is limited to 254 colours
             proc_args.clear();
@@ -233,8 +233,8 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             proc_args.append("254");
             proc_args.append("tmp3.png");
             process.setArguments(proc_args);
-            //process.open();
-            //process.waitForFinished();
+            process.open();
+            process.waitForFinished(30000000);
             //backuppy
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp3.png");
@@ -329,11 +329,11 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                     ba[iQuad_Size_X*iQuad_Size_Y*2*3 + y*iQuad_Size_X*2+x*2] = 0x80 | ((c.blue()>>1)&0x7C) | ((c.green()>>6)&0x3);
                 }
         }
-        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS) //VDP1 huge x huge mode
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS) //VDP1 huge x huge mode
         {
             int x_cells = img.size().width()/64;
-            int y_cells = img.size().height()/64;
-            ba.resize(x_cells*y_cells*4096);
+            int y_cells = img.size().height()/32;
+            ba.resize(x_cells*y_cells*2048);
             ba.fill('\0');
             //new background mode : 4 VDP1 interlaced sprites
             for (int y_cell = 0; y_cell<y_cells; y_cell++)
@@ -341,9 +341,14 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                     for (int x = 0; x < 64; x++)
                         for (int y = 0; y < 32; y++)
                         {
-                            ba[(y_cell*x_cells + x_cell)*4096 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*64+y*2);
-                            ba[(y_cell*x_cells + x_cell)*4096 + 2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*64+y*2+1);
+                            ba[(y_cell*x_cells + x_cell)*2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*32+y);
                         }
+                        /*for (int y = 0; y < 16; y++)
+                        {
+                            ba[(y_cell*x_cells + x_cell)*1024 + y*32+x] = img.pixelIndex(x_cell*32+x,y_cell*32+y*2);
+                            ba[(y_cell*x_cells + x_cell)*1024 + 512 + y*32+x] = img.pixelIndex(x_cell*32+x,y_cell*32+y*2+1);
+                        }*/
+
         }
 
 
@@ -391,7 +396,7 @@ void MainWindow::on_pushButton_process_BGs_clicked()
         {
             //for 16 bpp do nothing
         }
-        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_64X64_QUADS)
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS)
         {
             //for backgrounds 0x00 (transparent) and 0xFE(normal shadow) can't be used
             //imagemagick generates palettes from 0x00 to 0xFD, 0xFE being transparent

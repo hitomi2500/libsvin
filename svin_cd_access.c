@@ -1,7 +1,7 @@
 #include <cd-block.h>
 #include <cpu/instructions.h>
 #include <smpc/smc.h>
-#include <assert.h>
+//#include <assert.h>
 #include "svin.h"
 
 #ifdef ROM_MODE

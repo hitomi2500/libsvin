@@ -3,7 +3,7 @@
 
 #include <yaul.h>
 
-#include <assert.h>
+//#include <assert.h>
 #include <stdlib.h>
 
 #include "svin.h"
