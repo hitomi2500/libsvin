@@ -162,11 +162,11 @@ _svin_background_set_by_fad(fad_t fad, int size)
 
         //reading first half of the background
         _svin_cd_block_sectors_read(fad + 1, buffer, 2048 * 77);
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
+        scu_dma_transfer(0, (void *)(vdp1_vram_partitions.texture_base + 0 * 2048), buffer, 2048 * 77);
 
         //reading second half of the background
         _svin_cd_block_sectors_read(fad + 1 + 77, buffer, 2048 * 77);
-        memcpy((uint8_t *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
+        scu_dma_transfer(0, (void *)(vdp1_vram_partitions.texture_base + 77 * 2048), buffer, 2048 * 77);
 
         //read palette
         _svin_cd_block_sector_read(fad + 1 + 154, palette);
@@ -219,7 +219,7 @@ void _svin_background_update(char *filename)
     }
 
     //copy preloaded pattern names
-    memcpy((uint8_t *)(vdp1_vram_partitions.texture_base), buffer, 2048 * 154);
+    scu_dma_transfer(0, (void *)(vdp1_vram_partitions.texture_base), buffer, 2048 * 154);
 
     //read palette
     _svin_cd_block_sector_read(_bg_fad + 1 + 154, palette);
