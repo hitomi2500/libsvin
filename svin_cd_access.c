@@ -36,18 +36,13 @@ _svin_cd_block_sector_read(uint32_t fad, uint8_t *output_buffer)
 }
 #endif
 
-/*int
-_svin_cd_block_sector_read_request(uint32_t fad)
+int
+_svin_cd_block_async_read_request_sectors(uint32_t fad,  uint32_t sector_count)
 {
-        const int32_t num_sectors = 1;
-
         assert(fad >= 150);
+        assert(sector_count > 0);
 
         int ret;
-        
-        if ((ret = cd_block_cmd_sector_length_set(SECTOR_LENGTH_2048)) != 0) {
-                return ret;
-        }
 
         if ((ret = cd_block_cmd_selector_reset(0, 0)) != 0) {
                 return ret;
@@ -57,45 +52,37 @@ _svin_cd_block_sector_read_request(uint32_t fad)
                 return ret;
         }
 
-        // Start reading 
-        if ((ret = cd_block_cmd_disk_play(0, fad, num_sectors)) != 0) {
+        if ((ret = cd_block_cmd_disk_play(0, fad, sector_count)) != 0) {
                 return ret;
         }
 
-        return 0;
 }
 
 int
-_svin_cd_block_sector_read_process(uint8_t *output_buffer)
+_svin_cd_block_async_read_fetch_sectors(uint8_t *output_buffer, uint32_t buff_size_in_sectors)
 {
         assert(output_buffer != NULL);
+        assert(buff_size_in_sectors > 0);
 
-        int ret;
-
-        // If at least one sector has transferred, we copy it 
-        while ((cd_block_cmd_sector_number_get(0)) == 0) {
+        uint32_t sectors_to_read = cd_block_cmd_sector_number_get(0);
+        
+        if (sectors_to_read == 0)
+        {
+                //no data available, return 0
+                return 0;
         }
 
-        if ((ret = cd_block_transfer_data(0, 0, output_buffer,SECTOR_LENGTH_2048)) != 0) {
-                return ret;
-        }
+        if (sectors_to_read > buff_size_in_sectors) 
+                sectors_to_read = buff_size_in_sectors;
+        
+        int ret = cd_block_transfer_data(0, 0, output_buffer, sectors_to_read * CDFS_SECTOR_SIZE);
 
-        return 0;
+        if (ret == 0)
+                return sectors_to_read;
+        else
+                return -1; //some error
+
 }
-
-
-int
-_svin_cd_block_sector_read_flush(uint8_t *output_buffer)
-{
-       assert(output_buffer != NULL);
-
-        // If at least one sector has transferred, we copy it 
-        while ((cd_block_cmd_sector_number_get(0)) != 0) {
-                cd_block_transfer_data(0, 0, output_buffer,SECTOR_LENGTH_2048);
-        }
-
-        return 0;
-}*/
 
 /*----------------------- ROM cd emulation section -----------------------*/
 #ifdef ROM_MODE
