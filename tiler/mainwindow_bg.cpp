@@ -341,14 +341,11 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                     for (int x = 0; x < 64; x++)
                         for (int y = 0; y < 32; y++)
                         {
-                            ba[(y_cell*x_cells + x_cell)*2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*32+y);
+                            if (ui->checkBox_transposed_mega_bg->isChecked())
+                                ba[(x_cell*y_cells + y_cell)*2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*32+y);
+                            else
+                                ba[(y_cell*x_cells + x_cell)*2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*32+y);
                         }
-                        /*for (int y = 0; y < 16; y++)
-                        {
-                            ba[(y_cell*x_cells + x_cell)*1024 + y*32+x] = img.pixelIndex(x_cell*32+x,y_cell*32+y*2);
-                            ba[(y_cell*x_cells + x_cell)*1024 + 512 + y*32+x] = img.pixelIndex(x_cell*32+x,y_cell*32+y*2+1);
-                        }*/
-
         }
 
 
