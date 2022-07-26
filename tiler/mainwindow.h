@@ -18,6 +18,7 @@ struct Image_Link {
 #define BG_VDP1_8BPP_TAPESTRY 1
 #define BG_VDP1_16BPP_4QUADS 2
 #define BG_VDP1_8BPP_32X32_QUADS 3
+#define BG_VDP2_8BPP_8X8_QUADS 4
 
 //every menu is defined by:
 //menu start line in unprocessed script

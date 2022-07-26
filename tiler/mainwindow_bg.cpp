@@ -35,62 +35,6 @@ void MainWindow::on_pushButton_process_BGs_clicked()
     QFile outfile_bg;
     QByteArray b;
 
-    int iLimit = 127;
-    if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_TAPESTRY)
-        iLimit = 1; //only a single file in tapestry mode
-    if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_32X32_QUADS)
-        iLimit = 1; //only a single file in huge scroll bg mode
-    if ((true == ui->checkBox_PackBG->isChecked())&&(list.size() > iLimit))
-    {
-        QMessageBox msgBox;
-        msgBox.setWindowTitle("Oopsie daisy");
-        msgBox.setText("Packs with more than 127 files and tapestries/superbg with more than 1 file are not supported!");
-        msgBox.exec();
-        return;
-    }
-
-
-    if (true == ui->checkBox_PackBG->isChecked())
-    {
-        //making big bin instead of independent small NBG/PAL
-        outfile_pack.setFileName(QString("DATA.PAK"));
-        outfile_pack.open(QIODevice::WriteOnly);
-
-        //pass 1 - create filelist table
-        //first 64-byte entry is a system header
-        outfile_pack.write(QByteArray("SVINPACK"));
-        qint16_be s = (qint16_be)list83.size();//files in pack
-        outfile_pack.write((char*)&s,2);
-        s = 64;//filename size
-        outfile_pack.write((char*)&s,2);
-        b.clear();
-        b.fill('\0',52);
-        outfile_pack.write(b);
-
-        //64 bytes per entry, zero-terminated
-        written = 64;
-        for (int i=0; i<list83.size(); i++)
-        {
-            QByteArray _name;
-            _name.append("1234567890");//placeholder for : LEFT, TOP, SIZE_X, SIZE_Y, sector
-            _name.append(list83.at(i).toLatin1());
-            while (_name.size()<64)
-                _name.append('\0');
-            outfile_pack.write(_name);
-            written+=64;
-        }
-        //up to 127 files per pack, that's 8192 bytes = 4 sectors
-        //filling rest
-        while (written < 8192)
-        {
-            QByteArray _name;
-            while (_name.size()<64)
-                _name.append('\0');
-            outfile_pack.write(_name);
-            written+=64;
-        }
-    }
-
     int iCurrentSector = (list.size())/32 + 1;
 
     //using imagemagick for image transforms
@@ -195,8 +139,14 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::remove("tmp2.png");
             QFile::copy(list.at(iImageNumber), "tmp2.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP2_8BPP_8X8_QUADS)  //VDP1 huge x huge
+        {
+            //no resize
+            QFile::remove("tmp2.png");
+            QFile::copy(list.at(iImageNumber), "tmp2.png");
+        }
 
-
+        //making palette file
         if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_4QUADS)
         {
             //generate palette, sprited VDP1 palette is limited to 254 colours
@@ -239,6 +189,21 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp3.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP2_8BPP_8X8_QUADS)
+        {
+            //generate palette, sprited VDP2 palette is limited to 255 colours
+            proc_args.clear();
+            proc_args.append("tmp2.png");
+            proc_args.append("-colors");
+            proc_args.append("255");
+            proc_args.append("tmp3.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished(30000000);
+            //backuppy
+            QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
+            img.load("tmp3.png");
+        }
 
 
         QByteArray ba;
@@ -249,23 +214,6 @@ void MainWindow::on_pushButton_process_BGs_clicked()
         int iTop=0;
         int iSizeX=img.width();
         int iSizeY=img.height();
-
-        if (true == ui->checkBox_PackBG->isChecked())
-        {
-            //qint64 SeekBackup = outfile_pack.pos();
-            outfile_pack.seek(64+64*iImageNumber);
-            qint16_be s = (qint16_be)iLeft;
-            outfile_pack.write((char*)&s,2);
-            s = (qint16_be)iTop;
-            outfile_pack.write((char*)&s,2);
-            s = (qint16_be)(iSizeX);
-            outfile_pack.write((char*)&s,2);
-            s = (qint16_be)(iSizeY);
-            outfile_pack.write((char*)&s,2);
-            s = (qint16_be)iCurrentSector;
-            outfile_pack.write((char*)&s,2);
-            outfile_pack.seek(iCurrentSector*2048);
-        }
 
         int iQuad_Size_X = img.size().width()/2;
         int iQuad_Size_Y = img.size().height()/2;
@@ -347,6 +295,24 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                                 ba[(y_cell*x_cells + x_cell)*2048 + y*64+x] = img.pixelIndex(x_cell*64+x,y_cell*32+y);
                         }
         }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP2_8BPP_8X8_QUADS) //VDP1 huge x huge mode
+        {
+            int x_cells = img.size().width()/8;
+            int y_cells = img.size().height()/8;
+            ba.resize(x_cells*y_cells*64);
+            ba.fill('\0');
+            //new background mode : 4 VDP1 interlaced sprites
+            for (int y_cell = 0; y_cell<y_cells; y_cell++)
+                for (int x_cell = 0; x_cell<x_cells; x_cell++)
+                    for (int x = 0; x < 8; x++)
+                        for (int y = 0; y < 8; y++)
+                        {
+                            if (ui->checkBox_transposed_mega_bg->isChecked())
+                                ba[(x_cell*y_cells + y_cell)*64 + y*8+x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
+                            else
+                                ba[(y_cell*x_cells + x_cell)*64 + y*8+x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
+                        }
+        }
 
 
         ba_pal.clear();
@@ -406,124 +372,90 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             ba_pal[255*3+1] = ba_pal.at(0*3+1);
             ba_pal[255*3+2] = ba_pal.at(0*3+2);
         }
-
-
-
-        if (true == ui->checkBox_PackBG->isChecked())
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP2_8BPP_8X8_QUADS)
         {
-            outfile_pack.write(ba); //write recipe
-            written = ba.size();
-            //fill last cluster
-            while (written%2048 > 0)
-            {
-                written++;
-                outfile_pack.write("\0",1);
-            }
-            iSectorsUsed = (ba.size() - 1)/2048 + 1;
-            iCurrentSector += iSectorsUsed;//adding used sectors
+            //for VDP2 sprites 0x00 (transparent) can't be used
+            //imagemagick generates palettes from 0x00 to 0xFE, 0xFF being transparent
+            //so we only have to move color 0x00 to color 0xFF
+            for (int i=0;i<ba.size();i++)
+                if (ba.at(i) == 0)
+                    ba[i]=-1;
+            //hacking palette, moving color 0x00 to color 0xFF
+            ba_pal[255*3] = ba_pal.at(0*3);
+            ba_pal[255*3+1] = ba_pal.at(0*3+1);
+            ba_pal[255*3+2] = ba_pal.at(0*3+2);
+        }
 
-            outfile_pack.write(ba_pal); //write palette
-            written = ba_pal.size();
-            //fill last cluster
-            while (written%2048 > 0)
-            {
-                written++;
-                outfile_pack.write("\0",1);
-            }
-            iCurrentSector++;//adding sector for palette
+        //single file, care less about sectors and clusters
+        //open file first
+        QByteArray b = list83.at(iImageNumber).toLatin1();
+        QByteArray b2 = b;
+        if (b2.contains("safe_artist-colon-"))
+            b2.replace("safe_artist-colon-","-");
+        b2 = b2.left(30);
+        b2.append(".bg");
+        outfile_bg.setFileName(b2);
+        outfile_bg.open(QIODevice::WriteOnly);
+        qint16_be s = (qint16_be)iLeft;
+        outfile_bg.write((char*)&s,2);
+        s = (qint16_be)iTop;
+        outfile_bg.write((char*)&s,2);
+        s = (qint16_be)(iSizeX);
+        outfile_bg.write((char*)&s,2);
+        s = (qint16_be)(iSizeY);
+        outfile_bg.write((char*)&s,2);
+        s = (qint16_be)iCurrentSector;
+        outfile_bg.write((char*)&s,2);
+        outfile_bg.write(list83.at(iImageNumber).toLatin1());
+        while (outfile_bg.size()<2044)
+            outfile_bg.write(QByteArray(1,'\0'));
+        if (ui->comboBox_mode->currentIndex() == BG_VDP2_8BPP_8X8_QUADS)
+            outfile_bg.write("VDP2");
+        else
+            outfile_bg.write("VDP1");
+        //compressing prior to saving
+        QByteArray ba_compressed;
+        if (true == ui->checkBox_bg_rle->isChecked())
+        {
+            ba_compressed.append("LZ77");
+
+            uint8_t * _in = (uint8_t *)malloc(ba.size());
+            uint8_t * _out = (uint8_t *)malloc(ba.size());
+            for (int z=0;z<ba.size();z++)
+                _in[z] = ba[z];
+            int cmpsize = LZ_Compress(_in,_out,ba.size());
+            unsigned char * p8 = (unsigned char *)&cmpsize;
+            ba_compressed.append(p8[3]);
+            ba_compressed.append(p8[2]);
+            ba_compressed.append(p8[1]);
+            ba_compressed.append(p8[0]);
+            for (int z=0;z<cmpsize;z++)
+                ba_compressed.append(_out[z]);
+            free(_in);
+            free(_out);
+
+            while (ba_compressed.size()%2048 !=0)
+                ba_compressed.append(1,(char)(0));
+            outfile_bg.write(ba_compressed);//saving uncompressed
         }
         else
+            outfile_bg.write(ba);//saving uncompressed
+        //fill last cluster of bg
+        while (written%2048 > 0)
         {
-            //single file, care less about sectors and clusters
-            //open file first
-            QByteArray b = list83.at(iImageNumber).toLatin1();
-            QByteArray b2 = b;
-            if (b2.contains("safe_artist-colon-"))
-                b2.replace("safe_artist-colon-","-");
-            b2 = b2.left(30);
-            b2.append(".bg");
-            outfile_bg.setFileName(b2);
-            outfile_bg.open(QIODevice::WriteOnly);
-            qint16_be s = (qint16_be)iLeft;
-            outfile_bg.write((char*)&s,2);
-            s = (qint16_be)iTop;
-            outfile_bg.write((char*)&s,2);
-            s = (qint16_be)(iSizeX);
-            outfile_bg.write((char*)&s,2);
-            s = (qint16_be)(iSizeY);
-            outfile_bg.write((char*)&s,2);
-            s = (qint16_be)iCurrentSector;
-            outfile_bg.write((char*)&s,2);
-            outfile_bg.write(list83.at(iImageNumber).toLatin1());
-            while (outfile_bg.size()<2048)
-                outfile_bg.write(QByteArray(1,'\0'));
-            //compressing prior to saving
-            QByteArray ba_compressed;
-            if (true == ui->checkBox_bg_rle->isChecked())
-            {
-                ba_compressed.append("LZ77");
-
-                uint8_t * _in = (uint8_t *)malloc(ba.size());
-                uint8_t * _out = (uint8_t *)malloc(ba.size());
-                for (int z=0;z<ba.size();z++)
-                    _in[z] = ba[z];
-                int cmpsize = LZ_Compress(_in,_out,ba.size());
-                unsigned char * p8 = (unsigned char *)&cmpsize;
-                ba_compressed.append(p8[3]);
-                ba_compressed.append(p8[2]);
-                ba_compressed.append(p8[1]);
-                ba_compressed.append(p8[0]);
-                for (int z=0;z<cmpsize;z++)
-                    ba_compressed.append(_out[z]);
-                free(_in);
-                free(_out);
-
-                while (ba_compressed.size()%2048 !=0)
-                    ba_compressed.append(1,(char)(0));
-                outfile_bg.write(ba_compressed);//saving uncompressed
-            }
-            else
-                outfile_bg.write(ba);//saving uncompressed
-            //fill last cluster of bg
-            while (written%2048 > 0)
-            {
-                written++;
-                outfile_bg.write("\0",1);
-            }
-            //now save palette data
-            outfile_bg.write(ba_pal); //write palette
-            written = ba_pal.size();
-            //fill last cluster
-            while (written%2048 > 0)
-            {
-                written++;
-                outfile_bg.write("\0",1);
-            }
-            outfile_bg.close();
+            written++;
+            outfile_bg.write("\0",1);
         }
-
-    }
-
-    if (true == ui->checkBox_PackBG->isChecked())
-    {
-        //saving tile library. it is a last file, everything else is processed, so wa can save it safely
-        written = 0;
-        for (int i=0;i<TileLibrary.size();i++)
-        {
-            outfile_pack.write(TileLibrary.at(i)); //write tile
-            written += TileLibrary.at(i).size();
-        }
-
+        //now save palette data
+        outfile_bg.write(ba_pal); //write palette
+        written = ba_pal.size();
         //fill last cluster
         while (written%2048 > 0)
         {
             written++;
-            outfile_pack.write("\0",1);
+            outfile_bg.write("\0",1);
         }
-
-        //don't care about iCurrentSector because it's the last file
-
-        outfile_pack.close();
+        outfile_bg.close();
     }
 
 }
