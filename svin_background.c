@@ -163,7 +163,7 @@ _svin_background_set_by_fad(fad_t fad, int size)
             {
                 for (unsigned int y = 0; y  < 28; y++)
                 {   
-                    _pointer32[y*64+x] = 0x00000000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
+                    _pointer32[y*64+x] = 0x00100000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
                 }
             }
             //now plane 1
@@ -171,19 +171,23 @@ _svin_background_set_by_fad(fad_t fad, int size)
             {
                 for (unsigned int y = 0; y  < 28; y++)
                 {   
-                    _pointer32[64*64+y*64+x-64] = 0x00000000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
+                    _pointer32[64*64+y*64+x-64] = 0x00100000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
                 }
             }
             bcl_lz_decompress(&(buffer[8]),(char*)_SVIN_NBG0_CHPNDR_START,compressed_size);
             _svin_set_cycle_patterns_nbg();
+            //set palette, using palette 1 for VDP2 backgrounds
+            _svin_cd_block_sector_read(fad + compressed_size_sectors + 1, palette);
+            _svin_set_palette(1, palette);
         }
         else
+        {
             bcl_lz_decompress(&(buffer[8]),vdp1_vram_partitions.texture_base,compressed_size);
 
-
-        //set palette
-        _svin_cd_block_sector_read(fad + compressed_size_sectors + 1, palette);
-        _svin_set_palette(0, palette);
+            //set palette
+            _svin_cd_block_sector_read(fad + compressed_size_sectors + 1, palette);
+            _svin_set_palette(0, palette);
+        }
     }
     else
     {

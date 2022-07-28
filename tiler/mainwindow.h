@@ -76,6 +76,10 @@ private slots:
 
     void on_pushButton_Process_Sprites_clicked();
 
+    void on_pushButton_openSprite_clicked();
+
+    void on_pushButton_process_Sprite_clicked();
+
 private:
     //void Process_Sprite(QString filename);
     Ui::MainWindow *ui;

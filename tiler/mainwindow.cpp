@@ -24,18 +24,3 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-
-
-void MainWindow::on_pushButton_Set_reciles_List_clicked()
-{
-    ui->lineEdit_Recipes_List->setText(QFileDialog::getOpenFileName(this,
-        tr("Open Recipe"), "", tr("Recipe Files (*.*)")));
-}
-
-void MainWindow::on_pushButton_Set_Script_clicked()
-{
-    ui->lineEdit_script->setText(QFileDialog::getOpenFileName(this,
-        tr("Open Script"), "", tr("Script Files (*.*)")));
-}
-

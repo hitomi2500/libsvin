@@ -20,7 +20,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mainwindow_bg.cpp \
-    mainwindow_script.cpp
+    mainwindow_script.cpp \
+    mainwindow_sprite.cpp
 
 HEADERS += \
     lz.h \
