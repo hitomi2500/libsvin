@@ -163,7 +163,7 @@ _svin_background_set_by_fad(fad_t fad, int size)
             {
                 for (unsigned int y = 0; y  < 28; y++)
                 {   
-                    _pointer32[y*64+x] = 0x00000000 + 0x8000/32 + y*88+x; //palette 0, transparency on
+                    _pointer32[y*64+x] = 0x00000000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
                 }
             }
             //now plane 1
@@ -171,14 +171,11 @@ _svin_background_set_by_fad(fad_t fad, int size)
             {
                 for (unsigned int y = 0; y  < 28; y++)
                 {   
-                    _pointer32[64*64+y*64+x-64] = 0x00000000 + 0x8000/32 + y*88+x; //palette 0, transparency on
+                    _pointer32[64*64+y*64+x-64] = 0x00000000 + 0x8000/32 + y*88*2+x*2; //palette 0, transparency on
                 }
             }
             bcl_lz_decompress(&(buffer[8]),(char*)_SVIN_NBG0_CHPNDR_START,compressed_size);
             _svin_set_cycle_patterns_nbg();
-            _svin_textbox_init();
-            _svin_textbox_print("","Stopped as the node 200","Lato_Black15",7,7);
-            while (1);
         }
         else
             bcl_lz_decompress(&(buffer[8]),vdp1_vram_partitions.texture_base,compressed_size);

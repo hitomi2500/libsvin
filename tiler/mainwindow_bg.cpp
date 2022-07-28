@@ -301,16 +301,13 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             int y_cells = img.size().height()/8;
             ba.resize(x_cells*y_cells*64);
             ba.fill('\0');
-            //new background mode : 4 VDP1 interlaced sprites
+            //new background mode : 8x8 VDP2 interlaced sprites
             for (int y_cell = 0; y_cell<y_cells; y_cell++)
                 for (int x_cell = 0; x_cell<x_cells; x_cell++)
                     for (int x = 0; x < 8; x++)
                         for (int y = 0; y < 8; y++)
                         {
-                            if (ui->checkBox_transposed_mega_bg->isChecked())
-                                ba[(x_cell*y_cells + y_cell)*64 + y*8+x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
-                            else
-                                ba[(y_cell*x_cells + x_cell)*64 + y*8+x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
+                           ba[(y_cell*x_cells + x_cell)*64 + y*8 + x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
                         }
         }
 
