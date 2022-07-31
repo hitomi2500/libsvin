@@ -166,6 +166,8 @@ void _svin_delay(int milliseconds);
 int _svin_get_keys_state();
 int _svin_wait_for_key_press_and_release();
 
+void _svin_set_vdp1_cmdlist_toggle_at_vblank(bool enable);
+
 void _svin_set_cycle_patterns_cpu();
 void _svin_set_cycle_patterns_nbg();
 

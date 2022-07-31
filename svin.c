@@ -19,6 +19,7 @@ int _svin_videomode_x_res;
 int _svin_videomode_y_res;
 bool _svin_videomode_progressive;
 int _svin_frame_count;
+bool _svin_vdp1_cmdlist_toggle_at_vblank;
 
 void _svin_delay(int milliseconds)
 {
@@ -144,6 +145,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     _svin_init_done = 0;
     _svin_videomode_progressive = progressive;
     _svin_frame_count = 0;
+    _svin_vdp1_cmdlist_toggle_at_vblank = true;
 
     switch (x)
     {
@@ -689,6 +691,11 @@ void _svin_clear_palette(int number)
 
 //---------------------------------------------- Misc ----------------------------------------------------
 
+void _svin_set_vdp1_cmdlist_toggle_at_vblank(bool enable)
+{
+    _svin_vdp1_cmdlist_toggle_at_vblank = enable;
+}
+
 void _svin_vblank_out_handler(void *work __unused)
 {
     _svin_frame_count++;
@@ -699,12 +706,19 @@ void _svin_vblank_out_handler(void *work __unused)
     //smpc_peripheral_intback_issue();
     uint8_t * p = (uint8_t *)VDP1_VRAM(0); 
 
-    if (VDP2_TVMD_TV_FIELD_SCAN_ODD == vdp2_tvmd_field_scan_get())
-        //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX);
-        p[3]=0x2C;//1C;
+    if (_svin_vdp1_cmdlist_toggle_at_vblank)
+    {
+        if (VDP2_TVMD_TV_FIELD_SCAN_ODD == vdp2_tvmd_field_scan_get())
+            //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX);
+            p[3]=0x2C;//1C;
+        else
+            //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX);
+            p[3]=0x04;
+    }
     else
-        //vdp1_cmdt_jump_assign(&_svin_cmdt_list->cmdts[_SVIN_VDP1_ORDER_SYSTEM_CLIP_COORDS_INDEX], _SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX);
+    {
         p[3]=0x04;
+    }
 
     //vdp1_sync_cmdt_list_put(_svin_cmdt_list, 0, NULL, NULL);
     
