@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->radioButton_y_auto->setChecked(true);
     ui->comboBox_sprite_bpp->addItem("256 colors (8bpp)");
     ui->comboBox_sprite_bpp->addItem("32768 colors (15bpp)");
-    ui->comboBox_sprite_bpp->setCurrentIndex(1);
+    ui->comboBox_sprite_bpp->setCurrentIndex(0);
 }
 
 MainWindow::~MainWindow()
