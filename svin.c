@@ -345,7 +345,10 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     vdp1_cmdt_end_set(&cmdts[_SVIN_VDP1_ORDER_DRAW_END_A_INDEX]);
     vdp1_cmdt_end_set(&cmdts[_SVIN_VDP1_ORDER_DRAW_END_B_INDEX]);
 #define VDP1_FBCR_DIE (0x0008)
-    MEMORY_WRITE(16, VDP1(FBCR), VDP1_FBCR_DIE);
+    if (_svin_videomode_progressive) 
+        MEMORY_WRITE(16, VDP1(FBCR), 0);
+    else
+        MEMORY_WRITE(16, VDP1(FBCR), VDP1_FBCR_DIE);
     
     vdp1_vram_partitions_set(64,//VDP1_VRAM_DEFAULT_CMDT_COUNT,
                               0x7F000, //  VDP1_VRAM_DEFAULT_TEXTURE_SIZE,
@@ -353,7 +356,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
                                0);//  VDP1_VRAM_DEFAULT_CLUT_COUNT);
 
     static vdp1_env_t vdp1_env = {
-                .erase_color = COLOR_RGB1555(1, 0, 0, 0),
+                .erase_color = COLOR_RGB1555(0, 0, 0, 0),
                 .erase_points[0] = {
                         .x = 0,
                         .y = 0
