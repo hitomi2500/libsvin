@@ -9,6 +9,7 @@
 
 vdp1_cmdt_list_t *_svin_cmdt_list;
 extern uint8_t _svin_init_done;
+extern bool _svin_cram_24bpp;
 
 void _svin_background_fade_to_black_step()
 {

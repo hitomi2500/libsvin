@@ -175,5 +175,6 @@ void _svin_set_palette(int number, uint8_t * pointer);
 void _svin_set_palette_half_lo(int number, uint8_t * pointer);
 void _svin_set_palette_half_hi(int number, uint8_t * pointer);
 void _svin_clear_palette(int number);
+void _svin_set_palette_24bpp();
 
 #endif

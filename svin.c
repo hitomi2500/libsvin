@@ -20,6 +20,7 @@ int _svin_videomode_y_res;
 bool _svin_videomode_progressive;
 int _svin_frame_count;
 bool _svin_vdp1_cmdlist_toggle_at_vblank;
+bool _svin_cram_24bpp;
 
 void _svin_delay(int milliseconds)
 {
@@ -146,6 +147,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     _svin_videomode_progressive = progressive;
     _svin_frame_count = 0;
     _svin_vdp1_cmdlist_toggle_at_vblank = true;
+    _svin_cram_24bpp = false;
 
     switch (x)
     {
@@ -652,12 +654,26 @@ void _svin_deinit()
 
 void _svin_set_palette(int number, uint8_t *pointer)
 {
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i = 0; i < 256; i++)
+    if (_svin_cram_24bpp)
     {
-        my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
-                           ((pointer[i * 3 + 1] & 0xF8) << 2) |
-                           ((pointer[i * 3 + 0] & 0xF8) >> 3));
+        uint8_t *my_vdp2_cram8 = (uint16_t *)VDP2_VRAM_ADDR(8, 0x400 * number);
+        for (int i = 0; i < 256; i++)
+        {
+            my_vdp2_cram8[i*4+0] = 0;
+            my_vdp2_cram8[i*4+1] = pointer[i * 3 + 2];
+            my_vdp2_cram8[i*4+2] = pointer[i * 3 + 1];
+            my_vdp2_cram8[i*4+3] = pointer[i * 3 + 0];;
+        }
+    }
+    else
+    {
+        uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+        for (int i = 0; i < 256; i++)
+        {
+            my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
+                            ((pointer[i * 3 + 1] & 0xF8) << 2) |
+                            ((pointer[i * 3 + 0] & 0xF8) >> 3));
+        }        
     }
 }
 
@@ -685,10 +701,21 @@ void _svin_set_palette_half_hi(int number, uint8_t * pointer)
 
 void _svin_clear_palette(int number)
 {
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i = 0; i < 256; i++)
+    if (_svin_cram_24bpp)
     {
-        my_vdp2_cram[i] = 0;
+        uint32_t *my_vdp2_cram32 = (uint16_t *)VDP2_VRAM_ADDR(8, 0x400 * number);
+        for (int i = 0; i < 256; i++)
+        {
+            my_vdp2_cram32[i] = 0;
+        }
+    }
+    else
+    {
+        uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
+        for (int i = 0; i < 256; i++)
+        {
+            my_vdp2_cram[i] = 0;
+        }
     }
 }
 
@@ -759,4 +786,10 @@ int _svin_get_keys_state()
     smpc_peripheral_process();
     smpc_peripheral_digital_port(1, &_digital);
     return _digital.pressed.raw;
+}
+
+void _svin_set_palette_24bpp()
+{
+    _svin_cram_24bpp = true;
+    vdp2_cram_mode_set(2);
 }
