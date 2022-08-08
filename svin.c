@@ -651,13 +651,17 @@ void _svin_deinit()
 }
 
 //---------------------------------------------- Palette stuff ----------------------------------------------------
-
 void _svin_set_palette(int number, uint8_t *pointer)
+{
+    _svin_set_palette_part(number,pointer,0,255);
+}
+
+void _svin_set_palette_part(int number, uint8_t *pointer, int start, int end)
 {
     if (_svin_cram_24bpp)
     {
         uint8_t *my_vdp2_cram8 = (uint16_t *)VDP2_VRAM_ADDR(8, 0x400 * number);
-        for (int i = 0; i < 256; i++)
+        for (int i = start; i <= end; i++)
         {
             my_vdp2_cram8[i*4+0] = 0;
             my_vdp2_cram8[i*4+1] = pointer[i * 3 + 2];
@@ -668,7 +672,7 @@ void _svin_set_palette(int number, uint8_t *pointer)
     else
     {
         uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-        for (int i = 0; i < 256; i++)
+        for (int i = start; i <= end; i++)
         {
             my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
                             ((pointer[i * 3 + 1] & 0xF8) << 2) |
@@ -677,34 +681,17 @@ void _svin_set_palette(int number, uint8_t *pointer)
     }
 }
 
-void _svin_set_palette_half_lo(int number, uint8_t * pointer)
-{
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i = 0; i < 128; i++)
-    {
-        my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
-                           ((pointer[i * 3 + 1] & 0xF8) << 2) |
-                           ((pointer[i * 3 + 0] & 0xF8) >> 3));
-    }
-}
-
-void _svin_set_palette_half_hi(int number, uint8_t * pointer)
-{
-    uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-    for (int i = 128; i < 256; i++)
-    {
-        my_vdp2_cram[i] = (((pointer[i * 3 + 2] & 0xF8) << 7) |
-                           ((pointer[i * 3 + 1] & 0xF8) << 2) |
-                           ((pointer[i * 3 + 0] & 0xF8) >> 3));
-    }
-}
-
 void _svin_clear_palette(int number)
+{
+    _svin_clear_palette_part(number,0,255);
+}
+
+void _svin_clear_palette_part(int number, int start, int end)
 {
     if (_svin_cram_24bpp)
     {
         uint32_t *my_vdp2_cram32 = (uint16_t *)VDP2_VRAM_ADDR(8, 0x400 * number);
-        for (int i = 0; i < 256; i++)
+        for (int i = start; i <= end; i++)
         {
             my_vdp2_cram32[i] = 0;
         }
@@ -712,7 +699,7 @@ void _svin_clear_palette(int number)
     else
     {
         uint16_t *my_vdp2_cram = (uint16_t *)VDP2_VRAM_ADDR(8, 0x200 * number);
-        for (int i = 0; i < 256; i++)
+        for (int i = start; i <=  end; i++)
         {
             my_vdp2_cram[i] = 0;
         }

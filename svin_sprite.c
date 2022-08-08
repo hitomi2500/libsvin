@@ -374,10 +374,10 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                     _svin_set_palette(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
                     break;
                 case 1:
-                    _svin_set_palette_half_hi(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
+                    _svin_set_palette_part(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette,128,255);
                     break;
                 case 2:
-                    _svin_set_palette_half_lo(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette);
+                    _svin_set_palette_part(iPaletteIndex,_svin_sprite_cache_sprites[iCacheIndex].palette,0,127);
                     break;
             }
 		}
@@ -634,10 +634,10 @@ _svin_sprite_draw(char * filename, int iLayer, int iPosition, int iPalette)
                 _svin_set_palette(iPaletteIndex,big_buffer+iPointer);
                 break;
             case 1:
-                _svin_set_palette_half_hi(iPaletteIndex,big_buffer+iPointer);
+                _svin_set_palette_part(iPaletteIndex,big_buffer+iPointer,128,255);
                 break;
             case 2:
-                _svin_set_palette_half_lo(iPaletteIndex,big_buffer+iPointer);
+                _svin_set_palette_part(iPaletteIndex,big_buffer+iPointer,0,127);
                 break;
         }
 

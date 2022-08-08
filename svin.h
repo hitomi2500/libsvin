@@ -172,9 +172,9 @@ void _svin_set_cycle_patterns_cpu();
 void _svin_set_cycle_patterns_nbg();
 
 void _svin_set_palette(int number, uint8_t * pointer);
-void _svin_set_palette_half_lo(int number, uint8_t * pointer);
-void _svin_set_palette_half_hi(int number, uint8_t * pointer);
+void _svin_set_palette_part(int number, uint8_t * pointer, int start, int end);
 void _svin_clear_palette(int number);
+void _svin_clear_palette_part(int number, int start, int end);
 void _svin_set_palette_24bpp();
 
 #endif

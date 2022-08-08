@@ -35,13 +35,17 @@ void MainWindow::on_pushButton_process_Sprite_clicked()
     else if (QFile::exists("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick.exe"))
         process.setProgram("C:\\Program Files\\ImageMagick-7.1.0-Q16-HDRI\\magick");
 
+    int pal_start = ui->spinBox_palette_start->value();
+    int pal_end = ui->spinBox_palette_end->value();
+
     switch (ui->comboBox_sprite_bpp->currentIndex())
     {
     case 0:
         proc_args.clear();
         proc_args.append(ui->label_sprite_filename->text());
         proc_args.append("-colors");
-        proc_args.append("255");
+        //proc_args.append("255");
+        proc_args.append(QString("%1").arg(pal_end-pal_start));
         proc_args.append("tmp_spr.png");
         process.setArguments(proc_args);
         process.open();
@@ -69,6 +73,11 @@ void MainWindow::on_pushButton_process_Sprite_clicked()
     else
         s = (qint16_be)16;
     spr_file.write((char*)&s,2);
+    spr_file.write(QByteArray(2,0));
+    s = (qint16_be)pal_start;
+    spr_file.write((char*)&s,2);
+    s = (qint16_be)pal_end;
+    spr_file.write((char*)&s,2);
     while (spr_file.size()<16)
         spr_file.write(QByteArray(1,'\0'));
     //now write data
@@ -80,7 +89,12 @@ void MainWindow::on_pushButton_process_Sprite_clicked()
         {
             for (int y=0;y<img.height();y++)
                 for (int x=0;x<img.width();x++)
-                    ba.append(QByteArray(1,img.pixelIndex(x,y)));
+                {
+                    if (img.pixelIndex(x,y) == 0)
+                        ba.append(QByteArray(1,0));
+                    else
+                        ba.append(QByteArray(1,img.pixelIndex(x,y)+pal_start));
+                }
         }
         break;
     case 1:
@@ -112,6 +126,15 @@ void MainWindow::on_pushButton_process_Sprite_clicked()
     switch (ui->comboBox_sprite_bpp->currentIndex())
     {
     case 0:
+        if (img.colorTable().size() > (pal_end-pal_start+1))
+        {
+            QMessageBox msgBox;
+            msgBox.setWindowTitle("Oopsie daisy");
+            msgBox.setText("Internal error! Sprite have too many colors in the palette!");
+            msgBox.exec();
+            return;
+        }
+        ba_pal.append(QByteArray((pal_start)*3,0));
         for (int j=0;j<img.colorTable().size();j++)
         {
             ba_pal.append(QColor(img.colorTable().at(j)).red());

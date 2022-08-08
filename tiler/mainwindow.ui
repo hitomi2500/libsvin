@@ -269,13 +269,6 @@
         <string>Sprites</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="2" column="2">
-         <widget class="QLabel" name="label_processed_sprite">
-          <property name="text">
-           <string>Processed sprite</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QPushButton" name="pushButton_openSprite">
           <property name="text">
@@ -284,6 +277,30 @@
          </widget>
         </item>
         <item row="3" column="0">
+         <widget class="QLabel" name="label_master_sprite">
+          <property name="text">
+           <string>Master sprite</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QComboBox" name="comboBox_sprite_bpp"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_sprite_filename">
+          <property name="text">
+           <string>Filename</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QLabel" name="label_processed_sprite">
+          <property name="text">
+           <string>Processed sprite</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -296,13 +313,6 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_master_sprite">
-          <property name="text">
-           <string>Master sprite</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="2">
          <widget class="QPushButton" name="pushButton_process_Sprite">
           <property name="text">
@@ -311,14 +321,42 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="label_sprite_filename">
-          <property name="text">
-           <string>Filename</string>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="topMargin">
+           <number>8</number>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QComboBox" name="comboBox_sprite_bpp"/>
+          <item>
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Palette start</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_palette_start">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Palette end</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_palette_end">
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="value">
+             <number>255</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -332,7 +370,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -341,7 +379,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
