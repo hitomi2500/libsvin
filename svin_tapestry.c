@@ -6,13 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-fad_t _svin_background_pack_fad;
-uint8_t *_svin_background_index;
-uint16_t _svin_background_files_number;
-vdp1_cmdt_list_t *_svin_cmdt_list;
 vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_1;
 vdp1_cmdt_list_t *_svin_tapestry_cmdt_list_2;
-uint8_t _svin_init_done;
 fad_t _svin_tapestry_pack_fad;
 int _svin_tapestry_framebuffer_start;
 int _svin_tapestry_data_start;

@@ -1,7 +1,6 @@
 #include <yaul.h>
 #include <svin.h>
 #include <stdlib.h>
-#include <kernel/fs/cd/cdfs-internal.h>
 #include "svin_filelist.h"
 
 int _svin_filelist_size;

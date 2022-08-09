@@ -14,7 +14,6 @@
 _svin_menu_item_type _svin_menu_items[10];
 uint8_t _svin_menu_items_count;
 
-uint8_t *buffer;
 uint32_t MenuLinks[512];
 
 void 
@@ -104,7 +103,7 @@ _svin_menu_activate()
 
         int height;
 
-        buffer = malloc(8 * 2048);
+        uint8_t *buffer = malloc(8 * 2048);
         int16_t _x,_y;
         uint8_t * _p;
         uint8_t _buf;

@@ -5,9 +5,8 @@
 //#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <kernel/fs/cd/cdfs-internal.h>
+#include "svin_filelist.h"
 
-vdp1_cmdt_list_t *_svin_cmdt_list;
 extern uint8_t _svin_init_done;
 extern bool _svin_cram_24bpp;
 
