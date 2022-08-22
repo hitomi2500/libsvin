@@ -85,15 +85,19 @@ _svin_menu_activate()
         //menu is 40x20 tiles, to fit into a single plane, and into the same tilespace as dialog 
         int index = 0;
         int iOffset;
-        int iStartCell = 28-_svin_menu_items_count;
+        int iStartCell;
+        if (_svin_videomode_y_res > 256)
+                iStartCell = 28-_svin_menu_items_count;
+        else
+                iStartCell = 14-_svin_menu_items_count;
         for (int y = iStartCell; y < iStartCell + _svin_menu_items_count*2; y++)
         {
                 //plane 0 only
                 iOffset = y * 64;
                 for (int x = 24; x < 64; x++)
                 {
-                _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
-                index++;
+                        _pointer32[iOffset + x] = 0x10700000 + _SVIN_NBG2_CHPNDR_TEXTBOX_INDEX + _SVIN_CHARACTER_UNITS * index; //palette 7, transparency on
+                        index++;
                 }
         }
 
@@ -126,7 +130,6 @@ _svin_menu_activate()
                         if (strlen(_svin_menu_items[iLine].line)>0)
                         {
                                 // Render the speaker name 
-                                //sprintf(dummy,"%i",_svin_menu_items[iLine].jump);
                                 height = _svin_text_render(buffer,320,_svin_menu_items[iLine].line,"Lato_Black12");
                                 
                                 //copy menu line
@@ -211,7 +214,7 @@ _svin_menu_activate()
                 iOffset = y * 64;
                 for (int x = 24; x < 64; x++)
                 {
-                _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
+                        _pointer32[iOffset + x] = 0x10000000 + _SVIN_NBG2_CHPNDR_SPECIALS_INDEX; //palette 0, transparency on
                 }
         }
 
