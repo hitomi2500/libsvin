@@ -283,8 +283,8 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     vdp2_tvmd_display_res_set(interlace, horz, vert);
 
-    color_rgb1555_t bs_color;
-    bs_color = COLOR_RGB1555(1, 0, 0, 0);
+    rgb1555_t bs_color;
+    bs_color = RGB1555(1, 0, 0, 0);
     vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), bs_color);
 
     vdp2_sprite_priority_set(0, 1);
@@ -339,10 +339,8 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     vdp1_cmdt_local_coord_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX]);
     vdp1_cmdt_local_coord_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX]);
-    vdp1_cmdt_param_vertex_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX],
-                               CMDT_VTX_LOCAL_COORD, &local_coord_ul);
-    vdp1_cmdt_param_vertex_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX],
-                               CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_vtx_local_coord_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX], &local_coord_ul);
+    vdp1_cmdt_vtx_local_coord_set(&cmdts[_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX], &local_coord_ul);
 
     vdp1_cmdt_end_set(&cmdts[_SVIN_VDP1_ORDER_DRAW_END_A_INDEX]);
     vdp1_cmdt_end_set(&cmdts[_SVIN_VDP1_ORDER_DRAW_END_B_INDEX]);
@@ -358,7 +356,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
                                0);//  VDP1_VRAM_DEFAULT_CLUT_COUNT);
 
     static vdp1_env_t vdp1_env = {
-                .erase_color = COLOR_RGB1555(0, 0, 0, 0),
+                .erase_color = RGB1555(0, 0, 0, 0),
                 .erase_points[0] = {
                         .x = 0,
                         .y = 0
