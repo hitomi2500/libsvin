@@ -207,7 +207,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     format.plane_size = VDP2_SCRN_PLANE_SIZE_2X1;
     normal_map.plane_a = _SVIN_NBG0_PNDR_START;
 
-    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_cell_format_set(&format,&normal_map);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 3);
     vdp2_scrn_display_set(VDP2_SCRN_NBG0);
 
@@ -222,7 +222,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     format.plane_size = VDP2_SCRN_PLANE_SIZE_2X1;
     normal_map.plane_a = _SVIN_NBG1_PNDR_START;
 
-    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_cell_format_set(&format,&normal_map);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 5);
     vdp2_scrn_display_set(VDP2_SCRN_NBG1);
 
@@ -237,7 +237,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
     format.plane_size = VDP2_SCRN_PLANE_SIZE_2X1;
     normal_map.plane_a = _SVIN_NBG2_PNDR_START;
 
-    vdp2_scrn_cell_format_set(&format);
+    vdp2_scrn_cell_format_set(&format,&normal_map);
     vdp2_scrn_priority_set(VDP2_SCRN_NBG2, 6);
     vdp2_scrn_display_set(VDP2_SCRN_NBG2);
 
@@ -307,7 +307,7 @@ void _svin_init(_svin_x_resolution_t x, _svin_y_resolution_t y, bool progressive
 
     static const vdp1_cmdt_draw_mode_t sprite_draw_mode = {
         .raw = 0x0000,
-        .bits.pre_clipping_disable = true};
+        .pre_clipping_disable = true};
 
     assert(_svin_cmdt_list != NULL);
 
