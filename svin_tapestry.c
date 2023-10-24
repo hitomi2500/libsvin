@@ -75,8 +75,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+0) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
     //filling another 224 quads
@@ -88,8 +88,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+352) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
 
@@ -119,8 +119,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+704) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
     //filling another 224 quads
@@ -132,8 +132,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+1056) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
 
