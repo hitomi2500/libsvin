@@ -61,7 +61,7 @@ _svin_tapestry_init()
     //frame A branching first
     (void)memset(&cmdt_buf, 0x00, sizeof(vdp1_cmdt_t));
     vdp1_cmdt_local_coord_set(&cmdt_buf);
-    vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_vtx_local_coord_set(&cmdt_buf, local_coord_ul);
     vdp1_cmdt_jump_assign(&cmdt_buf,16);
     vdp1_sync_cmdt_put(&cmdt_buf,1,_SVIN_VDP1_ORDER_LOCAL_COORDS_A_INDEX);
     vdp1_sync();
@@ -75,8 +75,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+0) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
     //filling another 224 quads
@@ -88,8 +88,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+352) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
 
@@ -105,7 +105,7 @@ _svin_tapestry_init()
     //now frame B
     (void)memset(&cmdt_buf, 0x00, sizeof(vdp1_cmdt_t));
     vdp1_cmdt_local_coord_set(&cmdt_buf);
-    vdp1_cmdt_param_vertex_set(&cmdt_buf,CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_vtx_local_coord_set(&cmdt_buf, local_coord_ul);
     vdp1_cmdt_jump_assign(&cmdt_buf,480);
     vdp1_sync_cmdt_put(&cmdt_buf,1,_SVIN_VDP1_ORDER_LOCAL_COORDS_B_INDEX);
     vdp1_sync();
@@ -119,8 +119,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+704) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
     //filling another 224 quads
@@ -132,8 +132,8 @@ _svin_tapestry_init()
         cmdt_p->cmd_ya = i;
         cmdt_p->cmd_size = 0x2C01;
         cmdt_p->cmd_srca = ((int)vdp1_vram_partitions.texture_base-VDP1_VRAM(0)+1408*i+1056) / 8;
-        vdp1_cmdt_param_color_mode4_set(cmdt_p, dummy_bank);
-        vdp1_cmdt_param_color_bank_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_mode4_set(cmdt_p, dummy_bank);
+        vdp1_cmdt_color_bank_set(cmdt_p, dummy_bank);
         cmdt_p->cmd_pmod |= 0x08C0; //enabling ECD and SPD manually for now
     }
 
