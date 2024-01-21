@@ -18,41 +18,17 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>Backgrounds</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox_mode"/>
-        </item>
-        <item row="0" column="1">
-         <widget class="QPushButton" name="pushButton_Select_BGs">
-          <property name="text">
-           <string>Select BGs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QCheckBox" name="checkBox_bg_rle">
-          <property name="text">
-           <string>BG RLE compression</string>
-          </property>
-         </widget>
-        </item>
         <item row="6" column="0">
          <widget class="QCheckBox" name="checkBox_transposed_mega_bg">
           <property name="text">
            <string>Transposed tiles order (for megabackgrounds)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>0 files selected</string>
           </property>
          </widget>
         </item>
@@ -63,7 +39,7 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item row="8" column="0">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -80,6 +56,23 @@
          <widget class="QLabel" name="label_3">
           <property name="text">
            <string>Mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="comboBox_mode"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>0 files selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="pushButton_process_BGs">
+          <property name="text">
+           <string>Process BGs</string>
           </property>
          </widget>
         </item>
@@ -150,6 +143,20 @@
           </item>
          </layout>
         </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="pushButton_Select_BGs">
+          <property name="text">
+           <string>Select BGs</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBox_bg_rle">
+          <property name="text">
+           <string>BG RLE compression</string>
+          </property>
+         </widget>
+        </item>
         <item row="4" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <property name="topMargin">
@@ -204,10 +211,10 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="pushButton_process_BGs">
+        <item row="7" column="0">
+         <widget class="QCheckBox" name="checkBox_transparency">
           <property name="text">
-           <string>Process BGs</string>
+           <string>Use transparency in color 0</string>
           </property>
          </widget>
         </item>
@@ -370,7 +377,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -379,7 +386,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

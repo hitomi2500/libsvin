@@ -145,6 +145,12 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             QFile::remove("tmp2.png");
             QFile::copy(list.at(iImageNumber), "tmp2.png");
         }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_1QUAD) //VDP1 single quad
+        {
+            //no resize
+            QFile::remove("tmp2.png");
+            QFile::copy(list.at(iImageNumber), "tmp2.png");
+        }
 
         //making palette file
         if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_4QUADS)
@@ -200,6 +206,21 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             process.setArguments(proc_args);
             process.open();
             process.waitForFinished(30000000);
+            //backuppy
+            QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
+            img.load("tmp3.png");
+        }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_1QUAD)
+        {
+            //generate palette, sprited VDP1 palette is limited to 254 colours
+            proc_args.clear();
+            proc_args.append("tmp2.png");
+            proc_args.append("-colors");
+            proc_args.append("254");
+            proc_args.append("tmp3.png");
+            process.setArguments(proc_args);
+            process.open();
+            process.waitForFinished();
             //backuppy
             QFile::copy("tmp2.png", QString("tmp%1b.png").arg(iImageNumber,4,10,QLatin1Char('0')));
             img.load("tmp3.png");
@@ -310,6 +331,18 @@ void MainWindow::on_pushButton_process_BGs_clicked()
                            ba[(y_cell*x_cells + x_cell)*64 + y*8 + x] = img.pixelIndex(x_cell*8+x,y_cell*8+y);
                         }
         }
+        else if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_1QUAD) //VDP1 1-sprite mode
+        {
+            ba.resize(iSizeX*iSizeY);
+            ba.fill('\0');
+            //new background mode : 1 VDP1 interlaced sprite
+
+            for (int x = 0; x < iSizeX; x++)
+                for (int y = 0; y < iSizeY; y++)
+                {
+                    ba[y*iSizeX+x] = img.pixelIndex(x,y);
+                }
+        }
 
 
         ba_pal.clear();
@@ -374,13 +407,32 @@ void MainWindow::on_pushButton_process_BGs_clicked()
             //for VDP2 sprites 0x00 (transparent) can't be used
             //imagemagick generates palettes from 0x00 to 0xFE, 0xFF being transparent
             //so we only have to move color 0x00 to color 0xFF
-            for (int i=0;i<ba.size();i++)
-                if (ba.at(i) == 0)
-                    ba[i]=-1;
-            //hacking palette, moving color 0x00 to color 0xFF
-            ba_pal[255*3] = ba_pal.at(0*3);
-            ba_pal[255*3+1] = ba_pal.at(0*3+1);
-            ba_pal[255*3+2] = ba_pal.at(0*3+2);
+            if (ui->checkBox_transparency->isChecked() == false)
+            {
+                for (int i=0;i<ba.size();i++)
+                    if (ba.at(i) == 0)
+                        ba[i]=-1;
+                //hacking palette, moving color 0x00 to color 0xFF
+                ba_pal[255*3] = ba_pal.at(0*3);
+                ba_pal[255*3+1] = ba_pal.at(0*3+1);
+                ba_pal[255*3+2] = ba_pal.at(0*3+2);
+            }
+        }
+        if (ui->comboBox_mode->currentIndex() == BG_VDP1_8BPP_1QUAD)
+        {
+            //for backgrounds 0x00 (transparent) and 0xFE(normal shadow) can't be used
+            //imagemagick generates palettes from 0x00 to 0xFD, 0xFE being transparent
+            //so we only have to move color 0x00 to color 0xFF
+            if (ui->checkBox_transparency->isChecked() == false)
+            {
+                for (int i=0;i<ba.size();i++)
+                    if (ba.at(i) == 0)
+                        ba[i]=63;//-1;
+                //hacking palette, moving color 0x00 to color 0xFF
+                ba_pal[63*3] = ba_pal.at(0*3);
+                ba_pal[63*3+1] = ba_pal.at(0*3+1);
+                ba_pal[63*3+2] = ba_pal.at(0*3+2);
+            }
         }
 
         //single file, care less about sectors and clusters
