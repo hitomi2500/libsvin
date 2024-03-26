@@ -90,7 +90,7 @@ void _svin_background_set_no_filelist(char * filename)
 #else
     cdfs_filelist_entry_t * filelist_entries = cdfs_entries_alloc(-1);
     assert(filelist_entries != NULL);
-    cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+    cdfs_filelist_init(&_filelist, filelist_entries, -1);
     cdfs_filelist_root_read(&_filelist);
 #endif
 
